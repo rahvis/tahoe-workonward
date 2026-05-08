@@ -1,0 +1,146 @@
+.stack {
+    display: grid;
+    gap: 18px;
+}
+
+.form {
+    display: grid;
+    gap: 18px;
+}
+
+.fieldGridTwo {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.field {
+    display: grid;
+    gap: 8px;
+}
+
+.inputShell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 50px;
+    padding: 0 16px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: var(--tahoe-radius-lg);
+    background: var(--tahoe-color-canvas);
+}
+
+.inputIcon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--tahoe-color-text-tertiary);
+    flex-shrink: 0;
+}
+
+.input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--tahoe-color-text-primary);
+    outline: 0;
+}
+
+.input::placeholder {
+    color: var(--tahoe-color-text-tertiary);
+}
+
+.authDivider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 4px 0;
+    color: var(--tahoe-color-text-tertiary);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.authDivider::before,
+.authDivider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--tahoe-color-border-subtle);
+}
+
+.googleSection {
+    display: grid;
+    gap: 8px;
+}
+
+.googleButtonShell {
+    min-height: 44px;
+    display: flex;
+    justify-content: center;
+}
+
+.altchaField {
+    display: grid;
+    gap: 8px;
+}
+
+.altchaHint {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--tahoe-color-text-tertiary);
+}
+
+.altchaHintError {
+    color: var(--tahoe-color-danger);
+}
+
+.footerLinks {
+    display: grid;
+    gap: 10px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.authLink {
+    color: var(--tahoe-color-text-primary);
+    border-bottom: 1px solid currentColor;
+}
+
+.bannerLinks {
+    margin-left: 6px;
+}
+
+.loadingState {
+    display: grid;
+    gap: 14px;
+    justify-items: center;
+    padding: 18px 0;
+    text-align: center;
+}
+
+@media (max-width: 767px) {
+    .fieldGridTwo {
+        grid-template-columns: 1fr;
+    }
+
+    /* Prevent iOS auto-zoom on input focus (requires ≥16px) */
+    .input {
+        font-size: 16px;
+    }
+
+    .inputShell {
+        min-height: 48px;
+    }
+
+    .footerLinks {
+        font-size: 13px;
+    }
+
+    .authDivider {
+        font-size: 11px;
+        margin: 2px 0;
+    }
+}

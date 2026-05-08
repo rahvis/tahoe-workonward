@@ -1,0 +1,90 @@
+/* ===== Tahoe — Global Overrides for Radix UI Themes ===== */
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+/* Reset body defaults */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+/* Ensure Radix Theme wrapper also clips overflow */
+.radix-themes {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Mobile touch optimization */
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+/* Links reset */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ── Shared keyframes ── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes progressSlide {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+/* ── Gradient backgrounds for sections ── */
+.gradient-hero {
+  background: linear-gradient(180deg, #F5F7FF 0%, #FFFFFF 60%, #F8F9FC 100%);
+}
+
+.gradient-alt {
+  background: var(--gray-2);
+}

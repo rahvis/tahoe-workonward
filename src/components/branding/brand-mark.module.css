@@ -1,0 +1,44 @@
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logoMark,
+.logoMarkCompact {
+  display: block;
+  width: 26px;
+  height: 19px;
+  flex-shrink: 0;
+}
+
+.logoMarkCompact {
+  width: 22px;
+  height: 16px;
+}
+
+.textWrap {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.wordmark {
+  font-family: var(--tahoe-font-display);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--tahoe-color-text-primary);
+}
+
+.dot {
+  color: var(--tahoe-color-accent);
+}
+
+.meta {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--tahoe-color-text-tertiary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

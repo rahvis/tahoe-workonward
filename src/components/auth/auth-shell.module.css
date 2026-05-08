@@ -1,0 +1,193 @@
+.page {
+    min-height: 100vh;
+    padding: 32px;
+    background:
+        radial-gradient(circle at top left, rgba(255, 104, 44, 0.10), transparent 28%),
+        linear-gradient(180deg, #fffdf9 0%, #ffffff 34%, #fbfaf7 100%);
+}
+
+.shell {
+    width: min(1280px, 100%);
+    min-height: calc(100vh - 64px);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(320px, 0.95fr) minmax(360px, 0.85fr);
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: var(--tahoe-radius-md);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: var(--tahoe-shadow-panel);
+    overflow: hidden;
+}
+
+.brandPanel {
+    padding: 44px;
+    background:
+        linear-gradient(180deg, rgba(245, 245, 245, 0.85), rgba(235, 230, 221, 0.82));
+    border-right: 1px solid var(--tahoe-color-border-subtle);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 28px;
+}
+
+.brandLink {
+    width: fit-content;
+}
+
+.brandCopy {
+    display: grid;
+    gap: 18px;
+}
+
+.brandTitle {
+    margin: 0;
+    font-family: var(--tahoe-font-display);
+    font-size: clamp(34px, 4vw, 56px);
+    font-weight: 400;
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+    color: var(--tahoe-color-text-primary);
+}
+
+.brandBody {
+    margin: 0;
+    max-width: 28rem;
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.brandChecklist {
+    display: grid;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.brandChecklist div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.brandChecklist div::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--tahoe-color-accent);
+    flex-shrink: 0;
+}
+
+.formPanel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 44px 36px;
+}
+
+.formCard {
+    width: min(480px, 100%);
+    display: grid;
+    gap: 22px;
+}
+
+.formHeader {
+    display: grid;
+    gap: 18px;
+}
+
+.formTitle {
+    margin: 0 0 6px;
+    font-family: var(--tahoe-font-display);
+    font-size: 32px;
+    font-weight: 400;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+}
+
+.formSubtitle {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.panelNote {
+    padding: 14px 16px;
+    border-radius: var(--tahoe-radius-md);
+    background: var(--tahoe-color-surface-subtle);
+    color: var(--tahoe-color-text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.footer {
+    padding-top: 10px;
+}
+
+@media (max-width: 1023px) {
+    .page {
+        padding: 20px;
+    }
+
+    .shell {
+        grid-template-columns: 1fr;
+    }
+
+    .brandPanel {
+        border-right: 0;
+        border-bottom: 1px solid var(--tahoe-color-border-subtle);
+        padding: 28px;
+    }
+
+    .formPanel {
+        padding: 28px 20px;
+    }
+}
+
+@media (max-width: 767px) {
+    .page {
+        padding: 0;
+        background:
+            radial-gradient(circle at top left, rgba(255, 104, 44, 0.08), transparent 28%),
+            linear-gradient(180deg, #fffdf9 0%, #ffffff 34%, #fbfaf7 100%);
+        overflow-x: hidden;
+    }
+
+    .shell {
+        min-height: 100vh;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        background: transparent;
+        max-width: 100vw;
+        overflow-x: hidden;
+    }
+
+    /* Hide the brand panel on small phones so users see the form immediately */
+    .brandPanel {
+        display: none;
+    }
+
+    .formPanel {
+        padding: 32px 20px max(32px, env(safe-area-inset-bottom));
+    }
+
+    .formCard {
+        gap: 18px;
+    }
+
+    .formTitle {
+        font-size: 26px;
+    }
+
+    .formSubtitle {
+        font-size: 14px;
+    }
+
+    .panelNote {
+        font-size: 12px;
+        padding: 12px 14px;
+    }
+}

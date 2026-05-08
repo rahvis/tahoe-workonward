@@ -1,0 +1,158 @@
+.tableShell {
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: var(--tahoe-radius-md);
+    background: rgba(255, 255, 255, 0.94);
+    overflow: hidden;
+    box-shadow: var(--tahoe-shadow-soft);
+}
+
+.tableScroll {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-width: 100%;
+}
+
+.table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #faf8f3;
+    border-bottom: 1px solid var(--tahoe-color-border-subtle);
+    padding: 14px 16px;
+    text-align: left;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--tahoe-color-text-tertiary);
+}
+
+.table tbody td {
+    border-bottom: 1px solid rgba(232, 232, 232, 0.8);
+    padding: 14px 16px;
+    vertical-align: top;
+    background: white;
+    font-size: 14px;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.row {
+    cursor: pointer;
+}
+
+.row:hover td {
+    background: #fcfaf6;
+}
+
+.rowActive td {
+    background: rgba(255, 104, 44, 0.06);
+}
+
+.stickyHeader {
+    left: 0;
+    z-index: 4 !important;
+}
+
+.stickyCell {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: inherit;
+    box-shadow: 8px 0 18px rgba(32, 32, 32, 0.04);
+}
+
+.row:hover .stickyCell {
+    background: #fcfaf6;
+}
+
+.rowActive .stickyCell {
+    background: rgba(255, 104, 44, 0.06);
+}
+
+.candidateCell {
+    min-width: 220px;
+    max-width: 220px;
+}
+
+.narrowCell {
+    min-width: 120px;
+}
+
+.textCell {
+    min-width: 180px;
+    max-width: 240px;
+}
+
+.wideTextCell {
+    min-width: 240px;
+    max-width: 320px;
+}
+
+.numericCell {
+    min-width: 110px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.truncate {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    vertical-align: top;
+}
+
+.link {
+    color: var(--tahoe-color-text-primary);
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 104, 44, 0.4);
+    text-underline-offset: 3px;
+}
+
+.link:hover {
+    color: var(--tahoe-color-accent);
+}
+
+.subtle {
+    color: var(--tahoe-color-text-tertiary);
+    font-size: 12px;
+}
+
+.candidateName {
+    font-weight: 600;
+    color: var(--tahoe-color-text-primary);
+}
+
+.metaBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.levelBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255, 104, 44, 0.10);
+    color: var(--tahoe-color-text-primary);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.emptyMessage {
+    color: var(--tahoe-color-text-tertiary);
+}
