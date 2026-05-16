@@ -157,7 +157,9 @@
 .desktopNav a:hover,
 .textAction:hover,
 .footerGrid a:hover,
-.footerBottomLinks a:hover {
+.footerBottomLinks a:hover,
+.footerColumnButton:hover,
+.footerBottomButton:hover {
     color: var(--color-text-primary);
 }
 
@@ -1420,6 +1422,64 @@
     display: block;
     margin-bottom: 10px;
     font-size: 14px;
+}
+
+/* Re-assert the logo lockup inside the footer; the broad
+ * .footerGrid a / .footerGrid span rule above otherwise stacks the
+ * wordmark, dot, and meta onto separate lines and breaks the brand mark. */
+.footerBrand .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 0;
+    line-height: 1;
+}
+
+.footerBrand .logoTextWrap {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+    line-height: 1;
+}
+
+.footerBrand .logoWordmark {
+    display: inline;
+    margin-bottom: 0;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.footerBrand .logoDot {
+    display: inline;
+    margin-bottom: 0;
+}
+
+.footerBrand .logoMeta {
+    display: block;
+    margin-top: 4px;
+    margin-bottom: 0;
+    font-size: 10px;
+    line-height: 1.2;
+}
+
+.footerColumnButton,
+.footerBottomButton {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.footerColumnButton {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 14px;
+    text-align: left;
+}
+
+.footerBottomButton {
+    font-size: 13px;
 }
 
 .footerBottom {

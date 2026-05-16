@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 export default function DashboardPage() {
     const router = useRouter();
     useEffect(() => {
-        router.replace('/dashboard/search');
+        router.replace('/dashboard/search/new');
     }, [router]);
 
     return null;

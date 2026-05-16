@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import styles from "./dsl.module.css";
 
@@ -112,9 +113,9 @@ export default function DslPage() {
         <div className={styles.container}>
             <div className={styles.header}>
                 <div className={styles.headerLeft}>
-                    <a href="/" className={styles.logoLink}>
+                    <Link href="/" className={styles.logoLink}>
                         ← TahoeAI
-                    </a>
+                    </Link>
                     <div>
                         <h1 className={styles.title}>DSL Audit Feed</h1>
                         <p className={styles.subtitle}>Executed recruiter prompts and generated Elasticsearch DSL</p>

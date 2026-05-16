@@ -1,0 +1,84 @@
+.page {
+    display: grid;
+    gap: 24px;
+    font-family: var(--tahoe-font-body);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.title {
+    margin: 8px 0 10px;
+    font-family: var(--tahoe-font-display);
+    font-size: clamp(24px, 2.6vw, 30px);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--tahoe-color-text-primary);
+}
+
+.subtitle {
+    margin: 0;
+    max-width: 720px;
+    font-size: 15px;
+    line-height: 1.45;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.grid {
+    display: grid;
+    gap: 16px;
+}
+
+.card {
+    border: 1px solid var(--tahoe-color-border-subtle);
+    background: rgba(255, 255, 255, 0.96);
+}
+
+.emptyState {
+    display: grid;
+    place-items: center;
+    gap: 12px;
+    min-height: 240px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: var(--tahoe-radius-md);
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--tahoe-color-text-secondary);
+}
+
+.emptyTitle {
+    margin: 0;
+    font-family: var(--tahoe-font-display);
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--tahoe-color-text-primary);
+}
+
+.emptyBody {
+    margin: 0;
+    max-width: 420px;
+    font-size: 15px;
+    line-height: 1.45;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+    }
+}
+
+.errorBanner {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(180, 35, 24, 0.18);
+    background: rgba(180, 35, 24, 0.06);
+    color: #b42318;
+    font-size: 13px;
+}

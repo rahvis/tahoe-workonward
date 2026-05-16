@@ -1,6 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import * as Tooltip from '@radix-ui/react-tooltip';
 import { vi } from 'vitest';
 import DashboardLayout from './layout';
 import {
@@ -13,8 +12,9 @@ import {
 const pushMock = vi.fn();
 
 vi.mock('next/navigation', () => ({
-    useRouter: () => ({ push: pushMock }),
+    useRouter: () => ({ push: pushMock, replace: vi.fn(), prefetch: vi.fn() }),
     usePathname: () => '/dashboard/search',
+    useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -46,19 +46,63 @@ beforeEach(() => {
 test('logout clears auth state, disables Google auto select, and returns to login', async () => {
     const user = userEvent.setup();
     render(
-        <Tooltip.Provider>
-            <DashboardLayout>
-                <div>Dashboard Content</div>
-            </DashboardLayout>
-        </Tooltip.Provider>,
+        <DashboardLayout>
+            <div>Dashboard Content</div>
+        </DashboardLayout>,
     );
 
-    await screen.findByText('Test User');
-    await user.click(screen.getAllByText('Log out')[0]);
+    const logoutButton = await screen.findByRole('button', { name: /log out/i });
+    await user.click(logoutButton);
 
     await waitFor(() => {
         expect(mockedDisableGoogleAutoSelect).toHaveBeenCalledTimes(1);
         expect(mockedRemoveToken).toHaveBeenCalledTimes(1);
         expect(pushMock).toHaveBeenCalledWith('/login');
     });
+});
+
+test('dashboard nav includes the mailboxes section', async () => {
+    const user = userEvent.setup();
+    render(
+        <DashboardLayout>
+            <div>Dashboard Content</div>
+        </DashboardLayout>,
+    );
+
+    const mailboxesButton = await screen.findByRole('button', { name: /mailboxes/i });
+    expect(mailboxesButton).toBeInTheDocument();
+    await user.click(mailboxesButton);
+    expect(await screen.findByRole('link', { name: /connected mailboxes/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /send health/i })).toBeInTheDocument();
+});
+
+test('dashboard nav includes the outreach section', async () => {
+    const user = userEvent.setup();
+    render(
+        <DashboardLayout>
+            <div>Dashboard Content</div>
+        </DashboardLayout>,
+    );
+
+    const outreachButton = await screen.findByRole('button', { name: /outreach/i });
+    expect(outreachButton).toBeInTheDocument();
+    await user.click(outreachButton);
+    expect(await screen.findByRole('link', { name: /campaigns/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /replies/i })).toBeInTheDocument();
+});
+
+test('dashboard nav includes the analytics section', async () => {
+    const user = userEvent.setup();
+    render(
+        <DashboardLayout>
+            <div>Dashboard Content</div>
+        </DashboardLayout>,
+    );
+
+    const analyticsButton = await screen.findByRole('button', { name: /analytics/i });
+    expect(analyticsButton).toBeInTheDocument();
+    await user.click(analyticsButton);
+    expect(await screen.findByRole('link', { name: /overview/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /campaign performance/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /credit spend/i })).toBeInTheDocument();
 });

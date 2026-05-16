@@ -3,7 +3,7 @@ import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { apiRequest } from '@/lib/api';
-import { LockClosedIcon, ExclamationTriangleIcon, CheckCircledIcon } from '@radix-ui/react-icons';
+import { LockClosedIcon, ExclamationTriangleIcon, CheckCircledIcon } from '@/components/ui/icons';
 import AuthShell from '@/components/auth/AuthShell';
 import styles from '../auth.module.css';
 

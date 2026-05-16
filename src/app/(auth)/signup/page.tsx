@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiRequest } from '@/lib/api';
-import { PersonIcon, EnvelopeClosedIcon, LockClosedIcon, ExclamationTriangleIcon, CheckCircledIcon } from '@radix-ui/react-icons';
+import { PersonIcon, EnvelopeClosedIcon, LockClosedIcon, ExclamationTriangleIcon, CheckCircledIcon } from '@/components/ui/icons';
 import AltchaField, { type AltchaFieldHandle } from '@/components/auth/AltchaField';
 import GoogleAuthSection from '@/components/auth/GoogleAuthSection';
 import AuthShell from '@/components/auth/AuthShell';
@@ -122,8 +122,6 @@ export default function SignupPage() {
                     onError={setError}
                     onSuccess={() => router.push('/dashboard')}
                 />
-
-                <div className={styles.authDivider}>or continue with email</div>
 
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.fieldGridTwo}>

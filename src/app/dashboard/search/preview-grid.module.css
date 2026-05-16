@@ -44,6 +44,19 @@
     color: var(--tahoe-color-text-secondary);
 }
 
+.selectionHeader,
+.selectionCell {
+    width: 44px;
+    min-width: 44px;
+    text-align: center;
+}
+
+.selectionCell input,
+.selectionHeader input {
+    accent-color: var(--tahoe-color-accent);
+    cursor: pointer;
+}
+
 .table tbody tr:last-child td {
     border-bottom: 0;
 }

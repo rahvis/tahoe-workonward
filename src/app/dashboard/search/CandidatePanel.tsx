@@ -4,7 +4,7 @@ import {
     Cross2Icon,
     ExternalLinkIcon,
     PersonIcon,
-} from "@radix-ui/react-icons";
+} from "@/components/ui/icons";
 import styles from "./search.module.css";
 
 // ---------------------------------------------------------------------------
@@ -62,7 +62,7 @@ function levelColor(level: string | null): "gold" | "blue" | "violet" | "green" 
 
 export default function CandidatePanel({ preview, onClose, onSaveToList }: CandidatePanelProps) {
     return (
-        <aside className={styles.candidatePanel}>
+        <aside className={styles.candidatePanel} role="complementary" aria-label="Candidate details">
             <div className={styles.panelHeader}>
                 <div className={styles.panelIdentity}>
                     <div className={styles.avatarPlaceholder}>
@@ -127,18 +127,18 @@ export default function CandidatePanel({ preview, onClose, onSaveToList }: Candi
                     <div className={styles.panelSectionBody}>
                         {(preview.company_location_hq_full_address || preview.company_location_hq_country) && (
                             <div className={styles.panelSecondaryText}>
-                                📍 HQ: {preview.company_location_hq_full_address ? `${preview.company_location_hq_full_address}, ` : ""}{preview.company_location_hq_country}
+                                HQ: {preview.company_location_hq_full_address ? `${preview.company_location_hq_full_address}, ` : ""}{preview.company_location_hq_country}
                             </div>
                         )}
                         <div className={styles.panelActionRow}>
                             {preview.company_website && (
                                 <a href={preview.company_website.startsWith("http") ? preview.company_website : `https://${preview.company_website}`} target="_blank" rel="noopener noreferrer" className={styles.panelLink}>
-                                    🌐 Website
+                                    Website
                                 </a>
                             )}
                             {preview.company_linkedin_url && (
                                 <a href={preview.company_linkedin_url} target="_blank" rel="noopener noreferrer" className={styles.panelLink}>
-                                    External Company URL
+                                    Company LinkedIn
                                 </a>
                             )}
                         </div>

@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiRequest, setToken } from '@/lib/api';
-import { EnvelopeClosedIcon, LockClosedIcon, ExclamationTriangleIcon } from '@radix-ui/react-icons';
+import { EnvelopeClosedIcon, LockClosedIcon, ExclamationTriangleIcon } from '@/components/ui/icons';
 import AltchaField, { type AltchaFieldHandle } from '@/components/auth/AltchaField';
 import GoogleAuthSection from '@/components/auth/GoogleAuthSection';
 import AuthShell from '@/components/auth/AuthShell';
@@ -56,8 +56,6 @@ export default function LoginPage() {
                     onError={setError}
                     onSuccess={() => router.push('/dashboard')}
                 />
-
-                <div className={styles.authDivider}>or continue with email</div>
 
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.field}>

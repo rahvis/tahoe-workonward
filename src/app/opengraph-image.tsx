@@ -12,7 +12,7 @@ export const contentType = 'image/png';
 export default async function Image() {
   // Read the SVG logo directly from the filesystem
   const logoPath = join(process.cwd(), 'public', 'logo', 'workonward_logo-white.svg');
-  let logoSvg = readFileSync(logoPath, 'utf-8');
+  const logoSvg = readFileSync(logoPath, 'utf-8');
   
   // Extract just the inner paths or use the SVG as an image source if preferred.
   // Next.js ImageResponse supports rendering SVGs, but it's safest to pass it as an img src with a data URI,

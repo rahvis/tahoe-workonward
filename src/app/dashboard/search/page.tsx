@@ -1,7 +1,16 @@
 "use client";
 
-import { startTransition, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { apiRequest } from "@/lib/api";
+import {
+    clearSearchPageBootstrap,
+    readSearchPageBootstrap,
+    type SearchPageBootstrapPayload,
+} from "@/lib/search-page-bootstrap";
+import SaveSearchDialog from "../_components/SaveSearchDialog";
+import SaveToListDialog from "../_components/SaveToListDialog";
+import { fetchBillingSummary, previewCandidateToImportPayload, type BillingSummary } from "@/lib/organization";
 import {
     Badge,
     Box,
@@ -16,7 +25,7 @@ import {
     Table,
     Text,
     TextField,
-} from "@radix-ui/themes";
+} from "@/components/ui/tahoe-ui";
 import {
     ChevronLeftIcon,
     ChevronRightIcon,
@@ -24,10 +33,11 @@ import {
     ExclamationTriangleIcon,
     MagnifyingGlassIcon,
     MixerHorizontalIcon,
-} from "@radix-ui/react-icons";
+} from "@/components/ui/icons";
 import styles from "./search.module.css";
 import CandidatePanel, { type PreviewData } from "./CandidatePanel";
 import LangGraphSearchPage from "./LangGraphSearchPage";
+import PreviewCapBanner from "./preview-cap-banner";
 
 // Module-level flag: true when the component unmounted due to in-app navigation.
 // Resets to false on hard page refresh (browser reloads JS modules).
@@ -71,6 +81,7 @@ interface SearchExecuteResponse {
     has_next: boolean;
     has_prev: boolean;
     query_hash: string;
+    search_session_id: string;
 }
 
 interface SearchFilters {
@@ -98,6 +109,42 @@ function emptyFilters(): SearchFilters {
         is_working: null,
         min_experience_months: null,
         max_experience_months: null,
+    };
+}
+
+function coerceBootstrapFilters(raw: Record<string, unknown> | null | undefined): SearchFilters {
+    const source = raw ?? {};
+    const toStringArray = (value: unknown): string[] =>
+        Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+    const toNullableBool = (value: unknown): boolean | null =>
+        typeof value === "boolean" ? value : null;
+    const toNullableNumber = (value: unknown): number | null =>
+        typeof value === "number" && Number.isFinite(value) ? value : null;
+
+    return {
+        job_titles: toStringArray(source.job_titles),
+        companies: toStringArray(source.companies),
+        location_countries: toStringArray(source.location_countries),
+        location_cities: toStringArray(source.location_cities),
+        industries: toStringArray(source.industries),
+        management_levels: toStringArray(source.management_levels),
+        skills: toStringArray(source.skills),
+        is_working: toNullableBool(source.is_working),
+        min_experience_months: toNullableNumber(source.min_experience_months),
+        max_experience_months: toNullableNumber(source.max_experience_months),
+    };
+}
+
+function getLegacyBootstrapState(bootstrap?: SearchPageBootstrapPayload | null): {
+    query: string;
+    filters: SearchFilters;
+    searchSessionId: string;
+} | null {
+    if (!bootstrap || bootstrap.mode !== "legacy") return null;
+    return {
+        query: bootstrap.prompt ?? "",
+        filters: coerceBootstrapFilters(bootstrap.structuredFilters),
+        searchSessionId: bootstrap.searchSessionId,
     };
 }
 
@@ -193,9 +240,12 @@ function TagInput({
 // Main Page
 // ---------------------------------------------------------------------------
 
-function LegacySearchPage() {
-    const [query, setQuery] = useState("");
-    const [filters, setFilters] = useState<SearchFilters>(emptyFilters());
+export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstrapPayload | null }) {
+    const bootstrapState = getLegacyBootstrapState(bootstrap);
+    const [query, setQuery] = useState(bootstrapState?.query ?? "");
+    const [filters, setFilters] = useState<SearchFilters>(bootstrapState?.filters ?? emptyFilters());
+    const [lastCommittedQuery, setLastCommittedQuery] = useState(bootstrapState?.query ?? "");
+    const [lastCommittedFilters, setLastCommittedFilters] = useState<SearchFilters>(bootstrapState?.filters ?? emptyFilters());
     const [showFilters, setShowFilters] = useState(true);
 
     const [stage, setStage] = useState<"idle" | "searching" | "results" | "paginating">("idle");
@@ -211,10 +261,14 @@ function LegacySearchPage() {
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
     const [activeCandidate, setActiveCandidate] = useState<PreviewData | null>(null);
     const [queryHash, setQueryHash] = useState<string | null>(null);
+    const [searchSessionId, setSearchSessionId] = useState<string | null>(bootstrapState?.searchSessionId ?? null);
+    const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+    const [saveSearchDialogOpen, setSaveSearchDialogOpen] = useState(false);
+    const bootstrapRunStartedRef = useRef(false);
 
     // Keep latest committed search query/filters so pagination reuses them
-    const committedQuery = useRef("");
-    const committedFilters = useRef<SearchFilters>(emptyFilters());
+    const committedQuery = useRef(bootstrapState?.query ?? "");
+    const committedFilters = useRef<SearchFilters>(bootstrapState?.filters ?? emptyFilters());
 
     // ---------------------------------------------------------------------------
     // sessionStorage persistence — restore on in-app nav, save on results change
@@ -229,6 +283,7 @@ function LegacySearchPage() {
     }, []);
 
     useEffect(() => {
+        if (bootstrap) return;
         // Only restore when navigating within the app, not on hard refresh / login
         if (!_navigatedWithin) return;
         _navigatedWithin = false;
@@ -240,6 +295,8 @@ function LegacySearchPage() {
                     startTransition(() => {
                         setQuery(s.query ?? "");
                         setFilters(s.filters ?? emptyFilters());
+                        setLastCommittedQuery(s.query ?? "");
+                        setLastCommittedFilters(s.filters ?? emptyFilters());
                         setResults(s.results);
                         setTotalResults(s.totalResults ?? 0);
                         setTotalPages(Math.min(s.totalPages ?? 0, MAX_PREVIEW_PAGES));
@@ -247,6 +304,7 @@ function LegacySearchPage() {
                         setHasNext(s.hasNext ?? false);
                         setHasPrev(s.hasPrev ?? false);
                         setQueryHash(s.queryHash ?? null);
+                        setSearchSessionId(s.searchSessionId ?? null);
                         committedQuery.current = s.query ?? "";
                         committedFilters.current = s.filters ?? emptyFilters();
                         setStage("results");
@@ -256,7 +314,7 @@ function LegacySearchPage() {
         } catch {
             // ignore parse errors
         }
-    }, []);
+    }, [bootstrap]);
 
     useEffect(() => {
         if (results.length === 0) return;
@@ -271,18 +329,26 @@ function LegacySearchPage() {
                 hasNext,
                 hasPrev,
                 queryHash,
+                searchSessionId,
             }));
         } catch {
             // ignore quota errors
         }
-    }, [results, totalResults, totalPages, uiPage, hasNext, hasPrev, queryHash]);
+    }, [results, totalResults, totalPages, uiPage, hasNext, hasPrev, queryHash, searchSessionId]);
 
     // ---------------------------------------------------------------------------
     // Search execution
     // ---------------------------------------------------------------------------
 
     const runSearch = useCallback(
-        async (searchQuery: string, searchFilters: SearchFilters, page: number, isPaginating = false, currentQueryHash: string | null = null) => {
+        async (
+            searchQuery: string,
+            searchFilters: SearchFilters,
+            page: number,
+            isPaginating = false,
+            currentQueryHash: string | null = null,
+            currentSearchSessionId: string | null = null,
+        ) => {
             if (!searchQuery.trim() && searchFilters.job_titles.length === 0) return;
 
             setError("");
@@ -304,6 +370,9 @@ function LegacySearchPage() {
                 if (isPaginating && currentQueryHash) {
                     body.query_hash = currentQueryHash;
                 }
+                if (currentSearchSessionId) {
+                    body.search_session_id = currentSearchSessionId;
+                }
 
                 const response = await apiRequest<SearchExecuteResponse>("/search/execute", {
                     method: "POST",
@@ -317,6 +386,7 @@ function LegacySearchPage() {
                 setHasNext(response.has_next);
                 setHasPrev(response.has_prev);
                 setQueryHash(response.query_hash);
+                setSearchSessionId(response.search_session_id);
                 setStage("results");
             } catch (err: unknown) {
                 const msg = err instanceof Error ? err.message : "An unexpected error occurred.";
@@ -327,19 +397,45 @@ function LegacySearchPage() {
         []
     );
 
+
     const handleSearch = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         committedQuery.current = query;
         committedFilters.current = filters;
+        setLastCommittedQuery(query);
+        setLastCommittedFilters(filters);
         setQueryHash(null);
+        setSearchSessionId(null);
         // Clear sessionStorage so stale results don't persist if search fails
         try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
-        await runSearch(query, filters, 1, false, null);
+        await runSearch(query, filters, 1, false, null, null);
     };
 
     const handlePageChange = async (newPage: number) => {
-        await runSearch(committedQuery.current, committedFilters.current, newPage, true, queryHash);
+        await runSearch(committedQuery.current, committedFilters.current, newPage, true, queryHash, searchSessionId);
     };
+
+    useEffect(() => {
+        if (!bootstrapState || bootstrapRunStartedRef.current) return;
+        bootstrapRunStartedRef.current = true;
+
+        try {
+            sessionStorage.removeItem(SESSION_KEY);
+        } catch {
+            // ignore storage errors
+        }
+
+        queueMicrotask(() => {
+            void runSearch(
+                bootstrapState.query,
+                bootstrapState.filters,
+                1,
+                false,
+                null,
+                bootstrapState.searchSessionId,
+            );
+        });
+    }, [bootstrapState, runSearch]);
 
     // ---------------------------------------------------------------------------
     // Filter helpers
@@ -412,6 +508,29 @@ function LegacySearchPage() {
 
     const isLoading = stage === "searching";
     const isPaginating = stage === "paginating";
+    const selectedImportPayload = useMemo(
+        () =>
+            results
+                .filter((item) => selectedIds.has(item.id))
+                .map((item) =>
+                    previewCandidateToImportPayload(
+                        {
+                            ...item,
+                            page: uiPage,
+                            query_hash: queryHash,
+                            search_prompt: lastCommittedQuery || query,
+                        },
+                        {
+                            queryHash,
+                            searchPrompt: lastCommittedQuery || query,
+                            previewPage: uiPage,
+                            pipeline: "legacy_search",
+                            searchedAt: new Date().toISOString(),
+                        },
+                    ),
+                ),
+        [lastCommittedQuery, query, queryHash, results, selectedIds, uiPage],
+    );
 
     return (
         <Box className={styles.pageWrapper}>
@@ -649,31 +768,33 @@ function LegacySearchPage() {
                     {/* Results */}
                     {(stage === "results" || stage === "paginating") && (
                         <>
+                            {totalResults > 0 ? (
+                                <PreviewCapBanner
+                                    totalResults={totalResults}
+                                    previewTotalResults={Math.min(totalResults, 100)}
+                                    totalPages={totalPages || 5}
+                                />
+                            ) : null}
                             {/* Results header */}
                             <Flex justify="between" align="center" mb="3" px="1">
                                 <Flex align="center" gap="3">
                                     <Text size="2" color="gray">
-                                        {totalResults > 0
+                            {totalResults > 0
                                             ? `${totalResults.toLocaleString()} candidates found`
                                             : "No results found"}
                                     </Text>
-                                    {totalResults > 100 && (
-                                        <Text size="1" color="amber">
-                                            Showing top 100 — add filters to narrow results
-                                        </Text>
-                                    )}
                                     {isPaginating && <Spinner size="1" />}
                                 </Flex>
-                                {selectedIds.size > 0 && (
-                                    <Flex gap="2">
-                                        <Button size="1" variant="soft">
-                                            Add {selectedIds.size} to List
+                                <Flex gap="2" wrap="wrap">
+                                    <Button size="1" variant="soft" onClick={() => setSaveSearchDialogOpen(true)}>
+                                        Save search
+                                    </Button>
+                                    {selectedIds.size > 0 && (
+                                        <Button size="1" onClick={() => setSaveDialogOpen(true)}>
+                                            Save {selectedIds.size} to list
                                         </Button>
-                                        <Button size="1" variant="outline">
-                                            Export CSV
-                                        </Button>
-                                    </Flex>
-                                )}
+                                    )}
+                                </Flex>
                             </Flex>
 
                             {/* Results table */}
@@ -872,11 +993,90 @@ function LegacySearchPage() {
                         onClose={() => setActiveCandidate(null)}
                     />
                 )}
+
+                <SaveToListDialog
+                    open={saveDialogOpen}
+                    onOpenChange={setSaveDialogOpen}
+                    candidates={selectedImportPayload}
+                    onSaved={async () => {
+                        setSelectedIds(new Set());
+                    }}
+                />
+                <SaveSearchDialog
+                    open={saveSearchDialogOpen}
+                    onOpenChange={setSaveSearchDialogOpen}
+                    mode="legacy"
+                    prompt={lastCommittedQuery || query}
+                    structuredFilters={lastCommittedFilters as unknown as Record<string, unknown>}
+                    defaultName={query.trim() || lastCommittedQuery.trim()}
+                />
             </Flex>
         </Box>
     );
 }
 
+function SearchPageInner() {
+    const searchParams = useSearchParams();
+    const bootstrap = useMemo(
+        () => (typeof window === "undefined" ? null : readSearchPageBootstrap()),
+        [],
+    );
+    const [billingSummary, setBillingSummary] = useState<BillingSummary | null>(null);
+
+    useEffect(() => {
+        if (bootstrap) {
+            clearSearchPageBootstrap();
+        }
+    }, [bootstrap]);
+
+    useEffect(() => {
+        let cancelled = false;
+        async function loadBilling() {
+            try {
+                const summary = await fetchBillingSummary();
+                if (!cancelled) {
+                    setBillingSummary(summary);
+                }
+            } catch {
+                if (!cancelled) {
+                    setBillingSummary(null);
+                }
+            }
+        }
+        void loadBilling();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const forcedMode = searchParams.get("mode");
+    const resolvedMode = forcedMode ?? bootstrap?.mode ?? (SEARCH_LANGGRAPH_ENABLED ? "langgraph" : "legacy");
+
+    return (
+        <>
+            {billingSummary && ['low', 'critical', 'empty'].includes(billingSummary.low_credit_state) ? (
+                <Box className={styles.pageWrapper} mb="4">
+                    <Callout.Root color={billingSummary.low_credit_state === 'low' ? 'orange' : 'red'}>
+                        <Callout.Icon>
+                            <ExclamationTriangleIcon />
+                        </Callout.Icon>
+                        <Callout.Text>
+                            Credit runway is getting tight. Tahoe only charges search when it makes a new provider-backed preview fetch, and top-up credits never expire.
+                        </Callout.Text>
+                    </Callout.Root>
+                </Box>
+            ) : null}
+            {resolvedMode === "langgraph"
+                ? <LangGraphSearchPage bootstrap={bootstrap?.mode === "langgraph" ? bootstrap : null} />
+                : <LegacySearchPage bootstrap={bootstrap?.mode === "legacy" ? bootstrap : null} />}
+        </>
+    );
+}
+
 export default function SearchPage() {
-    return SEARCH_LANGGRAPH_ENABLED ? <LangGraphSearchPage /> : <LegacySearchPage />;
+    return (
+        <Suspense fallback={<Box className={styles.pageWrapper}><span className="tahoe-spinner" /></Box>}>
+            <SearchPageInner />
+        </Suspense>
+    );
 }

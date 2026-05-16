@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import BrandMark from '@/components/branding/BrandMark';
+import CookieSettingsButton from '@/components/consent/CookieSettingsButton';
 import styles from '../legal.module.css';
 
 const sections = [
     {
         title: '1. Agreement to the Terms',
-        body: 'These Terms of Service ("Terms") govern your access to and use of the Tahoe service, websites, applications, APIs, and related features provided by WorkOnward ("Tahoe," "we," "us," or "our"). By using Tahoe, you agree to these Terms. If you use Tahoe on behalf of an employer or other organization, you represent that you have authority to bind that organization to these Terms.',
+        body: 'These Terms of Service ("Terms") govern your access to and use of the Tahoe service, websites, applications, APIs, and related features provided by WorkOnward ("Tahoe," "we," "us," or "our"). By using Tahoe, you agree to these Terms. If you use Tahoe on behalf of an employer or other organization, you represent that you have authority to bind that organization to these Terms. Tahoe’s public pages may also use optional analytics if you choose to enable them through the site’s cookie settings, as described in the Cookie Policy and Privacy Policy.',
     },
     {
         title: '2. Eligibility and business use',
@@ -54,7 +55,7 @@ const sections = [
     },
     {
         title: '10. Third-party services and data sources',
-        body: 'Tahoe depends on third-party services, including Google, data providers, enrichment vendors, hosting providers, and payment providers. Those services may change, impose restrictions, suspend access, or introduce downtime beyond Tahoe\u2019s control. Tahoe is not responsible for the acts or omissions of third parties, except as required by law.',
+        body: 'Tahoe depends on third-party services, including Google, data providers, enrichment vendors, hosting providers, payment providers, and, on the public landing page where a user opts in, Google Analytics measurement services. Those services may change, impose restrictions, suspend access, or introduce downtime beyond Tahoe\u2019s control. Tahoe is not responsible for the acts or omissions of third parties, except as required by law.',
     },
     {
         title: '11. Suspension and termination',
@@ -96,6 +97,7 @@ export default function TermsPage() {
                     </Link>
                     <div className={styles.headerActions}>
                         <Link href="/privacy" className={styles.headerLink}>Privacy</Link>
+                        <Link href="/cookie" className={styles.headerLink}>Cookie</Link>
                         <Link href="/login" className={styles.headerLink}>Sign in</Link>
                     </div>
                 </header>
@@ -105,10 +107,11 @@ export default function TermsPage() {
                     <h1 className={styles.title}>Terms of Service</h1>
                     <p className={styles.lede}>
                         These Terms cover Tahoe&apos;s recruiter workflow platform, including Google sign-in, Gmail mailbox
-                        connections, candidate search, enrichment, and recruiter outreach features.
+                        connections, candidate search, enrichment, recruiter outreach features, and the public website
+                        experience that links to those flows.
                     </p>
                     <div className={styles.meta}>
-                        <span><strong>Last updated:</strong> May 8, 2026</span>
+                        <span><strong>Last updated:</strong> May 9, 2026</span>
                     </div>
                 </section>
 
@@ -130,8 +133,10 @@ export default function TermsPage() {
                     <div className={styles.flatSection}>
                         <h2 className={styles.flatSectionTitle}>Related policies</h2>
                         <p className={styles.paragraph}>
-                            These Terms work together with Tahoe&apos;s <Link href="/privacy" className={styles.inlineLink}>Privacy Policy</Link>.
-                            If you connect Google services, Google&apos;s own policies and scope-verification requirements also apply.
+                            These Terms work together with Tahoe&apos;s <Link href="/privacy" className={styles.inlineLink}>Privacy Policy</Link> and
+                            <Link href="/cookie" className={styles.inlineLink}> Cookie Policy</Link>. If you connect Google services, Google&apos;s own
+                            policies and scope-verification requirements also apply. Tahoe&apos;s public-site analytics choices, if enabled,
+                            are governed by those same policy pages and the site&apos;s Cookie settings control.
                         </p>
                     </div>
                 </div>
@@ -141,6 +146,8 @@ export default function TermsPage() {
                     <div className={styles.footerLinks}>
                         <Link href="/">Home</Link>
                         <Link href="/privacy">Privacy</Link>
+                        <Link href="/cookie">Cookie</Link>
+                        <CookieSettingsButton className={styles.footerButton}>Cookie settings</CookieSettingsButton>
                         <Link href="/signup">Create account</Link>
                     </div>
                 </footer>

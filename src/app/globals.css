@@ -1,4 +1,4 @@
-/* ===== Tahoe — Global Overrides for Radix UI Themes ===== */
+/* ===== Tahoe — Global Base ===== */
 
 /* Smooth scrolling */
 html {
@@ -18,12 +18,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
-}
-
-/* Ensure Radix Theme wrapper also clips overflow */
-.radix-themes {
-  overflow-x: hidden;
-  max-width: 100vw;
 }
 
 /* Mobile touch optimization */
@@ -86,5 +80,5 @@ a {
 }
 
 .gradient-alt {
-  background: var(--gray-2);
+  background: var(--tahoe-color-surface-subtle);
 }

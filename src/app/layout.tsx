@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Theme } from "@radix-ui/themes";
-import { Inter, Montserrat } from "next/font/google";
-import "@radix-ui/themes/styles.css";
+import { Inter, Instrument_Sans, Montserrat } from "next/font/google";
+import "vanilla-cookieconsent/dist/cookieconsent.css";
 import "./globals.css";
 import "./tahoe-theme.css";
+import PublicGoogleAnalytics from "@/components/analytics/PublicGoogleAnalytics";
+import PublicCookieConsent from "@/components/consent/PublicCookieConsent";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -15,6 +16,13 @@ const montserrat = Montserrat({
   subsets: ["latin"],
   variable: "--font-display",
   weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+const instrumentSans = Instrument_Sans({
+  subsets: ["latin"],
+  variable: "--font-instrument",
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -37,10 +45,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${montserrat.variable}`}>
-        <Theme accentColor="orange" grayColor="sand" radius="large" scaling="100%" panelBackground="solid">
-          {children}
-        </Theme>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className={`${inter.variable} ${montserrat.variable} ${instrumentSans.variable}`}>
+        <PublicGoogleAnalytics />
+        <PublicCookieConsent />
+        {children}
       </body>
     </html>
   );

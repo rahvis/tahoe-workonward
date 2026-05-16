@@ -4,13 +4,14 @@ interface RequestOptions {
     method?: string;
     body?: unknown;
     headers?: Record<string, string>;
+    signal?: AbortSignal;
 }
 
 export async function apiRequest<T>(
     endpoint: string,
     options: RequestOptions = {}
 ): Promise<T> {
-    const { method = "GET", body, headers = {} } = options;
+    const { method = "GET", body, headers = {}, signal } = options;
 
     const token =
         typeof window !== "undefined" ? localStorage.getItem("tahoe_token") : null;
@@ -22,6 +23,7 @@ export async function apiRequest<T>(
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
             ...headers,
         },
+        ...(signal ? { signal } : {}),
     };
 
     if (body) {
@@ -75,4 +77,57 @@ export function isLoggedIn(): boolean {
 export function disableGoogleAutoSelect() {
     if (typeof window === "undefined") return;
     window.google?.accounts.id.disableAutoSelect();
+}
+
+// ---------------------------------------------------------------------------
+// Phase 2 — search session helpers
+// ---------------------------------------------------------------------------
+
+export interface SearchSessionLatestPage {
+    page: number;
+    results: unknown[];
+    total_results: number;
+    total_pages: number;
+    preview_total_results: number;
+    query_hash: string | null;
+}
+
+export interface SearchSessionPayload {
+    session_id: string;
+    workspace_id: string;
+    owner_user_id: string;
+    prompt: string;
+    normalized_query_hash: string | null;
+    mode: "legacy" | "langgraph";
+    parsed_intent: Record<string, unknown>;
+    structured_filters: Record<string, unknown>;
+    popup_model: Record<string, unknown> | null;
+    total_results: number;
+    total_pages: number;
+    preview_total_results: number;
+    last_page_loaded: number;
+    pages_loaded: Record<string, unknown>;
+    created_at: string | null;
+    last_accessed_at: string | null;
+    latest_page?: SearchSessionLatestPage;
+}
+
+export async function getSearchSession(sessionId: string): Promise<SearchSessionPayload> {
+    return apiRequest<SearchSessionPayload>(`/search/sessions/${encodeURIComponent(sessionId)}`);
+}
+
+export interface SavedSearchRerunResponse {
+    search_session_id: string;
+    mode: "legacy" | "langgraph";
+    prompt: string;
+    parsed_intent: Record<string, unknown>;
+    structured_filters: Record<string, unknown>;
+    popup_model: Record<string, unknown> | null;
+}
+
+export async function rerunSavedSearch(savedSearchId: string): Promise<SavedSearchRerunResponse> {
+    return apiRequest<SavedSearchRerunResponse>(
+        `/saved-searches/${encodeURIComponent(savedSearchId)}/rerun`,
+        { method: "POST" }
+    );
 }

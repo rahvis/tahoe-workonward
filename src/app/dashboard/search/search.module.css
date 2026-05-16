@@ -4,6 +4,7 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
+    font-family: var(--tahoe-font-body);
 }
 
 .searchBarArea {
@@ -33,7 +34,7 @@
     padding: 18px 16px 24px;
     border-right: 1px solid var(--tahoe-color-border-subtle);
     overflow-y: auto;
-    background: rgba(245, 245, 245, 0.7);
+    background: rgba(250, 248, 243, 0.78);
 }
 
 .filterSection {
@@ -79,11 +80,13 @@
 }
 
 .candidatePanel {
-    width: 400px;
-    min-width: 400px;
+    width: 420px;
+    min-width: 420px;
+    max-width: 420px;
+    flex-basis: 420px;
     flex-shrink: 0;
     border-left: 1px solid var(--tahoe-color-border-subtle);
-    padding: 24px 22px;
+    padding: 24px 24px 28px;
     overflow-y: auto;
     background: rgba(255, 255, 255, 0.96);
     animation: slideInRight 0.18s ease-out;
@@ -131,14 +134,14 @@
 .panelTitle {
     margin: 0;
     font-family: var(--tahoe-font-display);
-    font-size: 28px;
-    font-weight: 400;
-    line-height: 1.05;
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1.15;
     letter-spacing: -0.02em;
 }
 
 .panelSubtitle {
-    margin: 4px 0 0;
+    margin: 6px 0 0;
     font-size: 14px;
     line-height: 1.5;
     color: var(--tahoe-color-text-secondary);
@@ -148,8 +151,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 999px;
     border: 1px solid var(--tahoe-color-border-subtle);
     background: transparent;
@@ -158,16 +161,17 @@
 }
 
 .panelClose:hover {
-    background: var(--tahoe-color-surface-subtle);
+    background: #fbf7ef;
+    color: var(--tahoe-color-text-primary);
 }
 
 .panelSection {
-    padding: 18px 0;
+    padding: 20px 0;
     border-bottom: 1px solid rgba(232, 232, 232, 0.85);
 }
 
 .panelLabel {
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     font-size: 11px;
     color: var(--tahoe-color-text-tertiary);
     text-transform: uppercase;
@@ -182,6 +186,7 @@
 .panelPrimaryText {
     font-size: 17px;
     font-weight: 600;
+    line-height: 1.35;
     color: var(--tahoe-color-text-primary);
 }
 
@@ -251,7 +256,7 @@
 }
 
 .scoreMeta {
-    margin-top: 18px;
+    margin-top: 20px;
     font-size: 12px;
     color: var(--tahoe-color-text-tertiary);
 }
@@ -278,68 +283,76 @@
     }
 }
 
-.pageWrapper :global(.rt-TextFieldRoot),
-.pageWrapper :global(.rt-Button),
-.pageWrapper :global(.rt-Badge),
-.pageWrapper :global(.rt-TableRootTable),
-.pageWrapper :global(.rt-CalloutRoot),
-.pageWrapper :global(.rt-SwitchRoot),
-.pageWrapper :global(.rt-CheckboxRoot) {
+.pageWrapper :global(.tui-textfield),
+.pageWrapper :global(.tui-button),
+.pageWrapper :global(.tui-badge),
+.pageWrapper :global(.tui-table),
+.pageWrapper :global(.tui-callout),
+.pageWrapper :global(.tui-switch),
+.pageWrapper :global(.tui-checkbox) {
     font-family: var(--tahoe-font-body);
 }
 
-.pageWrapper :global(.rt-TextFieldRoot) {
-    min-height: 50px;
-    border-radius: var(--tahoe-radius-lg);
-    border: 1px solid var(--tahoe-color-border-subtle);
-    background: white;
-    box-shadow: none;
+.pageWrapper :global(.tui-textfield) {
+    min-height: var(--tahoe-dashboard-control-height);
 }
 
-.pageWrapper :global(.rt-TextFieldInput) {
-    font-size: 14px;
+.pageWrapper :global(.tui-textfield__input) {
+    font-size: var(--tahoe-dashboard-control-font-size);
+    line-height: var(--tahoe-dashboard-control-line-height);
     color: var(--tahoe-color-text-primary);
 }
 
-.pageWrapper :global(.rt-Button) {
+.pageWrapper :global(.tui-button),
+.pageWrapper :global(.tahoe-button),
+.pageWrapper :global(.tahoe-button-secondary),
+.pageWrapper :global(.tahoe-button-ghost) {
+    min-height: var(--tahoe-dashboard-control-height);
+    padding-inline: var(--tahoe-dashboard-control-padding-inline);
+    font-size: var(--tahoe-dashboard-control-font-size);
+    line-height: var(--tahoe-dashboard-control-line-height);
+}
+
+.pageWrapper :global(.tui-button) {
     border-radius: var(--tahoe-radius-lg);
 }
 
-.pageWrapper :global(.rt-Button:where(.rt-variant-solid)) {
+.pageWrapper :global(.tui-button--solid) {
     background: var(--tahoe-color-text-primary);
+    color: var(--tahoe-color-canvas);
 }
 
-.pageWrapper :global(.rt-Button:where(.rt-variant-soft)) {
+.pageWrapper :global(.tui-button--soft) {
     background: var(--tahoe-color-surface-subtle);
     color: var(--tahoe-color-text-primary);
 }
 
-.pageWrapper :global(.rt-Button:where(.rt-variant-outline)) {
+.pageWrapper :global(.tui-button--outline) {
     border-color: var(--tahoe-color-border-subtle);
     color: var(--tahoe-color-text-primary);
 }
 
-.pageWrapper :global(.rt-CalloutRoot) {
+.pageWrapper :global(.tui-callout) {
     border-radius: var(--tahoe-radius-md);
 }
 
-.pageWrapper :global(.rt-TableRootTable) {
+.pageWrapper :global(.tui-table) {
     background: transparent;
 }
 
-.pageWrapper :global(.rt-TableHeader) {
+.pageWrapper :global(thead) {
     background: #faf8f3;
 }
 
-.pageWrapper :global(.rt-TableColumnHeaderCell) {
+.pageWrapper :global(.tui-table__header-cell) {
     color: var(--tahoe-color-text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     font-size: 11px;
 }
 
-.pageWrapper :global(.rt-TableCell),
-.pageWrapper :global(.rt-TableRowHeaderCell) {
+.pageWrapper :global(.tui-table__cell),
+.pageWrapper :global(.tui-table__row-header-cell) {
     border-bottom-color: rgba(232, 232, 232, 0.8);
 }
 

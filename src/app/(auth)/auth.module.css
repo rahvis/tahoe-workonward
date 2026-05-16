@@ -23,7 +23,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    min-height: 50px;
+    min-height: 40px;
     padding: 0 16px;
     border: 1px solid var(--tahoe-color-border-subtle);
     border-radius: var(--tahoe-radius-lg);
@@ -75,14 +75,32 @@
 }
 
 .googleButtonShell {
-    min-height: 44px;
+    min-height: 40px;
     display: flex;
+    align-items: center;
     justify-content: center;
 }
 
 .altchaField {
     display: grid;
     gap: 8px;
+}
+
+/* Hide the ALTCHA widget visually. It's auto-managed and triggered
+ * programmatically on form submit via the AltchaField imperative handle —
+ * users never need to see or interact with the widget UI. The error hint
+ * still renders inside this wrapper if the widget script fails to load. */
+.altchaField altcha-widget {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+    pointer-events: none;
 }
 
 .altchaHint {
@@ -132,7 +150,7 @@
     }
 
     .inputShell {
-        min-height: 48px;
+        min-height: 40px;
     }
 
     .footerLinks {

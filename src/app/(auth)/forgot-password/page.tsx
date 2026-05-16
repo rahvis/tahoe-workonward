@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { apiRequest } from '@/lib/api';
-import { EnvelopeClosedIcon, ExclamationTriangleIcon, CheckCircledIcon } from '@radix-ui/react-icons';
+import { EnvelopeClosedIcon, ExclamationTriangleIcon, CheckCircledIcon } from '@/components/ui/icons';
 import AltchaField, { type AltchaFieldHandle } from '@/components/auth/AltchaField';
 import AuthShell from '@/components/auth/AuthShell';
 import styles from '../auth.module.css';
@@ -54,7 +54,6 @@ function ForgotPasswordContent() {
         <AuthShell
             title="Forgot password?"
             subtitle="Enter your email and Tahoe will send a reset link."
-            panelNote="We keep this flow task-focused. Enter the inbox you use for Tahoe and confirm the human verification step."
         >
             <div className={styles.stack}>
                 {error && (

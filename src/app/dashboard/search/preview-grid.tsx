@@ -25,8 +25,12 @@ export interface PreviewGridRow {
     page?: number | null;
     page_rank?: number | null;
     pipeline?: string | null;
+    query_hash?: string | null;
+    search_session_id?: string | null;
     search_prompt?: string | null;
     searched_at?: string | null;
+    saved_origin?: "durable_list" | "legacy_preview_compat";
+    list_count?: number;
 }
 
 type PreviewGridColumn = {
@@ -36,6 +40,8 @@ type PreviewGridColumn = {
     sticky?: boolean;
     render: (row: PreviewGridRow) => ReactNode;
 };
+
+export type PreviewGridExtraColumn = PreviewGridColumn;
 
 function textValue(value: string | null | undefined) {
     return value?.trim() || "—";
@@ -70,139 +76,141 @@ function formatTimestamp(value: string | null | undefined) {
     return date.toLocaleString();
 }
 
-const BASE_COLUMNS: PreviewGridColumn[] = [
-    {
-        key: "candidate",
-        label: "Candidate",
-        className: `${styles.candidateCell} ${styles.stickyCell}`,
-        sticky: true,
-        render: (row) => (
-            <div className={styles.metaBlock}>
-                {row.websites_linkedin ? (
-                    <a
-                        href={row.websites_linkedin}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`${styles.link} ${styles.candidateName}`}
-                        title={row.full_name || ""}
-                        onClick={(event) => event.stopPropagation()}
-                    >
-                        <span className={styles.truncate}>{textValue(row.full_name)}</span>
-                    </a>
-                ) : (
-                    <span className={styles.candidateName}>{textValue(row.full_name)}</span>
-                )}
-                <span className={styles.subtle}>{textValue(row.job_title)}</span>
-            </div>
-        ),
-    },
-    {
-        key: "id",
-        label: "ID",
-        className: styles.numericCell,
-        render: (row) => formatNumber(row.id),
-    },
-    {
-        key: "profile_url",
-        label: "Professional Profile URL",
-        className: styles.wideTextCell,
-        render: (row) => externalLink(row.websites_linkedin),
-    },
-    {
-        key: "headline",
-        label: "Headline",
-        className: styles.wideTextCell,
-        render: (row) => <span className={styles.truncate} title={row.headline || ""}>{textValue(row.headline)}</span>,
-    },
-    {
-        key: "location_full",
-        label: "Full Location",
-        className: styles.textCell,
-        render: (row) => <span className={styles.truncate} title={row.location_full || ""}>{textValue(row.location_full)}</span>,
-    },
-    {
-        key: "location_country",
-        label: "Country",
-        className: styles.narrowCell,
-        render: (row) => textValue(row.location_country),
-    },
-    {
-        key: "connections_count",
-        label: "Connections",
-        className: styles.numericCell,
-        render: (row) => formatNumber(row.connections_count),
-    },
-    {
-        key: "followers_count",
-        label: "Followers",
-        className: styles.numericCell,
-        render: (row) => formatNumber(row.follower_count),
-    },
-    {
-        key: "company_name",
-        label: "Company Name",
-        className: styles.textCell,
-        render: (row) => <span className={styles.truncate} title={row.company_name || ""}>{textValue(row.company_name)}</span>,
-    },
-    {
-        key: "company_url",
-        label: "Company URL",
-        className: styles.wideTextCell,
-        render: (row) => externalLink(row.company_linkedin_url),
-    },
-    {
-        key: "company_website",
-        label: "Company Website",
-        className: styles.wideTextCell,
-        render: (row) => externalLink(row.company_website),
-    },
-    {
-        key: "company_industry",
-        label: "Company Industry",
-        className: styles.textCell,
-        render: (row) => <span className={styles.truncate} title={row.company_industry || ""}>{textValue(row.company_industry)}</span>,
-    },
-    {
-        key: "active_experience_title",
-        label: "Current Title",
-        className: styles.textCell,
-        render: (row) => <span className={styles.truncate} title={row.job_title || ""}>{textValue(row.job_title)}</span>,
-    },
-    {
-        key: "department",
-        label: "Department",
-        className: styles.textCell,
-        render: (row) => <span className={styles.truncate} title={row.department || ""}>{textValue(row.department)}</span>,
-    },
-    {
-        key: "management_level",
-        label: "Management Level",
-        className: styles.textCell,
-        render: (row) => row.management_level ? <span className={styles.levelBadge}>{row.management_level}</span> : "—",
-    },
-    {
-        key: "company_hq_full_address",
-        label: "Company HQ Address",
-        className: styles.wideTextCell,
-        render: (row) => (
-            <span className={styles.truncate} title={row.company_location_hq_full_address || ""}>
-                {textValue(row.company_location_hq_full_address)}
-            </span>
-        ),
-    },
-    {
-        key: "company_hq_country",
-        label: "Company HQ Country",
-        className: styles.narrowCell,
-        render: (row) => textValue(row.company_location_hq_country),
-    },
-    {
-        key: "score",
-        label: "Score",
-        className: styles.numericCell,
-        render: (row) => (row.score != null ? row.score.toFixed(2) : "—"),
-    },
-];
+function buildBaseColumns(showCandidateSubtitle: boolean): PreviewGridColumn[] {
+    return [
+        {
+            key: "candidate",
+            label: "Candidate",
+            className: `${styles.candidateCell} ${styles.stickyCell}`,
+            sticky: true,
+            render: (row) => (
+                <div className={styles.metaBlock}>
+                    {row.websites_linkedin ? (
+                        <a
+                            href={row.websites_linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`${styles.link} ${styles.candidateName}`}
+                            title={row.full_name || ""}
+                            onClick={(event) => event.stopPropagation()}
+                        >
+                            <span className={styles.truncate}>{textValue(row.full_name)}</span>
+                        </a>
+                    ) : (
+                        <span className={styles.candidateName}>{textValue(row.full_name)}</span>
+                    )}
+                    {showCandidateSubtitle ? <span className={styles.subtle}>{textValue(row.job_title)}</span> : null}
+                </div>
+            ),
+        },
+        {
+            key: "id",
+            label: "ID",
+            className: styles.numericCell,
+            render: (row) => formatNumber(row.id),
+        },
+        {
+            key: "profile_url",
+            label: "Professional Profile URL",
+            className: styles.wideTextCell,
+            render: (row) => externalLink(row.websites_linkedin),
+        },
+        {
+            key: "headline",
+            label: "Headline",
+            className: styles.wideTextCell,
+            render: (row) => <span className={styles.truncate} title={row.headline || ""}>{textValue(row.headline)}</span>,
+        },
+        {
+            key: "location_full",
+            label: "Full Location",
+            className: styles.textCell,
+            render: (row) => <span className={styles.truncate} title={row.location_full || ""}>{textValue(row.location_full)}</span>,
+        },
+        {
+            key: "location_country",
+            label: "Country",
+            className: styles.narrowCell,
+            render: (row) => textValue(row.location_country),
+        },
+        {
+            key: "connections_count",
+            label: "Connections",
+            className: styles.numericCell,
+            render: (row) => formatNumber(row.connections_count),
+        },
+        {
+            key: "followers_count",
+            label: "Followers",
+            className: styles.numericCell,
+            render: (row) => formatNumber(row.follower_count),
+        },
+        {
+            key: "company_name",
+            label: "Company Name",
+            className: styles.textCell,
+            render: (row) => <span className={styles.truncate} title={row.company_name || ""}>{textValue(row.company_name)}</span>,
+        },
+        {
+            key: "company_url",
+            label: "Company URL",
+            className: styles.wideTextCell,
+            render: (row) => externalLink(row.company_linkedin_url),
+        },
+        {
+            key: "company_website",
+            label: "Company Website",
+            className: styles.wideTextCell,
+            render: (row) => externalLink(row.company_website),
+        },
+        {
+            key: "company_industry",
+            label: "Company Industry",
+            className: styles.textCell,
+            render: (row) => <span className={styles.truncate} title={row.company_industry || ""}>{textValue(row.company_industry)}</span>,
+        },
+        {
+            key: "active_experience_title",
+            label: "Current Title",
+            className: styles.textCell,
+            render: (row) => <span className={styles.truncate} title={row.job_title || ""}>{textValue(row.job_title)}</span>,
+        },
+        {
+            key: "department",
+            label: "Department",
+            className: styles.textCell,
+            render: (row) => <span className={styles.truncate} title={row.department || ""}>{textValue(row.department)}</span>,
+        },
+        {
+            key: "management_level",
+            label: "Management Level",
+            className: styles.textCell,
+            render: (row) => row.management_level ? <span className={styles.levelBadge}>{row.management_level}</span> : "—",
+        },
+        {
+            key: "company_hq_full_address",
+            label: "Company HQ Address",
+            className: styles.wideTextCell,
+            render: (row) => (
+                <span className={styles.truncate} title={row.company_location_hq_full_address || ""}>
+                    {textValue(row.company_location_hq_full_address)}
+                </span>
+            ),
+        },
+        {
+            key: "company_hq_country",
+            label: "Company HQ Country",
+            className: styles.narrowCell,
+            render: (row) => textValue(row.company_location_hq_country),
+        },
+        {
+            key: "score",
+            label: "Score",
+            className: styles.numericCell,
+            render: (row) => (row.score != null ? row.score.toFixed(2) : "—"),
+        },
+    ];
+}
 
 const METADATA_COLUMNS: PreviewGridColumn[] = [
     {
@@ -231,8 +239,21 @@ const METADATA_COLUMNS: PreviewGridColumn[] = [
     },
 ];
 
-export function previewGridColumns(includeMetadata: boolean): PreviewGridColumn[] {
-    return includeMetadata ? [...BASE_COLUMNS, ...METADATA_COLUMNS] : BASE_COLUMNS;
+export function previewGridColumns({
+    includeMetadata,
+    hiddenColumnKeys = [],
+    showCandidateSubtitle = true,
+}: {
+    includeMetadata: boolean;
+    hiddenColumnKeys?: string[];
+    showCandidateSubtitle?: boolean;
+}): PreviewGridColumn[] {
+    const hiddenKeys = new Set(hiddenColumnKeys);
+    const columns = includeMetadata
+        ? [...buildBaseColumns(showCandidateSubtitle), ...METADATA_COLUMNS]
+        : buildBaseColumns(showCandidateSubtitle);
+
+    return columns.filter((column) => !hiddenKeys.has(column.key));
 }
 
 export default function PreviewGrid({
@@ -240,21 +261,53 @@ export default function PreviewGrid({
     activeRowId,
     emptyMessage,
     includeMetadata = false,
+    extraColumns = [],
+    hiddenColumnKeys = [],
+    showCandidateSubtitle = true,
+    selectable = false,
+    selectedRowIds,
+    onToggleAllSelection,
+    onToggleRowSelection,
     onRowClick,
 }: {
     rows: PreviewGridRow[];
     activeRowId?: number | null;
     emptyMessage: string;
     includeMetadata?: boolean;
+    extraColumns?: PreviewGridExtraColumn[];
+    hiddenColumnKeys?: string[];
+    showCandidateSubtitle?: boolean;
+    selectable?: boolean;
+    selectedRowIds?: Set<number>;
+    onToggleAllSelection?: (checked: boolean) => void;
+    onToggleRowSelection?: (row: PreviewGridRow) => void;
     onRowClick?: (row: PreviewGridRow) => void;
 }) {
-    const columns = previewGridColumns(includeMetadata);
+    const columns = [
+        ...previewGridColumns({
+            includeMetadata,
+            hiddenColumnKeys,
+            showCandidateSubtitle,
+        }),
+        ...extraColumns,
+    ];
+    const allSelected = selectable && rows.length > 0 && rows.every((row) => selectedRowIds?.has(row.id));
     return (
         <div className={styles.tableShell}>
             <div className={styles.tableScroll}>
                 <table className={styles.table}>
                     <thead>
                         <tr>
+                            {selectable && (
+                                <th className={styles.selectionHeader}>
+                                    <input
+                                        type="checkbox"
+                                        aria-label="Select all rows"
+                                        checked={Boolean(allSelected)}
+                                        onChange={(event) => onToggleAllSelection?.(event.target.checked)}
+                                    />
+                                </th>
+                            )}
                             {columns.map((column) => (
                                 <th
                                     key={column.key}
@@ -268,7 +321,7 @@ export default function PreviewGrid({
                     <tbody>
                         {rows.length === 0 ? (
                             <tr>
-                                <td colSpan={columns.length}>
+                                <td colSpan={columns.length + (selectable ? 1 : 0)}>
                                     <span className={styles.emptyMessage}>{emptyMessage}</span>
                                 </td>
                             </tr>
@@ -279,6 +332,16 @@ export default function PreviewGrid({
                                     className={`${styles.row} ${activeRowId === row.id ? styles.rowActive : ""}`.trim()}
                                     onClick={() => onRowClick?.(row)}
                                 >
+                                    {selectable && (
+                                        <td className={styles.selectionCell} onClick={(event) => event.stopPropagation()}>
+                                            <input
+                                                type="checkbox"
+                                                aria-label={`Select ${row.full_name || `candidate ${row.id}`}`}
+                                                checked={Boolean(selectedRowIds?.has(row.id))}
+                                                onChange={() => onToggleRowSelection?.(row)}
+                                            />
+                                        </td>
+                                    )}
                                     {columns.map((column) => (
                                         <td
                                             key={column.key}

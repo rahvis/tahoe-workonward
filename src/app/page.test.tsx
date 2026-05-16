@@ -24,6 +24,7 @@ test('renders Tahoe landing content with auth CTAs pointing to dedicated routes'
         screen.getAllByRole('link', { name: /start free trial/i }).every((link) => link.getAttribute('href') === '/signup'),
     ).toBe(true);
     expect(screen.getByText(/continue with google or email\. no credit card\./i)).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /cookie settings/i }).length).toBeGreaterThan(0);
     expect(screen.queryByTestId('google-signin-button')).not.toBeInTheDocument();
     expect(screen.queryByTestId('google-signup-button')).not.toBeInTheDocument();
 });

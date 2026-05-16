@@ -90,7 +90,7 @@ export default function GoogleAuthSection({
             shape: 'pill',
             type: 'standard',
             text: context === 'signup' ? 'signup_with' : 'signin_with',
-            width: Math.min(380, window.innerWidth - 72),
+            width: Math.min(400, window.innerWidth - 40),
         });
         googleIdentity.prompt();
 

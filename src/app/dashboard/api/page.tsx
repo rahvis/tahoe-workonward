@@ -1,5 +1,5 @@
 'use client';
-import { LockClosedIcon } from '@radix-ui/react-icons';
+import { LockClosedIcon } from '@/components/ui/icons';
 import styles from './api.module.css';
 
 const endpoints = [

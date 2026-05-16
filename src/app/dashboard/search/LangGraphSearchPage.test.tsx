@@ -1,11 +1,17 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, getSearchSession } from "@/lib/api";
 import LangGraphSearchPage from "./LangGraphSearchPage";
+
+const mockRouterPush = vi.fn();
+const mockRouterReplace = vi.fn();
+let currentSearchParams = new URLSearchParams();
+let desktopViewport = true;
 
 vi.mock("@/lib/api", () => ({
     apiRequest: vi.fn(),
+    getSearchSession: vi.fn(),
 }));
 
 vi.mock("./CandidatePanel", () => ({
@@ -13,7 +19,22 @@ vi.mock("./CandidatePanel", () => ({
     default: () => null,
 }));
 
+vi.mock("next/navigation", () => ({
+    useRouter: () => ({
+        push: mockRouterPush,
+        replace: mockRouterReplace,
+        prefetch: vi.fn(),
+    }),
+    usePathname: () => "/dashboard/search/new",
+    useSearchParams: () => currentSearchParams,
+}));
+
 const mockedApiRequest = vi.mocked(apiRequest);
+const mockedGetSearchSession = vi.mocked(getSearchSession);
+
+function setViewportMode(next: "desktop" | "mobile") {
+    desktopViewport = next === "desktop";
+}
 
 const metadataResponse = {
     version: "langgraph-v1",
@@ -36,7 +57,7 @@ const metadataResponse = {
             fields: [
                 { key: "job.current_title_keywords", label: "Current Titles", control: "tags_with_suggestions", help_text: "", options: [], suggestions: ["Software Developers", "Registered Nurses"], allow_custom: true },
                 { key: "job.departments", label: "Departments", control: "tags_with_suggestions", help_text: "", options: [], suggestions: ["Engineering and Technical", "Platform", "Warehouse Operations"], allow_custom: true },
-                { key: "job.management_levels", label: "Management Levels", control: "tags_with_suggestions", help_text: "", options: [], suggestions: ["Director", "Shift Lead"], allow_custom: true },
+                { key: "job.management_levels", label: "Management Levels", control: "tags_with_suggestions", help_text: "", options: [], suggestions: ["Director", "Shift Lead", "Individual Contributor"], allow_custom: true },
             ],
         },
         {
@@ -246,24 +267,72 @@ function setupApiMocks() {
     });
 }
 
+function getPopupInput(label: string): HTMLInputElement {
+    const fieldLabel = screen.getByText(label);
+    const fieldBlock = fieldLabel.closest("div");
+    const input = fieldBlock?.querySelector("input");
+    if (!(input instanceof HTMLInputElement)) {
+        throw new Error(`Unable to find input for ${label}`);
+    }
+    return input;
+}
+
+function createDeferred<T>() {
+    let resolve!: (value: T | PromiseLike<T>) => void;
+    let reject!: (reason?: unknown) => void;
+    const promise = new Promise<T>((res, rej) => {
+        resolve = res;
+        reject = rej;
+    });
+    return { promise, resolve, reject };
+}
+
 beforeEach(() => {
     mockedApiRequest.mockReset();
+    mockedGetSearchSession.mockReset();
+    mockRouterPush.mockReset();
+    mockRouterReplace.mockReset();
+    currentSearchParams = new URLSearchParams();
+    setViewportMode("desktop");
+    window.sessionStorage.clear();
+    Object.defineProperty(window, "matchMedia", {
+        writable: true,
+        value: vi.fn().mockImplementation((query: string) => ({
+            matches: query === "(min-width: 769px)" ? desktopViewport : false,
+            media: query,
+            onchange: null,
+            addListener: vi.fn(),
+            removeListener: vi.fn(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn(),
+        })),
+    });
     setupApiMocks();
 });
 
-test("renders backend-declared controls and language proficiency options", async () => {
+test("desktop page keeps Filters visible and opens the Tahoe popup with backend-declared controls", async () => {
     const user = userEvent.setup();
     render(<LangGraphSearchPage />);
 
-    await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "ml engineer");
-    await user.click(screen.getByRole("button", { name: "Search" }));
+    expect(await screen.findByRole("button", { name: "Filters" })).toBeInTheDocument();
+    expect(screen.queryByText("Min Followers")).not.toBeInTheDocument();
 
+    await user.click(screen.getByRole("button", { name: "Filters" }));
+
+    expect(await screen.findByLabelText("Search filters")).toBeInTheDocument();
     expect(await screen.findByText("Min Followers")).toBeInTheDocument();
     expect(screen.getByText("Min Connections")).toBeInTheDocument();
+    expect(getPopupInput("Min Followers")).toHaveAttribute("placeholder", "");
+    expect(getPopupInput("Ambiguities")).toHaveAttribute("placeholder", "");
 
     await user.click(screen.getByRole("button", { name: "Job" }));
-    expect(screen.getByRole("button", { name: "Software Developers" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Platform" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Software Developers" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Platform" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Individual Contributor" })).not.toBeInTheDocument();
+    expect(getPopupInput("Current Titles")).toHaveAttribute("placeholder", "");
+    expect(getPopupInput("Departments")).toHaveAttribute("placeholder", "");
+    expect(getPopupInput("Management Levels")).toHaveAttribute("placeholder", "");
 
     await user.click(screen.getByRole("button", { name: "Company" }));
     expect(screen.getByText("B2B Company")).toBeInTheDocument();
@@ -272,29 +341,282 @@ test("renders backend-declared controls and language proficiency options", async
 
     await user.click(screen.getByRole("button", { name: "Languages" }));
     await user.click(screen.getByRole("button", { name: /Add language/i }));
+    expect(screen.getByRole("textbox", { name: "Language 1" })).toHaveAttribute("placeholder", "");
+    expect(screen.getByRole("textbox", { name: "Proficiency 1" })).toHaveAttribute("placeholder", "");
     expect(screen.getByRole("button", { name: "English" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Native or bilingual proficiency" })).toBeInTheDocument();
+}, 10000);
+
+test("desktop popup closes from Done and persists active filter count on the Filters button", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Filters" }));
+    await user.click(screen.getByRole("button", { name: "Job" }));
+    await user.type(getPopupInput("Departments"), "Platform{enter}");
+
+    await user.click(screen.getByRole("button", { name: "Done" }));
+
+    await waitFor(() => {
+        expect(screen.queryByLabelText("Search filters")).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "Filters (1)" })).toBeInTheDocument();
 });
 
-test("preserves optional company background and custom open-taxonomy values in the execute payload", async () => {
+test("clicking Find candidates parses + runs in one shot and syncs session url", async () => {
     const user = userEvent.setup();
     render(<LangGraphSearchPage />);
 
     await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "ml engineer");
-    await user.click(screen.getByRole("button", { name: "Search" }));
+    await user.click(screen.getByRole("button", { name: "Find candidates" }));
 
+    // Auto-run: parse then execute fire back-to-back; results render directly.
+    expect(await screen.findByText("Casey Cho")).toBeInTheDocument();
+    await waitFor(() => {
+        expect(mockRouterReplace).toHaveBeenCalledWith("/dashboard/search/new?session=session-1");
+    });
+});
+
+test("desktop popup can run a filter-only search and then show results", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Filters" }));
+    const dialog = await screen.findByLabelText("Search filters");
+    await user.type(getPopupInput("Min Followers"), "300");
+    await user.click(within(dialog).getByRole("button", { name: "Find candidates" }));
+
+    expect(await screen.findByText("Casey Cho")).toBeInTheDocument();
+    await waitFor(() => {
+        expect(screen.queryByLabelText("Search filters")).not.toBeInTheDocument();
+        expect(mockRouterReplace).toHaveBeenCalledWith("/dashboard/search/new?session=session-1");
+    });
+
+    const parseCall = mockedApiRequest.mock.calls.find(([path]) => path === "/search/parse");
+    expect(parseCall).toBeDefined();
+    expect(parseCall?.[1]?.body).toEqual(
+        expect.objectContaining({
+            search_prompt: expect.stringMatching(/\S/),
+        }),
+    );
+});
+
+test("desktop popup shows a loading overlay while popup-launched search is in progress", async () => {
+    const executeDeferred = createDeferred<typeof executeResultsResponse>();
+    mockedApiRequest.mockImplementation(async (path, init) => {
+        if (path === "/search/filter-metadata") return metadataResponse;
+        if (path === "/search/parse") {
+            return {
+                search_session_id: "session-1",
+                checkpoint_id: "session-1",
+                parsed_intent: {},
+                confidence: "medium",
+                ambiguities: [],
+                semantic_expansions: popupModelResponse.semantic_expansions,
+                popup_model: popupModelResponse,
+                cache_hit: null,
+                langsmith_run_id: null,
+            };
+        }
+        if (path === "/search/execute") {
+            return executeDeferred.promise;
+        }
+        throw new Error(`Unhandled path: ${String(path)} ${JSON.stringify(init)}`);
+    });
+
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Filters" }));
+    const dialog = await screen.findByLabelText("Search filters");
+    await user.type(getPopupInput("Min Followers"), "300");
+    await user.click(within(dialog).getByRole("button", { name: "Find candidates" }));
+
+    expect(await screen.findByText("Searching candidates...")).toBeInTheDocument();
+    expect(screen.getByText(/Applying your filters, validating the search, and fetching the first preview matches\./i)).toBeInTheDocument();
+    expect(screen.getByLabelText("Search filters")).toBeInTheDocument();
+
+    executeDeferred.resolve(executeResultsResponse);
+
+    expect(await screen.findByText("Casey Cho")).toBeInTheDocument();
+    await waitFor(() => {
+        expect(screen.queryByLabelText("Search filters")).not.toBeInTheDocument();
+    });
+});
+
+test("desktop popup keeps filters open when popup-launched search fails", async () => {
+    mockedApiRequest.mockImplementation(async (path, init) => {
+        if (path === "/search/filter-metadata") return metadataResponse;
+        if (path === "/search/parse") {
+            return {
+                search_session_id: "session-1",
+                checkpoint_id: "session-1",
+                parsed_intent: {},
+                confidence: "medium",
+                ambiguities: [],
+                semantic_expansions: popupModelResponse.semantic_expansions,
+                popup_model: popupModelResponse,
+                cache_hit: null,
+                langsmith_run_id: null,
+            };
+        }
+        if (path === "/search/execute") {
+            throw new Error("Unable to run recruiter search.");
+        }
+        throw new Error(`Unhandled path: ${String(path)} ${JSON.stringify(init)}`);
+    });
+
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Filters" }));
+    const dialog = await screen.findByLabelText("Search filters");
+    await user.type(getPopupInput("Min Followers"), "300");
+    await user.click(within(dialog).getByRole("button", { name: "Find candidates" }));
+
+    expect(await screen.findByText("Unable to run recruiter search.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Search filters")).toBeInTheDocument();
+    await waitFor(() => {
+        expect(screen.queryByText("Searching candidates...")).not.toBeInTheDocument();
+    });
+});
+
+test("hydrates a parse-only session into the review modal and clears the session url", async () => {
+    currentSearchParams = new URLSearchParams("session=resume-review");
+    mockedGetSearchSession.mockResolvedValue({
+        session_id: "resume-review",
+        workspace_id: "workspace-1",
+        owner_user_id: "user-1",
+        prompt: "ml engineers in nyc",
+        normalized_query_hash: null,
+        mode: "langgraph",
+        parsed_intent: {},
+        structured_filters: {},
+        popup_model: popupModelResponse,
+        total_results: 0,
+        total_pages: 0,
+        preview_total_results: 0,
+        last_page_loaded: 0,
+        pages_loaded: {},
+        created_at: null,
+        last_accessed_at: null,
+    });
+
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    expect(await screen.findByLabelText("Search filters")).toBeInTheDocument();
+    expect(await screen.findByText("Min Followers")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Job" }));
-    const departmentInput = await screen.findByPlaceholderText("Add departments");
+    expect(await screen.findByText("ML Engineer")).toBeInTheDocument();
+    await waitFor(() => {
+        expect(mockRouterReplace).toHaveBeenCalledWith("/dashboard/search/new");
+    });
+});
+
+test("hydrates a results session from the server without reopening the review modal", async () => {
+    currentSearchParams = new URLSearchParams("session=resume-results");
+    mockedGetSearchSession.mockResolvedValue({
+        session_id: "resume-results",
+        workspace_id: "workspace-1",
+        owner_user_id: "user-1",
+        prompt: "backend engineers",
+        normalized_query_hash: "hash-1",
+        mode: "langgraph",
+        parsed_intent: {},
+        structured_filters: {},
+        popup_model: popupModelResponse,
+        total_results: 128,
+        total_pages: 5,
+        preview_total_results: 100,
+        last_page_loaded: 1,
+        pages_loaded: { "1": {} },
+        created_at: null,
+        last_accessed_at: null,
+        latest_page: {
+            page: 1,
+            results: executeResultsResponse.results,
+            total_results: 128,
+            total_pages: 5,
+            preview_total_results: 100,
+            query_hash: "hash-1",
+        },
+    });
+
+    render(<LangGraphSearchPage />);
+
+    expect(await screen.findByText("Casey Cho")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Search filters")).not.toBeInTheDocument();
+});
+
+test("Reset filters clears recruiter edits from the desktop popup", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await screen.findByRole("button", { name: "Filters" });
+    await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "ml engineer");
+    await user.click(screen.getByRole("button", { name: "Find candidates" }));
+    await screen.findByText("Casey Cho");
+
+    await user.click(screen.getByRole("button", { name: /Filters \(\d+\)/ }));
+    await user.click(screen.getByRole("button", { name: "Job" }));
+    expect(await screen.findByText("ML Engineer")).toBeInTheDocument();
+
+    // Clear filters — button should become disabled afterward.
+    await user.click(screen.getByRole("button", { name: "Reset filters" }));
+    expect(screen.queryByText("ML Engineer")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reset filters" })).toBeDisabled();
+});
+
+test("invalid session urls are cleared and show a recruiter-readable error", async () => {
+    currentSearchParams = new URLSearchParams("session=missing");
+    mockedGetSearchSession.mockRejectedValue(new Error("Search session not found"));
+
+    render(<LangGraphSearchPage />);
+
+    expect(await screen.findByText(/This search session is no longer available/i)).toBeInTheDocument();
+    await waitFor(() => {
+        expect(mockRouterReplace).toHaveBeenCalledWith("/dashboard/search/new");
+    });
+});
+
+test("stale persisted search errors are not restored on page load", async () => {
+    window.sessionStorage.setItem("langgraph_search_preview_state_v1", JSON.stringify({
+        error: "body.search_prompt: String should have at least 1 character",
+        viewState: "idle",
+        popupModel: popupModelResponse,
+    }));
+
+    render(<LangGraphSearchPage />);
+
+    expect(await screen.findByRole("button", { name: /Filters \(\d+\)/ })).toBeInTheDocument();
+    expect(screen.queryByText("body.search_prompt: String should have at least 1 character")).not.toBeInTheDocument();
+});
+
+test("popup edits before Find candidates win over the parse response (popupDirty preserved)", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "ml engineer");
+    await user.click(await screen.findByRole("button", { name: "Filters" }));
+    await screen.findByText("Min Followers");
+
+    // Edit the popup BEFORE running. These edits set popupDirty=true so they
+    // survive the next /search/parse call and become the confirmed_intent.
+    await user.click(screen.getByRole("button", { name: "Job" }));
+    const departmentInput = getPopupInput("Departments");
     await user.type(departmentInput, "Platform{enter}");
 
     await user.click(screen.getByRole("button", { name: "Company" }));
-    const companySizeInput = await screen.findByPlaceholderText("Add company sizes");
+    const companySizeInput = getPopupInput("Company Sizes");
     await user.type(companySizeInput, "startup{enter}");
 
     await user.click(screen.getByRole("button", { name: "General" }));
-    const followersInput = await screen.findByPlaceholderText("Enter min followers");
+    const followersInput = getPopupInput("Min Followers");
     await user.type(followersInput, "500");
-    await user.click(screen.getByRole("button", { name: "Run Search" }));
+
+    await user.click(screen.getByRole("button", { name: "Done" }));
+    await user.click(screen.getByRole("button", { name: "Find candidates" }));
 
     await waitFor(() => {
         expect(mockedApiRequest).toHaveBeenCalledWith(
@@ -307,11 +629,20 @@ test("preserves optional company background and custom open-taxonomy values in t
     expect(executeCall).toBeDefined();
 
     const payload = executeCall?.[1]?.body as { confirmed_intent: typeof popupModelResponse };
-    expect(payload.confirmed_intent.company.optional_company_names).toEqual(["Google", "Meta"]);
-    expect(payload.confirmed_intent.company.optional_company_size_ranges).toEqual(["11-50 employees"]);
     expect(payload.confirmed_intent.job.departments).toEqual(["Platform"]);
     expect(payload.confirmed_intent.company.company_size_ranges).toEqual(["startup"]);
     expect(payload.confirmed_intent.general.min_followers).toBe(500);
+});
+
+test("mobile Filters button opens the existing bottom sheet filter surface", async () => {
+    setViewportMode("mobile");
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Filters" }));
+
+    expect(await screen.findByLabelText("Search filters")).toBeInTheDocument();
+    expect(await screen.findByText("Min Followers")).toBeInTheDocument();
 });
 
 test("renders the full preview grid and reuses cached page 1 when paging back", async () => {
@@ -319,14 +650,30 @@ test("renders the full preview grid and reuses cached page 1 when paging back", 
     render(<LangGraphSearchPage />);
 
     await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "backend engineers");
-    await user.click(screen.getByRole("button", { name: "Search" }));
-    await user.click(await screen.findByRole("button", { name: "Run Search" }));
+    await user.click(screen.getByRole("button", { name: "Find candidates" }));
 
     expect(await screen.findByText("Professional Profile URL")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Select all rows" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Select Casey Cho" })).toBeInTheDocument();
+    expect(screen.queryByText("ID")).not.toBeInTheDocument();
     expect(screen.getByText("Company HQ Country")).toBeInTheDocument();
     expect(screen.getByText("Casey Cho")).toBeInTheDocument();
     expect(screen.queryByText(/128 candidates found/)).not.toBeInTheDocument();
-    expect(screen.getByText(/preview limited to the top 100 across 5 pages/i)).toBeInTheDocument();
+    const previewBanner = screen.getByText(/Preview window: top 100 of 128 total matches across 5 pages\./i);
+    expect(previewBanner).toBeInTheDocument();
+    expect(screen.getAllByText(/Preview window: top 100 of 128 total matches across 5 pages\./i)).toHaveLength(1);
+    expect(previewBanner.compareDocumentPosition(screen.getByPlaceholderText(/Senior ML engineers/i)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Save search" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save 1 to list" })).not.toBeInTheDocument();
+
+    const row = screen.getByText("Casey Cho").closest("tr");
+    expect(row).not.toBeNull();
+    const candidateCell = within(row as HTMLTableRowElement).getAllByRole("cell")[1];
+    expect(within(candidateCell).queryByText("Senior Backend Engineer")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("checkbox", { name: "Select Casey Cho" }));
+    expect(screen.getByRole("button", { name: "Save search" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save 1 to list" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "2" }));
 
@@ -349,4 +696,17 @@ test("renders the full preview grid and reuses cached page 1 when paging back", 
 
     expect(previewPageCallsAfterPageTwo).toBe(1);
     expect(previewPageCallsAfterReturn).toBe(1);
+});
+
+test("reopening the desktop popup preserves recruiter filter edits", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Filters" }));
+    await user.click(screen.getByRole("button", { name: "Job" }));
+    await user.type(getPopupInput("Departments"), "Platform{enter}");
+    await user.click(screen.getByRole("button", { name: "Done" }));
+
+    await user.click(screen.getByRole("button", { name: "Filters (1)" }));
+    expect(await screen.findByText("Platform")).toBeInTheDocument();
 });

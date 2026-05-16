@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import BrandMark from '@/components/branding/BrandMark';
+import CookieSettingsButton from '@/components/consent/CookieSettingsButton';
 import styles from '../legal.module.css';
 
 const sections = [
@@ -80,7 +81,7 @@ const sections = [
     },
     {
         title: '10. Cookies, local storage, and similar technologies',
-        body: 'Tahoe may use browser storage, session storage, local storage, and similar technologies to maintain sessions, preserve workflow state, secure the Service, and improve reliability. For example, Tahoe may store authentication tokens, temporary session state, and feature-related settings in your browser. We do not currently use these technologies to build advertising profiles for cross-context behavioral advertising.',
+        body: 'Tahoe uses browser storage, session storage, local storage, and similar technologies to maintain sessions, preserve workflow state, secure the Service, and improve reliability. On Tahoe’s public pages, our consent manager stores consent state in the `tahoe_cookie_consent` cookie and allows users to turn optional analytics on or off. If a user opts in, Tahoe may use Google Analytics on the landing page to measure visits, engagement, and sign-up intent. Tahoe may also store authentication tokens, temporary workflow state, and feature-related settings in your browser. We do not currently use these technologies to build advertising profiles for cross-context behavioral advertising, and users can reopen Tahoe’s public-page preferences through the site’s “Cookie settings” control.',
     },
     {
         title: '11. Children\u2019s privacy',
@@ -105,6 +106,7 @@ export default function PrivacyPage() {
                         <BrandMark subtitle />
                     </Link>
                     <div className={styles.headerActions}>
+                        <Link href="/cookie" className={styles.headerLink}>Cookie</Link>
                         <Link href="/terms" className={styles.headerLink}>Terms</Link>
                         <Link href="/signup" className={styles.headerLink}>Create account</Link>
                     </div>
@@ -119,7 +121,7 @@ export default function PrivacyPage() {
                         what U.S. privacy rights users may have.
                     </p>
                     <div className={styles.meta}>
-                        <span><strong>Last updated:</strong> May 8, 2026</span>
+                        <span><strong>Last updated:</strong> May 9, 2026</span>
                     </div>
                 </section>
 
@@ -159,6 +161,8 @@ export default function PrivacyPage() {
                     <span>© 2026 WorkOnward</span>
                     <div className={styles.footerLinks}>
                         <Link href="/">Home</Link>
+                        <Link href="/cookie">Cookie</Link>
+                        <CookieSettingsButton className={styles.footerButton}>Cookie settings</CookieSettingsButton>
                         <Link href="/terms">Terms</Link>
                         <Link href="/login">Sign in</Link>
                     </div>

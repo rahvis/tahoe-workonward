@@ -1,0 +1,348 @@
+.page {
+    display: grid;
+    gap: 24px;
+    width: 100%;
+    min-width: 0;
+}
+
+.page,
+.page * {
+    box-sizing: border-box;
+}
+
+.page :global(.tahoe-button),
+.page :global(.tahoe-button-secondary),
+.page :global(.tahoe-button-ghost),
+.page :global(.tahoe-select) {
+    min-height: var(--tahoe-dashboard-control-height);
+    font-size: var(--tahoe-dashboard-control-font-size);
+    line-height: var(--tahoe-dashboard-control-line-height);
+    border-radius: var(--tahoe-radius-lg);
+}
+
+.page :global(.tahoe-button),
+.page :global(.tahoe-button-secondary),
+.page :global(.tahoe-button-ghost) {
+    padding: 0 var(--tahoe-dashboard-control-padding-inline);
+}
+
+.header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.heroCard,
+.card,
+.tableCard {
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: var(--tahoe-radius-md);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: var(--tahoe-shadow-soft);
+}
+
+.heroCard {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.eyebrow {
+    font-size: 12px;
+    line-height: 1.2;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--tahoe-color-text-tertiary);
+}
+
+.heroTitle {
+    margin: 0;
+    font-family: var(--tahoe-font-display);
+    font-size: 30px;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--tahoe-color-text-primary);
+}
+
+.heroCopy {
+    margin: 0;
+    max-width: 760px;
+    color: var(--tahoe-color-text-secondary);
+    font-size: 15px;
+    line-height: 1.45;
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 8px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: var(--tahoe-shadow-soft);
+}
+
+.tab,
+.activeTab {
+    border: 0;
+    border-radius: 999px;
+    padding: 9px 14px;
+    white-space: nowrap;
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.tab {
+    color: var(--tahoe-color-text-secondary);
+    background: transparent;
+}
+
+.tab:hover {
+    color: var(--tahoe-color-text-primary);
+    background: #fbf7ef;
+}
+
+.activeTab {
+    color: var(--tahoe-color-text-primary);
+    background: rgba(255, 104, 44, 0.12);
+}
+
+.sectionStack {
+    display: grid;
+    gap: 18px;
+    min-width: 0;
+}
+
+.metricRow {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.metricCard {
+    padding: 16px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 12px;
+    background: #fbfaf7;
+}
+
+.metricLabel {
+    font-size: 13px;
+    color: var(--tahoe-color-text-tertiary);
+}
+
+.metricValue {
+    margin-top: 6px;
+    font-size: 28px;
+    line-height: 1.1;
+    font-weight: 600;
+    color: var(--tahoe-color-text-primary);
+}
+
+.metricMeta {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.summaryGrid,
+.planGrid,
+.topupGrid,
+.rulesGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rulesGrid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.card {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.cardTitle {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.2;
+    color: var(--tahoe-color-text-primary);
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.muted {
+    color: var(--tahoe-color-text-secondary);
+}
+
+.finePrint {
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.statusHealthy,
+.statusLow,
+.statusCritical,
+.statusEmpty {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.statusHealthy {
+    background: rgba(33, 110, 78, 0.08);
+    color: var(--tahoe-color-success);
+}
+
+.statusLow {
+    background: rgba(255, 104, 44, 0.1);
+    color: var(--tahoe-color-accent);
+}
+
+.statusCritical,
+.statusEmpty {
+    background: rgba(180, 35, 24, 0.08);
+    color: var(--tahoe-color-danger);
+}
+
+.buttonRow {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.planPrice {
+    font-size: 32px;
+    line-height: 1;
+    font-weight: 600;
+    color: var(--tahoe-color-text-primary);
+}
+
+.planPriceMeta {
+    font-size: 14px;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.list {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.emptyState {
+    padding: 28px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: var(--tahoe-radius-md);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: var(--tahoe-shadow-soft);
+    color: var(--tahoe-color-text-secondary);
+    text-align: center;
+}
+
+.tableCard {
+    padding: 20px;
+    overflow: auto;
+}
+
+.filterRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 760px;
+}
+
+.table th,
+.table td {
+    padding: 12px 10px;
+    border-top: 1px solid var(--tahoe-color-border-subtle);
+    text-align: left;
+    font-size: 14px;
+    vertical-align: top;
+}
+
+.table thead th {
+    border-top: 0;
+    color: var(--tahoe-color-text-tertiary);
+    font-weight: 500;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.positive {
+    color: var(--tahoe-color-success);
+    font-weight: 600;
+}
+
+.negative {
+    color: var(--tahoe-color-danger);
+    font-weight: 600;
+}
+
+.subtext {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--tahoe-color-text-tertiary);
+}
+
+@media (max-width: 1080px) {
+    .metricRow,
+    .summaryGrid,
+    .planGrid,
+    .topupGrid,
+    .rulesGrid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .metricRow,
+    .summaryGrid,
+    .planGrid,
+    .topupGrid,
+    .rulesGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .tabs {
+        border-radius: var(--tahoe-radius-lg);
+    }
+
+    .heroCard,
+    .card,
+    .tableCard {
+        padding: 18px;
+    }
+}

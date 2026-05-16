@@ -10,7 +10,7 @@ export interface AltchaFieldHandle {
 }
 
 interface AltchaFieldProps {
-    flow: 'signup' | 'login' | 'forgot-password';
+    flow: 'signup' | 'login' | 'forgot-password' | 'partner-application';
 }
 
 interface AltchaStateDetail {
@@ -124,22 +124,20 @@ const AltchaField = forwardRef<AltchaFieldHandle, AltchaFieldProps>(function Alt
     }), [isReady, loadError, payload]);
 
     return (
-        <div className={styles.altchaField}>
+        <div className={styles.altchaField} aria-hidden="true">
             <altcha-widget
                 ref={widgetRef}
                 id={widgetId}
                 auto="off"
                 challengeurl={challengeUrl}
                 delay={250}
-                floating="auto"
-                floatingpersist="focus"
                 hidefooter
                 hidelogo
                 refetchonexpire
             />
-            <p className={`${styles.altchaHint} ${loadError ? styles.altchaHintError : ''}`}>
-                {loadError || 'Human verification will appear when you submit the form.'}
-            </p>
+            {loadError ? (
+                <p className={`${styles.altchaHint} ${styles.altchaHintError}`}>{loadError}</p>
+            ) : null}
         </div>
     );
 });

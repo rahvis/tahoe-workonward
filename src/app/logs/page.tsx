@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import styles from "./logs.module.css";
 
@@ -106,9 +107,9 @@ export default function LogsPage() {
             {/* ── Header ── */}
             <div className={styles.header}>
                 <div className={styles.headerLeft}>
-                    <a href="/" className={styles.logoLink}>
+                    <Link href="/" className={styles.logoLink}>
                         ← TahoeAI
-                    </a>
+                    </Link>
                     <div>
                         <h1 className={styles.title}>Search Logs</h1>
                         <p className={styles.subtitle}>Pipeline execution history</p>

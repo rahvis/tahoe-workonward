@@ -15,38 +15,45 @@ export default function AuthShell({
     subtitle,
     children,
     footer,
-    panelNote = 'Continue with your email. No hidden setup. No surprise UX.',
+    panelNote = '',
 }: AuthShellProps) {
     return (
-        <main className={styles.page}>
+        <main className={styles.page} data-tahoe-auth-shell>
             <div className={styles.shell}>
-                <section className={styles.brandPanel}>
-                    <Link href="/" className={styles.brandLink} aria-label="Tahoe home">
-                        <BrandMark subtitle />
-                    </Link>
-                    <div className={styles.brandCopy}>
-                        <span className="tahoe-eyebrow">Recruiter workflow</span>
-                        <h1 className={styles.brandTitle}>Search, organize, enrich, and launch from one calm surface.</h1>
-                        <p className={styles.brandBody}>
-                            Tahoe keeps the recruiter flow direct: plain-English search, focused lists, native outreach,
-                            and product-grade operational visibility.
+                <aside className={styles.marketingPanel} aria-hidden="true">
+                    <div className={styles.brandLockup}>
+                        <Link href="/" className={styles.brandLink} tabIndex={-1}>
+                            <BrandMark compact />
+                        </Link>
+                        <span className={styles.brandEyebrow}>Recruiter Operating System</span>
+                    </div>
+
+                    <div className={styles.heroBlock}>
+                        <span className={styles.heroEyebrow}>Recruiter workflow</span>
+                        <h1 className={styles.heroTitle}>
+                            Search, organize, enrich, and launch from one calm surface.
+                        </h1>
+                        <p className={styles.heroBody}>
+                            Tahoe keeps the recruiter flow direct: plain-English search, focused lists,
+                            native outreach, and product-grade operational visibility.
                         </p>
                     </div>
-                    <div className={styles.brandChecklist}>
-                        <div>Plain-English candidate search</div>
-                        <div>Send from your own inbox</div>
-                        <div>Credits and actions stay explicit</div>
-                    </div>
-                </section>
+
+                    <ul className={styles.featureList}>
+                        <li><span className={styles.bullet} aria-hidden="true" />Plain-English candidate search</li>
+                        <li><span className={styles.bullet} aria-hidden="true" />Send from your own inbox</li>
+                        <li><span className={styles.bullet} aria-hidden="true" />Credits and actions stay explicit</li>
+                    </ul>
+                </aside>
 
                 <section className={styles.formPanel}>
                     <div className={styles.formCard}>
-                        <div className={styles.formHeader}>
+                        <Link href="/" className={styles.formBrandLink} aria-label="Tahoe home">
                             <BrandMark compact />
-                            <div>
-                                <h2 className={styles.formTitle}>{title}</h2>
-                                {subtitle && <p className={styles.formSubtitle}>{subtitle}</p>}
-                            </div>
+                        </Link>
+                        <div className={styles.formHeader}>
+                            <h2 className={styles.formTitle}>{title}</h2>
+                            {subtitle && <p className={styles.formSubtitle}>{subtitle}</p>}
                         </div>
 
                         {panelNote && <div className={styles.panelNote}>{panelNote}</div>}

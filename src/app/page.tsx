@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { Inter, Montserrat } from 'next/font/google';
 import { useEffect, useMemo, useState } from 'react';
-import { HamburgerMenuIcon, Cross1Icon } from '@radix-ui/react-icons';
+import { HamburgerMenuIcon, Cross1Icon } from '@/components/ui/icons';
+import CookieSettingsButton from '@/components/consent/CookieSettingsButton';
+import { trackLandingEvent } from '@/lib/public-analytics';
 import styles from './page.module.css';
 
 const inter = Inter({
@@ -468,6 +470,23 @@ export default function LandingPage() {
     const [typedQuery, setTypedQuery] = useState('');
     const [showResults, setShowResults] = useState(false);
 
+    const trackSectionNav = (section: string, placement: string) => {
+        trackLandingEvent('landing_section_nav_click', { section, placement });
+    };
+
+    const trackAuthCta = (cta: string, placement: string) => {
+        trackLandingEvent('landing_auth_cta_click', { cta, placement });
+    };
+
+    const trackSocialClick = (platform: string) => {
+        trackLandingEvent('landing_social_click', { platform });
+    };
+
+    const handleTabSelect = (tab: ScreenTab) => {
+        trackLandingEvent('landing_screen_tab_selected', { tab });
+        setActiveTab(tab);
+    };
+
     useEffect(() => {
         const target = HERO_QUERIES[queryIndex];
         let i = 0;
@@ -500,6 +519,37 @@ export default function LandingPage() {
         };
     }, [queryIndex]);
 
+    useEffect(() => {
+        const thresholds = [25, 50, 75, 90];
+        const seen = new Set<number>();
+
+        const trackScrollDepth = () => {
+            const maxScrollable = document.documentElement.scrollHeight - window.innerHeight;
+
+            if (maxScrollable <= 0) {
+                return;
+            }
+
+            const percent = Math.min(100, Math.round((window.scrollY / maxScrollable) * 100));
+
+            thresholds.forEach((threshold) => {
+                if (percent >= threshold && !seen.has(threshold)) {
+                    seen.add(threshold);
+                    trackLandingEvent('landing_scroll_depth', { depth_percent: threshold });
+                }
+            });
+        };
+
+        window.addEventListener('scroll', trackScrollDepth, { passive: true });
+        window.addEventListener('resize', trackScrollDepth);
+        trackScrollDepth();
+
+        return () => {
+            window.removeEventListener('scroll', trackScrollDepth);
+            window.removeEventListener('resize', trackScrollDepth);
+        };
+    }, []);
+
     const activeScreen = useMemo(() => {
         switch (activeTab) {
             case 'lists':
@@ -519,22 +569,33 @@ export default function LandingPage() {
             <header className={styles.header}>
                 <div className={styles.container}>
                     <div className={styles.headerInner}>
-                        <Link href="/" className={styles.logoLink} aria-label="Tahoe home">
+                        <Link
+                            href="/"
+                            className={styles.logoLink}
+                            aria-label="Tahoe home"
+                            onClick={(event) => {
+                                if (typeof window !== 'undefined' && window.location.pathname === '/') {
+                                    event.preventDefault();
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    setMobileNavOpen(false);
+                                }
+                            }}
+                        >
                             <Logo />
                         </Link>
 
                         <nav className={styles.desktopNav} aria-label="Primary">
-                            <a href="#product">Product</a>
-                            <a href="#screens">Features</a>
-                            <a href="#pricing">Pricing</a>
-                            <a href="#customers">Customers</a>
+                            <a href="#product" onClick={() => trackSectionNav('product', 'header_desktop')}>Product</a>
+                            <a href="#screens" onClick={() => trackSectionNav('screens', 'header_desktop')}>Features</a>
+                            <a href="#pricing" onClick={() => trackSectionNav('pricing', 'header_desktop')}>Pricing</a>
+                            <a href="#customers" onClick={() => trackSectionNav('customers', 'header_desktop')}>Customers</a>
                         </nav>
 
                         <div className={styles.headerActions}>
-                            <Link href="/login" className={styles.textAction}>
+                            <Link href="/login" className={styles.textAction} onClick={() => trackAuthCta('sign_in', 'header_desktop')}>
                                 Sign in
                             </Link>
-                            <Link href="/signup" className={styles.secondaryAction}>
+                            <Link href="/signup" className={styles.secondaryAction} onClick={() => trackAuthCta('start_free_trial', 'header_desktop')}>
                                 Start free trial <ArrowUpRightIcon />
                             </Link>
                             <button
@@ -542,7 +603,10 @@ export default function LandingPage() {
                                 className={styles.mobileToggle}
                                 aria-expanded={mobileNavOpen}
                                 aria-label="Toggle navigation"
-                                onClick={() => setMobileNavOpen((open) => !open)}
+                                onClick={() => {
+                                    trackLandingEvent('landing_mobile_nav_toggle', { state: mobileNavOpen ? 'closed' : 'open' });
+                                    setMobileNavOpen((open) => !open);
+                                }}
                             >
                                 {mobileNavOpen ? <Cross1Icon /> : <HamburgerMenuIcon />}
                             </button>
@@ -551,13 +615,13 @@ export default function LandingPage() {
 
                     {mobileNavOpen && (
                         <div className={styles.mobileNav} aria-label="Mobile navigation">
-                            <a href="#product" onClick={() => setMobileNavOpen(false)}>Product</a>
-                            <a href="#screens" onClick={() => setMobileNavOpen(false)}>Features</a>
-                            <a href="#pricing" onClick={() => setMobileNavOpen(false)}>Pricing</a>
-                            <a href="#customers" onClick={() => setMobileNavOpen(false)}>Customers</a>
+                            <a href="#product" onClick={() => { trackSectionNav('product', 'header_mobile'); setMobileNavOpen(false); }}>Product</a>
+                            <a href="#screens" onClick={() => { trackSectionNav('screens', 'header_mobile'); setMobileNavOpen(false); }}>Features</a>
+                            <a href="#pricing" onClick={() => { trackSectionNav('pricing', 'header_mobile'); setMobileNavOpen(false); }}>Pricing</a>
+                            <a href="#customers" onClick={() => { trackSectionNav('customers', 'header_mobile'); setMobileNavOpen(false); }}>Customers</a>
                             <div className={styles.mobileAuthActions}>
-                                <Link href="/login" className={styles.textAction}>Sign in</Link>
-                                <Link href="/signup" className={styles.secondaryAction}>Start free trial</Link>
+                                <Link href="/login" className={styles.textAction} onClick={() => trackAuthCta('sign_in', 'header_mobile')}>Sign in</Link>
+                                <Link href="/signup" className={styles.secondaryAction} onClick={() => trackAuthCta('start_free_trial', 'header_mobile')}>Start free trial</Link>
                             </div>
                         </div>
                     )}
@@ -580,10 +644,10 @@ export default function LandingPage() {
                                 data, launch native sequences, and watch replies without buying a noisy legacy stack.
                             </p>
                             <div className={styles.heroActions}>
-                                <Link href="/signup" className={styles.primaryAction}>
+                                <Link href="/signup" className={styles.primaryAction} onClick={() => trackAuthCta('start_free_trial', 'hero')}>
                                     Start free trial <ArrowIcon />
                                 </Link>
-                                <Link href="/login" className={styles.ghostAction}>
+                                <Link href="/login" className={styles.ghostAction} onClick={() => trackAuthCta('sign_in', 'hero')}>
                                     Sign in <ArrowUpRightIcon />
                                 </Link>
                             </div>
@@ -723,7 +787,7 @@ export default function LandingPage() {
                                 role="tab"
                                 aria-selected={activeTab === tab.id}
                                 className={activeTab === tab.id ? styles.activeTab : styles.inactiveTab}
-                                onClick={() => setActiveTab(tab.id)}
+                                onClick={() => handleTabSelect(tab.id)}
                             >
                                 {tab.label}
                             </button>
@@ -760,7 +824,7 @@ export default function LandingPage() {
                                 Tahoe is built for teams that want recruiter-grade capability without enterprise-contract
                                 drag. Credits are visible, pricing is legible, and the system does not hide spend until the invoice arrives.
                             </p>
-                            <Link href="/signup" className={styles.primaryAction}>
+                            <Link href="/signup" className={styles.primaryAction} onClick={() => trackAuthCta('start_free_trial', 'pricing')}>
                                 See full pricing <ArrowIcon />
                             </Link>
                         </div>
@@ -835,10 +899,10 @@ export default function LandingPage() {
                                 Continue with Google or email, run your first search, and see what Tahoe surfaces before lunch.
                             </p>
                             <div className={styles.heroActions}>
-                                <Link href="/signup" className={styles.accentAction}>
+                                <Link href="/signup" className={styles.accentAction} onClick={() => trackAuthCta('start_free_trial', 'final_cta')}>
                                     Start free trial <ArrowIcon />
                                 </Link>
-                                <Link href="/login" className={styles.inverseGhostAction}>
+                                <Link href="/login" className={styles.inverseGhostAction} onClick={() => trackAuthCta('sign_in', 'final_cta')}>
                                     Sign in <ArrowUpRightIcon />
                                 </Link>
                             </div>
@@ -874,19 +938,29 @@ export default function LandingPage() {
 
                         <div>
                             <h3>Product</h3>
-                            <a href="#product">Features</a>
-                            <a href="#pricing">Pricing</a>
+                            <a href="#product" onClick={() => trackSectionNav('product', 'footer_column')}>Features</a>
+                            <a href="#pricing" onClick={() => trackSectionNav('pricing', 'footer_column')}>Pricing</a>
                         </div>
 
                         <div>
                             <h3>Company</h3>
-                            <a href="#customers">Customers</a>
-                            <a href="#screens">Product vision</a>
+                            <a href="#customers" onClick={() => trackSectionNav('customers', 'footer_column')}>Customers</a>
+                            <a href="#screens" onClick={() => trackSectionNav('screens', 'footer_column')}>Product vision</a>
+                            <a
+                                href="/partner"
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={() => trackLandingEvent('footer_partner_clicked')}
+                            >
+                                Partner program
+                            </a>
                         </div>
 
                         <div>
                             <h3>Legal</h3>
                             <Link href="/privacy">Privacy</Link>
+                            <Link href="/cookie">Cookie</Link>
+                            <CookieSettingsButton className={styles.footerColumnButton}>Cookie settings</CookieSettingsButton>
                             <Link href="/terms">Terms</Link>
                         </div>
 
@@ -898,21 +972,23 @@ export default function LandingPage() {
                     </div>
 
                     <div className={styles.socialLinksRow}>
-                        <a href="https://www.linkedin.com/company/workonward" target="_blank" rel="noreferrer">LinkedIn</a>
-                        <a href="https://www.facebook.com/workonward" target="_blank" rel="noreferrer">Facebook</a>
-                        <a href="https://x.com/workonward" target="_blank" rel="noreferrer">X</a>
-                        <a href="https://www.instagram.com/workonward" target="_blank" rel="noreferrer">Instagram</a>
-                        <a href="https://www.youtube.com/@workonward" target="_blank" rel="noreferrer">YouTube</a>
+                        <a href="https://www.linkedin.com/company/workonward" target="_blank" rel="noreferrer" onClick={() => trackSocialClick('linkedin')}>LinkedIn</a>
+                        <a href="https://www.facebook.com/workonward" target="_blank" rel="noreferrer" onClick={() => trackSocialClick('facebook')}>Facebook</a>
+                        <a href="https://x.com/workonward" target="_blank" rel="noreferrer" onClick={() => trackSocialClick('x')}>X</a>
+                        <a href="https://www.instagram.com/workonward" target="_blank" rel="noreferrer" onClick={() => trackSocialClick('instagram')}>Instagram</a>
+                        <a href="https://www.youtube.com/@workonward" target="_blank" rel="noreferrer" onClick={() => trackSocialClick('youtube')}>YouTube</a>
                     </div>
 
                     <div className={styles.footerBottom}>
                         <span>© 2026 WorkOnward. Made for recruiters who would rather hire than negotiate contracts.</span>
                         <div className={styles.footerBottomLinks}>
-                            <a href="#product">Product</a>
-                            <a href="#pricing">Pricing</a>
+                            <a href="#product" onClick={() => trackSectionNav('product', 'footer_bottom')}>Product</a>
+                            <a href="#pricing" onClick={() => trackSectionNav('pricing', 'footer_bottom')}>Pricing</a>
                             <Link href="/privacy">Privacy</Link>
+                            <Link href="/cookie">Cookie</Link>
+                            <CookieSettingsButton className={styles.footerBottomButton}>Cookie settings</CookieSettingsButton>
                             <Link href="/terms">Terms</Link>
-                            <Link href="/login">Sign in</Link>
+                            <Link href="/login" onClick={() => trackAuthCta('sign_in', 'footer_bottom')}>Sign in</Link>
                         </div>
                     </div>
                 </div>
