@@ -767,6 +767,12 @@ export interface MailboxTestSendResponse {
     last_test_send_at?: string | null;
 }
 
+export interface MailboxDeleteResponse {
+    mailbox_id: string;
+    email: string;
+    deleted: boolean;
+}
+
 export interface OutreachSignature {
     sender_name: string;
     sender_email: string;
@@ -935,7 +941,11 @@ export async function sendMailboxTest(mailboxId: string) {
 }
 
 export async function disconnectMailbox(mailboxId: string) {
-    return apiRequest<MailboxSummary>(`/mailboxes/${mailboxId}`, { method: 'DELETE' });
+    return apiRequest<MailboxSummary>(`/mailboxes/${mailboxId}/disconnect`, { method: 'POST' });
+}
+
+export async function deleteMailbox(mailboxId: string) {
+    return apiRequest<MailboxDeleteResponse>(`/mailboxes/${mailboxId}`, { method: 'DELETE' });
 }
 
 export async function fetchCampaigns() {

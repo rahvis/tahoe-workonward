@@ -1,9 +1,10 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Button, Card, Checkbox, Flex, TextField } from '@/components/ui/tahoe-ui';
+import { Button, Checkbox, Dialog, TextField } from '@/components/ui/tahoe-ui';
 import {
+    deleteMailbox,
     disconnectMailbox,
     fetchMailboxConnectUrl,
     fetchMailboxes,
@@ -13,6 +14,8 @@ import {
     type MailboxSummary,
 } from '@/lib/organization';
 import styles from './mailboxes.module.css';
+
+const PAGE_SIZE = 5;
 
 const WEEKDAY_OPTIONS = [
     { label: 'Mon', value: 1 },
@@ -31,30 +34,69 @@ function formatTimestamp(value?: string | null) {
     return date.toLocaleString();
 }
 
-function statusClassName(status: MailboxSummary['status']) {
-    if (status === 'healthy') return styles.statusHealthy;
-    if (status === 'error') return styles.statusError;
+function statusLabel(statusValue: MailboxSummary['status']) {
+    if (statusValue === 'healthy') return 'Healthy';
+    if (statusValue === 'error') return 'Error';
+    return 'Disconnected';
+}
+
+function statusClassName(statusValue: MailboxSummary['status']) {
+    if (statusValue === 'healthy') return styles.statusHealthy;
+    if (statusValue === 'error') return styles.statusError;
     return styles.statusDisconnected;
 }
 
-function MailboxCard({
+function weekdayLabel(weekdays: number[]) {
+    const selected = WEEKDAY_OPTIONS.filter((option) => weekdays.includes(option.value)).map((option) => option.label);
+    return selected.length ? selected.join(', ') : 'None';
+}
+
+function lastActivity(mailbox: MailboxSummary) {
+    return mailbox.last_send_at ?? mailbox.last_test_send_at ?? mailbox.updated_at ?? mailbox.created_at ?? null;
+}
+
+function usagePercent(mailbox: MailboxSummary) {
+    if (mailbox.daily_cap <= 0) return 0;
+    return Math.min(100, Math.round((mailbox.sent_today / mailbox.daily_cap) * 100));
+}
+
+function MailboxManageDialog({
     mailbox,
+    open,
+    onOpenChange,
     onRefresh,
 }: {
-    mailbox: MailboxSummary;
+    mailbox: MailboxSummary | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
     onRefresh: () => Promise<void>;
 }) {
-    const [dailyCap, setDailyCap] = useState(String(mailbox.daily_cap));
-    const [sendWindow, setSendWindow] = useState<MailboxSendWindow>(mailbox.send_window);
+    const [dailyCap, setDailyCap] = useState('');
+    const [sendWindow, setSendWindow] = useState<MailboxSendWindow>({
+        start_local: '09:00',
+        end_local: '17:00',
+        weekdays: [1, 2, 3, 4, 5],
+        timezone: 'America/Los_Angeles',
+    });
     const [saving, setSaving] = useState(false);
     const [sendingTest, setSendingTest] = useState(false);
     const [disconnecting, setDisconnecting] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [confirmingDelete, setConfirmingDelete] = useState(false);
     const [localError, setLocalError] = useState('');
 
     useEffect(() => {
+        if (!mailbox) return;
         setDailyCap(String(mailbox.daily_cap));
         setSendWindow(mailbox.send_window);
+        setLocalError('');
+        setConfirmingDelete(false);
     }, [mailbox]);
+
+    if (!mailbox) {
+        return null;
+    }
+    const activeMailbox = mailbox;
 
     async function handleSave() {
         const parsedCap = Number(dailyCap);
@@ -65,7 +107,7 @@ function MailboxCard({
         setSaving(true);
         setLocalError('');
         try {
-            await updateMailbox(mailbox.id, {
+            await updateMailbox(activeMailbox.id, {
                 daily_cap: parsedCap,
                 send_window: sendWindow,
             });
@@ -81,7 +123,7 @@ function MailboxCard({
         setSendingTest(true);
         setLocalError('');
         try {
-            await sendMailboxTest(mailbox.id);
+            await sendMailboxTest(activeMailbox.id);
             await onRefresh();
         } catch (error) {
             setLocalError(error instanceof Error ? error.message : 'Unable to send a mailbox test email.');
@@ -94,7 +136,7 @@ function MailboxCard({
         setDisconnecting(true);
         setLocalError('');
         try {
-            await disconnectMailbox(mailbox.id);
+            await disconnectMailbox(activeMailbox.id);
             await onRefresh();
         } catch (error) {
             setLocalError(error instanceof Error ? error.message : 'Unable to disconnect this mailbox.');
@@ -103,129 +145,167 @@ function MailboxCard({
         }
     }
 
-    const usagePercentage = mailbox.daily_cap > 0
-        ? Math.min(100, Math.round((mailbox.sent_today / mailbox.daily_cap) * 100))
-        : 0;
-    const canSendTest = mailbox.status !== 'disconnected';
+    async function handleDelete() {
+        setDeleting(true);
+        setLocalError('');
+        try {
+            await deleteMailbox(activeMailbox.id);
+            setConfirmingDelete(false);
+            onOpenChange(false);
+            await onRefresh();
+        } catch (error) {
+            setLocalError(error instanceof Error ? error.message : 'Unable to delete this mailbox.');
+        } finally {
+            setDeleting(false);
+        }
+    }
+
+    const canSendTest = activeMailbox.status !== 'disconnected';
+    const canDisconnect = activeMailbox.status !== 'disconnected';
 
     return (
-        <Card className={styles.card}>
-            <Flex direction="column" gap="4">
-                <div className={styles.cardHeader}>
-                    <div>
-                        <h2 className={styles.email}>{mailbox.email}</h2>
-                        <div className={styles.meta}>
-                            <span className={statusClassName(mailbox.status)}>
-                                {mailbox.status === 'healthy' ? 'Healthy' : mailbox.status === 'error' ? 'Error' : 'Disconnected'}
-                            </span>
-                            <span className={styles.pill}>Send only</span>
-                            <span className={styles.pill}>Replies remain in Gmail</span>
+        <>
+            <Dialog.Root open={open} onOpenChange={onOpenChange}>
+                <Dialog.Content className={styles.modalPanel} aria-label="Manage mailbox" maxWidth="760px">
+                    <div className={styles.modalHeader}>
+                        <div>
+                            <Dialog.Title className={styles.modalTitle}>{activeMailbox.email}</Dialog.Title>
+                            <div className={styles.modalMeta}>
+                                <span className={statusClassName(activeMailbox.status)}>{statusLabel(activeMailbox.status)}</span>
+                                <span>Send-only Gmail</span>
+                            </div>
                         </div>
-                    </div>
-                    <div className={styles.actions}>
-                        <Button size="3" variant="soft" onClick={() => void handleSendTest()} disabled={sendingTest || !canSendTest}>
-                            {sendingTest ? 'Sending…' : 'Send test email'}
-                        </Button>
-                        <Button size="3" color="red" variant="soft" onClick={() => void handleDisconnect()} disabled={disconnecting}>
-                            {disconnecting ? 'Disconnecting…' : 'Disconnect'}
+                        <Button size="2" variant="ghost" onClick={() => onOpenChange(false)}>
+                            Close
                         </Button>
                     </div>
-                </div>
 
-                <p className={styles.scopeNote}>
-                    Tahoe does not request mailbox read access in this phase. Connection scope is limited to sending through Gmail.
-                </p>
-
-                <div className={styles.statsGrid}>
-                    <div className={styles.statCard}>
-                        <p className={styles.statLabel}>Today sent</p>
-                        <p className={styles.statValue}>{mailbox.sent_today} / {mailbox.daily_cap}</p>
-                        <div className={styles.progressTrack}>
-                            <div className={styles.progressFill} style={{ width: `${usagePercentage}%` }} />
+                    <div className={styles.detailGrid}>
+                        <div>
+                            <span>Today sent</span>
+                            <strong>{activeMailbox.sent_today} / {activeMailbox.daily_cap}</strong>
+                        </div>
+                        <div>
+                            <span>Last activity</span>
+                            <strong>{formatTimestamp(lastActivity(activeMailbox))}</strong>
+                        </div>
+                        <div>
+                            <span>Weekdays</span>
+                            <strong>{weekdayLabel(activeMailbox.send_window.weekdays)}</strong>
                         </div>
                     </div>
-                    <div className={styles.statCard}>
-                        <p className={styles.statLabel}>Send window</p>
-                        <p className={styles.statValue}>{mailbox.send_window.start_local} - {mailbox.send_window.end_local}</p>
-                    </div>
-                    <div className={styles.statCard}>
-                        <p className={styles.statLabel}>Timezone</p>
-                        <p className={styles.statValue}>{mailbox.send_window.timezone}</p>
-                    </div>
-                    <div className={styles.statCard}>
-                        <p className={styles.statLabel}>Last test send</p>
-                        <p className={styles.statValue}>{formatTimestamp(mailbox.last_test_send_at)}</p>
-                    </div>
-                </div>
 
-                <div className={styles.settingsGrid}>
-                    <label className={styles.fieldGroup}>
-                        <span className={styles.fieldLabel}>Daily cap</span>
-                        <TextField.Root
-                            size="3"
-                            type="number"
-                            value={dailyCap}
-                            onChange={(event) => setDailyCap(event.target.value)}
-                        />
-                    </label>
-                    <label className={styles.fieldGroup}>
-                        <span className={styles.fieldLabel}>Send window start</span>
-                        <TextField.Root
-                            size="3"
-                            value={sendWindow.start_local}
-                            onChange={(event) => setSendWindow((current) => ({ ...current, start_local: event.target.value }))}
-                        />
-                    </label>
-                    <label className={styles.fieldGroup}>
-                        <span className={styles.fieldLabel}>Send window end</span>
-                        <TextField.Root
-                            size="3"
-                            value={sendWindow.end_local}
-                            onChange={(event) => setSendWindow((current) => ({ ...current, end_local: event.target.value }))}
-                        />
-                    </label>
-                    <label className={styles.fieldGroup}>
-                        <span className={styles.fieldLabel}>Timezone</span>
-                        <TextField.Root
-                            size="3"
-                            value={sendWindow.timezone}
-                            onChange={(event) => setSendWindow((current) => ({ ...current, timezone: event.target.value }))}
-                        />
-                    </label>
-                </div>
-
-                <div className={styles.fieldGroup}>
-                    <span className={styles.fieldLabel}>Weekdays</span>
-                    <div className={styles.weekdayGrid}>
-                        {WEEKDAY_OPTIONS.map((option) => (
-                            <label key={option.value} className={styles.weekdayChip}>
-                                <Checkbox
-                                    checked={sendWindow.weekdays.includes(option.value)}
-                                    onCheckedChange={(checked) => {
-                                        setSendWindow((current) => ({
-                                            ...current,
-                                            weekdays: checked
-                                                ? [...current.weekdays, option.value].sort((a, b) => a - b)
-                                                : current.weekdays.filter((day) => day !== option.value),
-                                        }));
-                                    }}
-                                />
-                                <span>{option.label}</span>
-                            </label>
-                        ))}
+                    <div className={styles.progressTrack}>
+                        <div className={styles.progressFill} style={{ width: `${usagePercent(activeMailbox)}%` }} />
                     </div>
-                </div>
 
-                {mailbox.last_error ? <p className={styles.errorText}>Last provider error: {mailbox.last_error}</p> : null}
-                {localError ? <p className={styles.errorText}>{localError}</p> : null}
+                    <div className={styles.settingsGrid}>
+                        <label className={styles.fieldGroup}>
+                            <span className={styles.fieldLabel}>Daily cap</span>
+                            <TextField.Root
+                                size="3"
+                                type="number"
+                                value={dailyCap}
+                                onChange={(event) => setDailyCap(event.target.value)}
+                            />
+                        </label>
+                        <label className={styles.fieldGroup}>
+                            <span className={styles.fieldLabel}>Window start</span>
+                            <TextField.Root
+                                size="3"
+                                value={sendWindow.start_local}
+                                onChange={(event) => setSendWindow((current) => ({ ...current, start_local: event.target.value }))}
+                            />
+                        </label>
+                        <label className={styles.fieldGroup}>
+                            <span className={styles.fieldLabel}>Window end</span>
+                            <TextField.Root
+                                size="3"
+                                value={sendWindow.end_local}
+                                onChange={(event) => setSendWindow((current) => ({ ...current, end_local: event.target.value }))}
+                            />
+                        </label>
+                        <label className={styles.fieldGroup}>
+                            <span className={styles.fieldLabel}>Timezone</span>
+                            <TextField.Root
+                                size="3"
+                                value={sendWindow.timezone}
+                                onChange={(event) => setSendWindow((current) => ({ ...current, timezone: event.target.value }))}
+                            />
+                        </label>
+                    </div>
 
-                <div className={styles.actions}>
-                    <Button size="3" onClick={() => void handleSave()} disabled={saving}>
-                        {saving ? 'Saving…' : 'Save settings'}
-                    </Button>
-                </div>
-            </Flex>
-        </Card>
+                    <div className={styles.fieldGroup}>
+                        <span className={styles.fieldLabel}>Send days</span>
+                        <div className={styles.weekdayGrid}>
+                            {WEEKDAY_OPTIONS.map((option) => (
+                                <label key={option.value} className={styles.weekdayChip}>
+                                    <Checkbox
+                                        checked={sendWindow.weekdays.includes(option.value)}
+                                        onCheckedChange={(checked) => {
+                                            setSendWindow((current) => {
+                                                if (checked) {
+                                                    return {
+                                                        ...current,
+                                                        weekdays: [...current.weekdays, option.value].sort((a, b) => a - b),
+                                                    };
+                                                }
+                                                if (current.weekdays.length === 1) return current;
+                                                return {
+                                                    ...current,
+                                                    weekdays: current.weekdays.filter((day) => day !== option.value),
+                                                };
+                                            });
+                                        }}
+                                    />
+                                    <span>{option.label}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    {activeMailbox.last_error ? <p className={styles.errorText}>Last provider error: {activeMailbox.last_error}</p> : null}
+                    {localError && !confirmingDelete ? <p className={styles.errorText}>{localError}</p> : null}
+
+                    <div className={styles.modalFooter}>
+                        <div className={styles.actionGroup}>
+                            <Button size="3" onClick={() => void handleSave()} disabled={saving}>
+                                {saving ? 'Saving...' : 'Save settings'}
+                            </Button>
+                            <Button size="3" variant="soft" onClick={() => void handleSendTest()} disabled={sendingTest || !canSendTest}>
+                                {sendingTest ? 'Sending...' : 'Send test'}
+                            </Button>
+                        </div>
+                        <div className={styles.actionGroup}>
+                            <Button size="3" color="red" variant="soft" onClick={() => void handleDisconnect()} disabled={disconnecting || !canDisconnect}>
+                                {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+                            </Button>
+                            <Button size="3" color="red" onClick={() => setConfirmingDelete(true)}>
+                                Delete
+                            </Button>
+                        </div>
+                    </div>
+                </Dialog.Content>
+            </Dialog.Root>
+
+            <Dialog.Root open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+                <Dialog.Content className={styles.confirmPanel} aria-label="Delete mailbox" maxWidth="460px">
+                    <Dialog.Title className={styles.modalTitle}>Delete mailbox?</Dialog.Title>
+                    <Dialog.Description>
+                        This permanently removes {activeMailbox.email} from Tahoe. Active campaigns or queued sends will block deletion.
+                    </Dialog.Description>
+                    {localError ? <p className={styles.errorText}>{localError}</p> : null}
+                    <div className={styles.confirmActions}>
+                        <Button size="3" variant="soft" onClick={() => setConfirmingDelete(false)} disabled={deleting}>
+                            Cancel
+                        </Button>
+                        <Button size="3" color="red" onClick={() => void handleDelete()} disabled={deleting}>
+                            {deleting ? 'Deleting...' : 'Delete mailbox'}
+                        </Button>
+                    </div>
+                </Dialog.Content>
+            </Dialog.Root>
+        </>
     );
 }
 
@@ -235,6 +315,8 @@ function MailboxesPageContent() {
     const [loading, setLoading] = useState(true);
     const [pageError, setPageError] = useState('');
     const [connecting, setConnecting] = useState(false);
+    const [page, setPage] = useState(1);
+    const [selectedMailboxId, setSelectedMailboxId] = useState<string | null>(null);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -254,6 +336,21 @@ function MailboxesPageContent() {
         void load();
     }, [load]);
 
+    const totalPages = Math.max(1, Math.ceil(mailboxes.length / PAGE_SIZE));
+    useEffect(() => {
+        setPage((current) => Math.min(current, totalPages));
+    }, [totalPages]);
+
+    const visibleMailboxes = useMemo(() => {
+        const start = (page - 1) * PAGE_SIZE;
+        return mailboxes.slice(start, start + PAGE_SIZE);
+    }, [mailboxes, page]);
+
+    const selectedMailbox = useMemo(
+        () => mailboxes.find((mailbox) => mailbox.id === selectedMailboxId) ?? null,
+        [mailboxes, selectedMailboxId],
+    );
+
     async function handleConnect() {
         setConnecting(true);
         setPageError('');
@@ -269,20 +366,20 @@ function MailboxesPageContent() {
     const callbackStatus = searchParams.get('status');
     const callbackMailbox = searchParams.get('mailbox');
     const callbackError = searchParams.get('error');
+    const rowStart = mailboxes.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+    const rowEnd = Math.min(mailboxes.length, page * PAGE_SIZE);
 
     return (
         <section className={styles.page}>
             <header className={styles.header}>
                 <div>
-                    <span className="tahoe-eyebrow">Gmail send-only baseline</span>
+                    <span className="tahoe-eyebrow">Gmail send-only</span>
                     <h1 className={styles.title}>Connected Mailboxes</h1>
-                    <p className={styles.subtitle}>
-                        Connect your Gmail or Google Workspace inbox with minimum permissions. Tahoe sends through your mailbox, while replies remain in Gmail.
-                    </p>
+                    <p className={styles.subtitle}>Send from connected Gmail accounts. Replies remain in Gmail.</p>
                 </div>
                 <div className={styles.headerActions}>
                     <Button size="3" onClick={() => void handleConnect()} disabled={connecting}>
-                        {connecting ? 'Connecting…' : 'Connect Gmail'}
+                        {connecting ? 'Connecting...' : 'Connect Gmail'}
                     </Button>
                 </div>
             </header>
@@ -306,29 +403,93 @@ function MailboxesPageContent() {
             {loading ? (
                 <div className={styles.emptyState}>
                     <span className="tahoe-spinner" />
-                    <p>Loading mailboxes…</p>
+                    <p>Loading mailboxes...</p>
                 </div>
             ) : null}
 
             {!loading && mailboxes.length === 0 ? (
                 <div className={styles.emptyState}>
                     <h2>No mailbox connected yet</h2>
-                    <p>
-                        Send outreach from your Gmail or Google Workspace inbox. Tahoe requests send-only mailbox permission in this phase and does not read your mailbox.
-                    </p>
+                    <p>Connect Gmail with send-only permission to start outreach.</p>
                     <Button size="3" onClick={() => void handleConnect()} disabled={connecting}>
-                        {connecting ? 'Connecting…' : 'Connect Gmail'}
+                        {connecting ? 'Connecting...' : 'Connect Gmail'}
                     </Button>
                 </div>
             ) : null}
 
             {!loading && mailboxes.length > 0 ? (
-                <div className={styles.grid}>
-                    {mailboxes.map((mailbox) => (
-                        <MailboxCard key={mailbox.id} mailbox={mailbox} onRefresh={load} />
-                    ))}
+                <div className={styles.tableCard}>
+                    <div className={styles.tableHeader}>
+                        <p>Send-only access. Tahoe does not read inbox contents.</p>
+                    </div>
+                    <div className={styles.tableViewport}>
+                        <table className={styles.mailboxTable}>
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                    <th>Today sent</th>
+                                    <th>Send window</th>
+                                    <th>Last activity</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {visibleMailboxes.map((mailbox) => (
+                                    <tr key={mailbox.id}>
+                                        <td>
+                                            <div className={styles.emailCell}>
+                                                <strong>{mailbox.email}</strong>
+                                                <span>{weekdayLabel(mailbox.send_window.weekdays)}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span className={statusClassName(mailbox.status)}>{statusLabel(mailbox.status)}</span>
+                                        </td>
+                                        <td>
+                                            {mailbox.sent_today} / {mailbox.daily_cap}
+                                        </td>
+                                        <td>
+                                            <div className={styles.stackCell}>
+                                                <strong>{mailbox.send_window.start_local} - {mailbox.send_window.end_local}</strong>
+                                                <span>{mailbox.send_window.timezone}</span>
+                                            </div>
+                                        </td>
+                                        <td>{formatTimestamp(lastActivity(mailbox))}</td>
+                                        <td>
+                                            <Button size="2" variant="soft" onClick={() => setSelectedMailboxId(mailbox.id)}>
+                                                Manage
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className={styles.pagination}>
+                        <span>
+                            Showing {rowStart}-{rowEnd} of {mailboxes.length}
+                        </span>
+                        <div className={styles.paginationButtons}>
+                            <Button size="2" variant="soft" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page === 1}>
+                                Previous
+                            </Button>
+                            <Button size="2" variant="soft" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page === totalPages}>
+                                Next
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             ) : null}
+
+            <MailboxManageDialog
+                mailbox={selectedMailbox}
+                open={Boolean(selectedMailboxId)}
+                onOpenChange={(nextOpen) => {
+                    if (!nextOpen) setSelectedMailboxId(null);
+                }}
+                onRefresh={load}
+            />
         </section>
     );
 }
@@ -340,7 +501,7 @@ export default function MailboxesPage() {
                 <section className={styles.page}>
                     <div className={styles.emptyState}>
                         <span className="tahoe-spinner" />
-                        <p>Loading mailboxes…</p>
+                        <p>Loading mailboxes...</p>
                     </div>
                 </section>
             )}
