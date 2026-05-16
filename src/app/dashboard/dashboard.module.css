@@ -26,6 +26,7 @@
 }
 
 .sidebarHeader {
+    flex-shrink: 0;
     min-height: 72px;
     display: flex;
     align-items: center;
@@ -68,10 +69,27 @@
 }
 
 .sidebarNav {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 12px 10px;
     display: flex;
     flex-direction: column;
     gap: 2px;
+}
+
+.sidebarNav::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sidebarNav::-webkit-scrollbar-thumb {
+    background: rgba(110, 93, 76, 0.22);
+    border-radius: 999px;
+}
+
+.sidebarNav::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 .sidebarSection {
@@ -186,6 +204,7 @@
 }
 
 .sidebarFooter {
+    flex-shrink: 0;
     margin-top: auto;
     padding: 10px;
     border-top: 1px solid var(--tahoe-color-border-subtle);
