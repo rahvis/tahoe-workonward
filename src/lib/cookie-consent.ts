@@ -64,8 +64,8 @@ export function buildCookieConsentConfig() {
             title: "Tahoe uses cookies and browser storage",
             description:
               "Tahoe uses essential browser technologies to keep the site secure, support Google sign-in and anti-abuse flows, preserve necessary product state, and, if you allow it, measure how the landing page is used.",
-            acceptNecessaryBtn: "Continue",
-            showPreferencesBtn: "Cookie settings",
+            acceptNecessaryBtn: "Accept",
+            showPreferencesBtn: "Settings",
             footer:
               '<a href="/cookie">Cookie</a><a href="/privacy">Privacy</a>',
           },

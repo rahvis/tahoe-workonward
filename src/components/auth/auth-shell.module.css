@@ -67,9 +67,9 @@
 
 .heroTitle {
     margin: 0;
-    font-family: var(--tahoe-font-display);
+    font-family: var(--tahoe-font-body);
     font-size: clamp(36px, 4vw, 56px);
-    font-weight: 500;
+    font-weight: 400;
     line-height: 1.05;
     letter-spacing: -0.02em;
     color: var(--tahoe-color-text-primary);

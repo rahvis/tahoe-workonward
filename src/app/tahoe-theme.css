@@ -71,6 +71,13 @@
   --cc-overlay-bg: rgba(32, 32, 32, 0.22);
 }
 
+@media screen and (min-width: 768px) {
+  #cc-main .cm--cloud {
+    max-width: 70vw;
+    width: 70vw;
+  }
+}
+
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;

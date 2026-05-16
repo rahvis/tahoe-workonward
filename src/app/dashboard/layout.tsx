@@ -127,7 +127,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         disableGoogleAutoSelect();
         removeToken();
         sessionStorage.removeItem('search_page_state');
-        router.push('/login');
+        window.location.href = 'https://tahoe.workonward.com';
     };
 
     const toggleSection = (key: PrimarySection) => {

@@ -43,22 +43,41 @@ beforeEach(() => {
     });
 });
 
-test('logout clears auth state, disables Google auto select, and returns to login', async () => {
-    const user = userEvent.setup();
-    render(
-        <DashboardLayout>
-            <div>Dashboard Content</div>
-        </DashboardLayout>,
-    );
-
-    const logoutButton = await screen.findByRole('button', { name: /log out/i });
-    await user.click(logoutButton);
-
-    await waitFor(() => {
-        expect(mockedDisableGoogleAutoSelect).toHaveBeenCalledTimes(1);
-        expect(mockedRemoveToken).toHaveBeenCalledTimes(1);
-        expect(pushMock).toHaveBeenCalledWith('/login');
+test('logout clears auth state, disables Google auto select, and redirects to the landing page', async () => {
+    const originalLocation = window.location;
+    const hrefSetter = vi.fn();
+    Object.defineProperty(window, 'location', {
+        configurable: true,
+        value: {
+            ...originalLocation,
+            set href(value: string) {
+                hrefSetter(value);
+            },
+        },
     });
+
+    try {
+        const user = userEvent.setup();
+        render(
+            <DashboardLayout>
+                <div>Dashboard Content</div>
+            </DashboardLayout>,
+        );
+
+        const logoutButton = await screen.findByRole('button', { name: /log out/i });
+        await user.click(logoutButton);
+
+        await waitFor(() => {
+            expect(mockedDisableGoogleAutoSelect).toHaveBeenCalledTimes(1);
+            expect(mockedRemoveToken).toHaveBeenCalledTimes(1);
+            expect(hrefSetter).toHaveBeenCalledWith('https://tahoe.workonward.com');
+        });
+    } finally {
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: originalLocation,
+        });
+    }
 });
 
 test('dashboard nav includes the mailboxes section', async () => {
