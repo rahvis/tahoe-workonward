@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { apiRequest, getSearchSession, type SearchSessionPayload } from "@/lib/api";
 import type { SearchPageBootstrapPayload } from "@/lib/search-page-bootstrap";
-import SaveSearchDialog from "../_components/SaveSearchDialog";
 import SaveToListDialog from "../_components/SaveToListDialog";
 import { previewCandidateToImportPayload } from "@/lib/organization";
+import { clearAnalyticsCache } from "../analytics/_components/analytics-cache";
 import PreviewCapBanner from "./preview-cap-banner";
 import {
     Badge,
@@ -777,6 +777,13 @@ function toPreviewData(item: SearchResultItem): PreviewData {
     };
 }
 
+function notifyCreditsChanged() {
+    clearAnalyticsCache();
+    if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("tahoe:credits-updated"));
+    }
+}
+
 export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPageProps) {
     const router = useRouter();
     const pathname = usePathname();
@@ -788,10 +795,11 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
     const [hydrated, setHydrated] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
     const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-    const [saveSearchDialogOpen, setSaveSearchDialogOpen] = useState(false);
     const [popupSearchPending, setPopupSearchPending] = useState(false);
     const sessionUrlConsumedRef = useRef<string | null>(null);
     const bootstrapAppliedRef = useRef<string | null>(null);
+    const previousQueryHashRef = useRef<string | null>(null);
+    const searchInputRef = useRef<HTMLInputElement | null>(null);
 
     const popupModel = state.popupModel;
     const currentResults = useMemo(
@@ -887,23 +895,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
             return;
         }
 
-        try {
-            const raw = window.sessionStorage.getItem(SESSION_KEY);
-            if (raw) {
-                const parsed = JSON.parse(raw) as Partial<SearchPageState>;
-                dispatch({
-                    type: "hydrate",
-                    payload: sanitizePersistedState({
-                        ...parsed,
-                        popupModel: parsed.popupModel ?? emptyPopupModel(),
-                    }),
-                });
-            }
-        } catch {
-            window.sessionStorage.removeItem(SESSION_KEY);
-        } finally {
-            setHydrated(true);
-        }
+        setHydrated(true);
     }, [bootstrap, openFilterSurface, sessionFromUrl]);
 
     useEffect(() => {
@@ -968,27 +960,37 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
 
     useEffect(() => {
         if (!hydrated || typeof window === "undefined") return;
-        window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(sanitizePersistedState(state)));
-    }, [hydrated, state]);
+        if (hasResumeEligibleResults || state.viewState === "review") {
+            window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(sanitizePersistedState(state)));
+            return;
+        }
+        window.sessionStorage.removeItem(SESSION_KEY);
+    }, [hasResumeEligibleResults, hydrated, state]);
 
     useEffect(() => {
+        if (previousQueryHashRef.current === state.queryHash) return;
+        previousQueryHashRef.current = state.queryHash;
         setSelectedIds(new Set());
-    }, [state.currentPage, state.queryHash]);
+    }, [state.queryHash]);
 
     const activeFilterCount = useMemo(() => countActiveFilters(popupModel), [popupModel]);
     const selectedRows = useMemo(
-        () => allLoadedRows.filter((row) => selectedIds.has(row.id)),
-        [allLoadedRows, selectedIds],
+        () => Object.entries(state.pagesByNumber).flatMap(([page, rows]) =>
+            rows
+                .filter((row) => selectedIds.has(row.id))
+                .map((row) => ({ row, page: Number(page) })),
+        ),
+        [state.pagesByNumber, selectedIds],
     );
     const selectedImportPayload = useMemo(
-        () => selectedRows.map((row) => previewCandidateToImportPayload(row, {
+        () => selectedRows.map(({ row, page }) => previewCandidateToImportPayload(row, {
             queryHash: state.queryHash,
             searchPrompt: state.query,
-            previewPage: state.currentPage,
+            previewPage: page,
             pipeline: "langgraph_search",
             searchedAt: new Date().toISOString(),
         })),
-        [selectedRows, state.currentPage, state.query, state.queryHash],
+        [selectedRows, state.query, state.queryHash],
     );
 
     const parseQuery = useCallback(async (nextQuery: string) => {
@@ -1030,6 +1032,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
             setPopupSearchPending(true);
         }
         try {
+            setSelectedIds(new Set());
             dispatch({ type: "patch", payload: { error: "", viewState: "searching" } });
 
             const wasDirty = state.popupDirty;
@@ -1067,6 +1070,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                 },
             });
             dispatch({ type: "execute_success", payload: executeResponse });
+            notifyCreditsChanged();
             // Keep the filter editor aligned to the recruiter's now-effective state.
             dispatch({
                 type: "patch",
@@ -1148,6 +1152,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                 `/search/preview-page?query_hash=${encodeURIComponent(state.queryHash)}&page=${targetPage}`
             );
             dispatch({ type: "page_loaded", payload: response });
+            notifyCreditsChanged();
         } catch (err: unknown) {
             dispatch({
                 type: "patch",
@@ -1157,6 +1162,24 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                 },
             });
         }
+    }
+
+    function handleStartNewSearch() {
+        const freshState = initialSearchState();
+        try {
+            window.sessionStorage.removeItem(SESSION_KEY);
+            window.sessionStorage.removeItem("search_page_state");
+        } catch {
+            // Ignore storage failures.
+        }
+        setSelectedIds(new Set());
+        setSaveDialogOpen(false);
+        setPopupSearchPending(false);
+        sessionUrlConsumedRef.current = sessionFromUrl ?? state.searchSessionId;
+        bootstrapAppliedRef.current = null;
+        dispatch({ type: "hydrate", payload: freshState });
+        router.replace("/dashboard/search/new");
+        window.setTimeout(() => searchInputRef.current?.focus(), 0);
     }
 
     function renderField(field: FilterField) {
@@ -1346,29 +1369,26 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
     const activeSectionData = sections.find((section) => section.id === activeSection) ?? sections[0];
     const showPreviewCapBanner =
         state.totalResults != null && state.previewTotalResults != null && state.totalResults > 0;
-    const showSelectionActions = selectedIds.size > 0;
+    const showStartNewSearch =
+        state.viewState !== "idle"
+        || Boolean(state.searchSessionId)
+        || Boolean(state.queryHash)
+        || Object.keys(state.pagesByNumber).length > 0;
+    const hasResultView = state.viewState === "results" || state.viewState === "diagnosis";
 
     const findButtonDisabled =
         state.viewState === "parsing" ||
         state.viewState === "searching" ||
         (!state.query.trim() && countActiveFilters(popupModel) === 0);
     const isBusy = state.viewState === "parsing" || state.viewState === "searching";
-
     return (
         <Box className={styles.page}>
             <Box className={styles.searchBar}>
-                {showPreviewCapBanner ? (
-                    <PreviewCapBanner
-                        className={styles.searchBarBanner}
-                        totalResults={state.totalResults || 0}
-                        previewTotalResults={state.previewTotalResults || 0}
-                        totalPages={state.totalPages}
-                    />
-                ) : null}
                 <form onSubmit={handleFindCandidates}>
                     <Flex gap="3" align="center" wrap="wrap">
                         <Box style={{ flexGrow: 1, minWidth: 0 }}>
                             <TextField.Root
+                                ref={searchInputRef}
                                 size="3"
                                 placeholder='Try: "Senior ML engineers in Europe with Python skills"'
                                 value={state.query}
@@ -1380,6 +1400,14 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                                 </TextField.Slot>
                             </TextField.Root>
                         </Box>
+                        {showPreviewCapBanner ? (
+                            <PreviewCapBanner
+                                className={styles.inlineResultsCount}
+                                totalResults={state.totalResults || 0}
+                                previewTotalResults={state.previewTotalResults || 0}
+                                totalPages={state.totalPages}
+                            />
+                        ) : null}
                         <button
                             type="button"
                             className={styles.filtersButton}
@@ -1388,14 +1416,39 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                         >
                             Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
                         </button>
-                        <Button
-                            size="3"
-                            className={styles.findCandidatesButton}
-                            type="submit"
-                            disabled={findButtonDisabled}
-                        >
-                            {isBusy ? <Spinner /> : "Find candidates"}
-                        </Button>
+                        {showStartNewSearch ? (
+                            <Button
+                                size="3"
+                                variant="soft"
+                                type="button"
+                                className={styles.startNewSearchButton}
+                                onClick={handleStartNewSearch}
+                                disabled={isBusy}
+                            >
+                                <Cross2Icon width="15" height="15" />
+                                Start new search
+                            </Button>
+                        ) : null}
+                        {selectedIds.size > 0 ? (
+                            <Button
+                                size="3"
+                                className={styles.saveToListButton}
+                                type="button"
+                                onClick={() => setSaveDialogOpen(true)}
+                            >
+                                Save {selectedIds.size} to list
+                            </Button>
+                        ) : null}
+                        {!hasResultView ? (
+                            <Button
+                                size="3"
+                                className={styles.findCandidatesButton}
+                                type="submit"
+                                disabled={findButtonDisabled}
+                            >
+                                {isBusy ? <Spinner /> : "Find candidates"}
+                            </Button>
+                        ) : null}
                     </Flex>
                 </form>
             </Box>
@@ -1430,47 +1483,46 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                     )}
 
                     {(state.viewState === "results" || state.viewState === "diagnosis") && (
-                        <>
-                            {showSelectionActions ? (
-                                <Flex justify="end" align="center" mb="3">
-                                    <Flex gap="2" wrap="wrap">
-                                        <Button size="2" variant="soft" onClick={() => setSaveSearchDialogOpen(true)}>
-                                            Save search
-                                        </Button>
-                                        <Button size="2" onClick={() => setSaveDialogOpen(true)}>
-                                            Save {selectedIds.size} to list
-                                        </Button>
-                                    </Flex>
-                                </Flex>
-                            ) : null}
-
-                            <PreviewGrid
-                                rows={currentResults}
-                                selectable
-                                showCandidateSubtitle={false}
-                                hiddenColumnKeys={["id", "page", "pipeline", "search_prompt"]}
-                                selectedRowIds={selectedIds}
-                                activeRowId={state.activeCandidateId}
-                                emptyMessage="No preview rows were returned for this search."
-                                onToggleAllSelection={(checked) => {
-                                    setSelectedIds(checked ? new Set(currentResults.map((row) => row.id)) : new Set());
-                                }}
-                                onToggleRowSelection={(row) => {
-                                    setSelectedIds((current) => {
-                                        const next = new Set(current);
-                                        if (next.has(row.id)) {
-                                            next.delete(row.id);
-                                        } else {
-                                            next.add(row.id);
-                                        }
-                                        return next;
-                                    });
-                                }}
-                                onRowClick={(row) => dispatch({ type: "toggle_candidate", candidateId: row.id })}
-                            />
+                        <Box className={styles.resultsLayout}>
+                            <Box className={styles.resultsTableRegion}>
+                                <PreviewGrid
+                                    className={styles.resultsPreviewGrid}
+                                    rows={currentResults}
+                                    selectable
+                                    showCandidateSubtitle={false}
+                                    hiddenColumnKeys={["id", "page", "pipeline", "search_prompt"]}
+                                    selectedRowIds={selectedIds}
+                                    activeRowId={state.activeCandidateId}
+                                    emptyMessage="No preview rows were returned for this search."
+                                    onToggleAllSelection={(checked) => {
+                                        setSelectedIds((current) => {
+                                            const next = new Set(current);
+                                            const currentPageIds = currentResults.map((row) => row.id);
+                                            if (checked) {
+                                                currentPageIds.forEach((id) => next.add(id));
+                                            } else {
+                                                currentPageIds.forEach((id) => next.delete(id));
+                                            }
+                                            return next;
+                                        });
+                                    }}
+                                    onToggleRowSelection={(row) => {
+                                        setSelectedIds((current) => {
+                                            const next = new Set(current);
+                                            if (next.has(row.id)) {
+                                                next.delete(row.id);
+                                            } else {
+                                                next.add(row.id);
+                                            }
+                                            return next;
+                                        });
+                                    }}
+                                    onRowClick={(row) => dispatch({ type: "toggle_candidate", candidateId: row.id })}
+                                />
+                            </Box>
 
                             {state.totalPages > 1 && (
-                                <Flex justify="center" align="center" gap="2" mt="4" wrap="wrap">
+                                <Flex justify="center" align="center" gap="2" wrap="wrap" className={styles.paginationFooter}>
                                     <Button
                                         size="1"
                                         variant="soft"
@@ -1502,7 +1554,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                                     </Button>
                                 </Flex>
                             )}
-                        </>
+                        </Box>
                     )}
                 </Box>
 
@@ -1602,14 +1654,6 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                 onSaved={async () => {
                     setSelectedIds(new Set());
                 }}
-            />
-            <SaveSearchDialog
-                open={saveSearchDialogOpen}
-                onOpenChange={setSaveSearchDialogOpen}
-                mode="langgraph"
-                prompt={state.query}
-                structuredFilters={popupModel as unknown as Record<string, unknown>}
-                defaultName={state.query}
             />
 
             {state.mobileFiltersOpen && (

@@ -29,7 +29,6 @@ const sectionConfig = {
         subnav: [
             { href: '/dashboard/search/new', label: 'New Search' },
             { href: '/dashboard/search/saved-candidates', label: 'Saved Candidates' },
-            { href: '/dashboard/search/saved-searches', label: 'Saved Searches' },
         ],
     },
     projects: {
@@ -127,6 +126,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         disableGoogleAutoSelect();
         removeToken();
         sessionStorage.removeItem('search_page_state');
+        sessionStorage.removeItem('langgraph_search_preview_state_v1');
         window.location.href = 'https://tahoe.workonward.com';
     };
 

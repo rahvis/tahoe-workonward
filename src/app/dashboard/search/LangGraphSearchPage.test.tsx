@@ -549,6 +549,52 @@ test("hydrates a results session from the server without reopening the review mo
     expect(screen.queryByLabelText("Search filters")).not.toBeInTheDocument();
 });
 
+test("Start new search clears explicit session results without rehydrating the old session", async () => {
+    currentSearchParams = new URLSearchParams("session=resume-results");
+    mockedGetSearchSession.mockResolvedValue({
+        session_id: "resume-results",
+        workspace_id: "workspace-1",
+        owner_user_id: "user-1",
+        prompt: "backend engineers",
+        normalized_query_hash: "hash-1",
+        mode: "langgraph",
+        parsed_intent: {},
+        structured_filters: {},
+        popup_model: popupModelResponse,
+        total_results: 128,
+        total_pages: 5,
+        preview_total_results: 100,
+        last_page_loaded: 1,
+        pages_loaded: { "1": {} },
+        created_at: null,
+        last_accessed_at: null,
+        latest_page: {
+            page: 1,
+            results: executeResultsResponse.results,
+            total_results: 128,
+            total_pages: 5,
+            preview_total_results: 100,
+            query_hash: "hash-1",
+        },
+    });
+
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    expect(await screen.findByText("Casey Cho")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Start new search" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Start new search" }));
+
+    await waitFor(() => {
+        expect(screen.queryByText("Casey Cho")).not.toBeInTheDocument();
+    });
+    expect(screen.getByPlaceholderText(/Senior ML engineers/i)).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Filters" })).toBeInTheDocument();
+    expect(mockRouterReplace).toHaveBeenCalledWith("/dashboard/search/new");
+    expect(mockedGetSearchSession).toHaveBeenCalledTimes(1);
+});
+
 test("Reset filters clears recruiter edits from the desktop popup", async () => {
     const user = userEvent.setup();
     render(<LangGraphSearchPage />);
@@ -580,17 +626,25 @@ test("invalid session urls are cleared and show a recruiter-readable error", asy
     });
 });
 
-test("stale persisted search errors are not restored on page load", async () => {
+test("stale persisted search state is not restored on New Search page load", async () => {
     window.sessionStorage.setItem("langgraph_search_preview_state_v1", JSON.stringify({
+        query: "old query",
         error: "body.search_prompt: String should have at least 1 character",
-        viewState: "idle",
+        viewState: "results",
         popupModel: popupModelResponse,
+        pagesByNumber: { 1: executeResultsResponse.results },
+        currentPage: 1,
+        totalResults: executeResultsResponse.total_results,
+        totalPages: executeResultsResponse.total_pages,
+        previewTotalResults: executeResultsResponse.preview_total_results,
     }));
 
     render(<LangGraphSearchPage />);
 
-    expect(await screen.findByRole("button", { name: /Filters \(\d+\)/ })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Filters" })).toBeInTheDocument();
     expect(screen.queryByText("body.search_prompt: String should have at least 1 character")).not.toBeInTheDocument();
+    expect(screen.queryByText("Casey Cho")).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Senior ML engineers/i)).toHaveValue("");
 });
 
 test("popup edits before Find candidates win over the parse response (popupDirty preserved)", async () => {
@@ -659,10 +713,12 @@ test("renders the full preview grid and reuses cached page 1 when paging back", 
     expect(screen.getByText("Company HQ Country")).toBeInTheDocument();
     expect(screen.getByText("Casey Cho")).toBeInTheDocument();
     expect(screen.queryByText(/128 candidates found/)).not.toBeInTheDocument();
-    const previewBanner = screen.getByText(/Preview window: top 100 of 128 total matches across 5 pages\./i);
+    const previewBanner = screen.getByText("Found 128 matches");
     expect(previewBanner).toBeInTheDocument();
-    expect(screen.getAllByText(/Preview window: top 100 of 128 total matches across 5 pages\./i)).toHaveLength(1);
-    expect(previewBanner.compareDocumentPosition(screen.getByPlaceholderText(/Senior ML engineers/i)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getAllByText("Found 128 matches")).toHaveLength(1);
+    expect(screen.getByPlaceholderText(/Senior ML engineers/i).compareDocumentPosition(previewBanner) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Start new search" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Find candidates" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Save search" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Save 1 to list" })).not.toBeInTheDocument();
 
@@ -672,7 +728,7 @@ test("renders the full preview grid and reuses cached page 1 when paging back", 
     expect(within(candidateCell).queryByText("Senior Backend Engineer")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("checkbox", { name: "Select Casey Cho" }));
-    expect(screen.getByRole("button", { name: "Save search" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save search" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save 1 to list" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "2" }));
@@ -682,6 +738,9 @@ test("renders the full preview grid and reuses cached page 1 when paging back", 
     });
 
     expect(await screen.findByText("Mina Park")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save 1 to list" })).toBeInTheDocument();
+    await user.click(screen.getByRole("checkbox", { name: "Select Mina Park" }));
+    expect(screen.getByRole("button", { name: "Save 2 to list" })).toBeInTheDocument();
 
     const previewPageCallsAfterPageTwo = mockedApiRequest.mock.calls.filter(
         ([path]) => path === "/search/preview-page?query_hash=hash-1&page=2"
@@ -690,12 +749,34 @@ test("renders the full preview grid and reuses cached page 1 when paging back", 
     await user.click(screen.getByRole("button", { name: "1" }));
 
     expect(await screen.findByText("Casey Cho")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Select Casey Cho" })).toBeChecked();
+    expect(screen.getByRole("button", { name: "Save 2 to list" })).toBeInTheDocument();
     const previewPageCallsAfterReturn = mockedApiRequest.mock.calls.filter(
         ([path]) => String(path).startsWith("/search/preview-page")
     ).length;
 
     expect(previewPageCallsAfterPageTwo).toBe(1);
     expect(previewPageCallsAfterReturn).toBe(1);
+});
+
+test("Start new search clears results, selection, storage, and session URL state", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "backend engineers");
+    await user.click(screen.getByRole("button", { name: "Find candidates" }));
+
+    expect(await screen.findByText("Casey Cho")).toBeInTheDocument();
+    await user.click(screen.getByRole("checkbox", { name: "Select Casey Cho" }));
+    expect(screen.getByRole("button", { name: "Save 1 to list" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Start new search" }));
+
+    expect(screen.queryByText("Casey Cho")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save 1 to list" })).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Senior ML engineers/i)).toHaveValue("");
+    expect(window.sessionStorage.getItem("langgraph_search_preview_state_v1")).toBeNull();
+    expect(mockRouterReplace).toHaveBeenCalledWith("/dashboard/search/new");
 });
 
 test("reopening the desktop popup preserves recruiter filter edits", async () => {

@@ -99,6 +99,9 @@ test('saved candidates uses the aligned Tahoe search input sizing and pagination
     render(<SavedCandidatesPage />);
 
     expect(await screen.findByText('Casey Cho')).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'ID' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Pipeline' })).not.toBeInTheDocument();
+    expect(screen.queryByText('langgraph_search')).not.toBeInTheDocument();
 
     const searchInput = screen.getByPlaceholderText('Search candidates...');
     expect(searchInput.closest('label')).toHaveClass('tui-textfield--size-3');

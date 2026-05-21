@@ -25,8 +25,10 @@ export default function CreditsBadge({ refreshKey }: CreditsBadgeProps) {
             }
         }
         void loadBalance();
+        window.addEventListener('tahoe:credits-updated', loadBalance);
         return () => {
             cancelled = true;
+            window.removeEventListener('tahoe:credits-updated', loadBalance);
         };
     }, [refreshKey]);
 

@@ -193,34 +193,38 @@ export default function SavedCandidatesPage() {
                     )}
 
                     {!loading && candidates.length > 0 && (
-                        <>
-                            <PreviewGrid
-                                rows={gridRows}
-                                includeMetadata
-                                showCandidateSubtitle={false}
-                                selectable
-                                selectedRowIds={selectedIds}
-                                activeRowId={activeCandidateId}
-                                emptyMessage="No candidates found."
-                                onToggleAllSelection={(checked) => {
-                                    setSelectedIds(checked ? new Set(candidates.map((candidate) => candidate.coresignal_id)) : new Set());
-                                }}
-                                onToggleRowSelection={(row) => {
-                                    setSelectedIds((current) => {
-                                        const next = new Set(current);
-                                        if (next.has(row.id)) {
-                                            next.delete(row.id);
-                                        } else {
-                                            next.add(row.id);
-                                        }
-                                        return next;
-                                    });
-                                }}
-                                onRowClick={(row) => setActiveCandidateId(activeCandidateId === row.id ? null : row.id)}
-                            />
+                        <div className={styles.resultsLayout}>
+                            <div className={styles.resultsTableRegion}>
+                                <PreviewGrid
+                                    className={styles.resultsPreviewGrid}
+                                    rows={gridRows}
+                                    includeMetadata
+                                    hiddenColumnKeys={['id', 'pipeline']}
+                                    showCandidateSubtitle={false}
+                                    selectable
+                                    selectedRowIds={selectedIds}
+                                    activeRowId={activeCandidateId}
+                                    emptyMessage="No candidates found."
+                                    onToggleAllSelection={(checked) => {
+                                        setSelectedIds(checked ? new Set(candidates.map((candidate) => candidate.coresignal_id)) : new Set());
+                                    }}
+                                    onToggleRowSelection={(row) => {
+                                        setSelectedIds((current) => {
+                                            const next = new Set(current);
+                                            if (next.has(row.id)) {
+                                                next.delete(row.id);
+                                            } else {
+                                                next.add(row.id);
+                                            }
+                                            return next;
+                                        });
+                                    }}
+                                    onRowClick={(row) => setActiveCandidateId(activeCandidateId === row.id ? null : row.id)}
+                                />
+                            </div>
 
                             {totalPages > 1 && (
-                                <Flex className={styles.pagination} justify="center" align="center" gap="2" wrap="wrap">
+                                <Flex className={styles.paginationFooter} justify="center" align="center" gap="2" wrap="wrap">
                                     <Button
                                         size="1"
                                         variant="soft"
@@ -260,7 +264,7 @@ export default function SavedCandidatesPage() {
                                     </Button>
                                 </Flex>
                             )}
-                        </>
+                        </div>
                     )}
                 </div>
 

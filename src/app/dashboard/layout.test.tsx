@@ -95,6 +95,18 @@ test('dashboard nav includes the mailboxes section', async () => {
     expect(screen.getByRole('link', { name: /send health/i })).toBeInTheDocument();
 });
 
+test('dashboard search nav hides saved searches', async () => {
+    render(
+        <DashboardLayout>
+            <div>Dashboard Content</div>
+        </DashboardLayout>,
+    );
+
+    expect(await screen.findByRole('link', { name: /new search/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /saved candidates/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /saved searches/i })).not.toBeInTheDocument();
+});
+
 test('dashboard nav includes the outreach section', async () => {
     const user = userEvent.setup();
     render(

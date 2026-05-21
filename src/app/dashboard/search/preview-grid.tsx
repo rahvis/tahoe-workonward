@@ -260,6 +260,7 @@ export default function PreviewGrid({
     rows,
     activeRowId,
     emptyMessage,
+    className,
     includeMetadata = false,
     extraColumns = [],
     hiddenColumnKeys = [],
@@ -273,6 +274,7 @@ export default function PreviewGrid({
     rows: PreviewGridRow[];
     activeRowId?: number | null;
     emptyMessage: string;
+    className?: string;
     includeMetadata?: boolean;
     extraColumns?: PreviewGridExtraColumn[];
     hiddenColumnKeys?: string[];
@@ -293,7 +295,7 @@ export default function PreviewGrid({
     ];
     const allSelected = selectable && rows.length > 0 && rows.every((row) => selectedRowIds?.has(row.id));
     return (
-        <div className={styles.tableShell}>
+        <div className={`${styles.tableShell} ${className || ""}`.trim()}>
             <div className={styles.tableScroll}>
                 <table className={styles.table}>
                     <thead>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import {
@@ -8,9 +8,9 @@ import {
     readSearchPageBootstrap,
     type SearchPageBootstrapPayload,
 } from "@/lib/search-page-bootstrap";
-import SaveSearchDialog from "../_components/SaveSearchDialog";
 import SaveToListDialog from "../_components/SaveToListDialog";
 import { fetchBillingSummary, previewCandidateToImportPayload, type BillingSummary } from "@/lib/organization";
+import { clearAnalyticsCache } from "../analytics/_components/analytics-cache";
 import {
     Badge,
     Box,
@@ -39,13 +39,14 @@ import CandidatePanel, { type PreviewData } from "./CandidatePanel";
 import LangGraphSearchPage from "./LangGraphSearchPage";
 import PreviewCapBanner from "./preview-cap-banner";
 
-// Module-level flag: true when the component unmounted due to in-app navigation.
-// Resets to false on hard page refresh (browser reloads JS modules).
-let _navigatedWithin = false;
-
 // Maximum pages the Coresignal preview endpoint supports.
 const MAX_PREVIEW_PAGES = 5;
 const SEARCH_LANGGRAPH_ENABLED = process.env.NEXT_PUBLIC_SEARCH_LANGGRAPH_ENABLED !== "false";
+
+function notifyCreditsChanged() {
+    clearAnalyticsCache();
+    window.dispatchEvent(new Event('tahoe:credits-updated'));
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -245,7 +246,6 @@ export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstra
     const [query, setQuery] = useState(bootstrapState?.query ?? "");
     const [filters, setFilters] = useState<SearchFilters>(bootstrapState?.filters ?? emptyFilters());
     const [lastCommittedQuery, setLastCommittedQuery] = useState(bootstrapState?.query ?? "");
-    const [lastCommittedFilters, setLastCommittedFilters] = useState<SearchFilters>(bootstrapState?.filters ?? emptyFilters());
     const [showFilters, setShowFilters] = useState(true);
 
     const [stage, setStage] = useState<"idle" | "searching" | "results" | "paginating">("idle");
@@ -259,11 +259,11 @@ export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstra
     const [hasPrev, setHasPrev] = useState(false);
 
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [selectedCandidatesById, setSelectedCandidatesById] = useState<Map<number, { item: SearchResultItem; page: number }>>(new Map());
     const [activeCandidate, setActiveCandidate] = useState<PreviewData | null>(null);
     const [queryHash, setQueryHash] = useState<string | null>(null);
     const [searchSessionId, setSearchSessionId] = useState<string | null>(bootstrapState?.searchSessionId ?? null);
     const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-    const [saveSearchDialogOpen, setSaveSearchDialogOpen] = useState(false);
     const bootstrapRunStartedRef = useRef(false);
 
     // Keep latest committed search query/filters so pagination reuses them
@@ -276,43 +276,14 @@ export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstra
 
     const SESSION_KEY = "search_page_state";
 
-    // Set _navigatedWithin=true on unmount so the restore effect knows it's safe
-    // to restore state. Hard refreshes reset the module-level variable to false.
-    useEffect(() => {
-        return () => { _navigatedWithin = true; };
-    }, []);
-
     useEffect(() => {
         if (bootstrap) return;
-        // Only restore when navigating within the app, not on hard refresh / login
-        if (!_navigatedWithin) return;
-        _navigatedWithin = false;
+        // "New Search" should be a fresh workspace. Explicit saved-search
+        // bootstraps still hydrate through the bootstrap path above.
         try {
-            const saved = sessionStorage.getItem(SESSION_KEY);
-            if (saved) {
-                const s = JSON.parse(saved);
-                if (Array.isArray(s.results) && s.results.length > 0) {
-                    startTransition(() => {
-                        setQuery(s.query ?? "");
-                        setFilters(s.filters ?? emptyFilters());
-                        setLastCommittedQuery(s.query ?? "");
-                        setLastCommittedFilters(s.filters ?? emptyFilters());
-                        setResults(s.results);
-                        setTotalResults(s.totalResults ?? 0);
-                        setTotalPages(Math.min(s.totalPages ?? 0, MAX_PREVIEW_PAGES));
-                        setUiPage(s.uiPage ?? 1);
-                        setHasNext(s.hasNext ?? false);
-                        setHasPrev(s.hasPrev ?? false);
-                        setQueryHash(s.queryHash ?? null);
-                        setSearchSessionId(s.searchSessionId ?? null);
-                        committedQuery.current = s.query ?? "";
-                        committedFilters.current = s.filters ?? emptyFilters();
-                        setStage("results");
-                    });
-                }
-            }
+            sessionStorage.removeItem(SESSION_KEY);
         } catch {
-            // ignore parse errors
+            // ignore storage errors
         }
     }, [bootstrap]);
 
@@ -357,6 +328,7 @@ export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstra
                 setResults([]);
                 setTotalResults(0);
                 setSelectedIds(new Set());
+                setSelectedCandidatesById(new Map());
                 setActiveCandidate(null);
             }
 
@@ -388,6 +360,7 @@ export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstra
                 setQueryHash(response.query_hash);
                 setSearchSessionId(response.search_session_id);
                 setStage("results");
+                notifyCreditsChanged();
             } catch (err: unknown) {
                 const msg = err instanceof Error ? err.message : "An unexpected error occurred.";
                 setError(msg);
@@ -403,7 +376,6 @@ export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstra
         committedQuery.current = query;
         committedFilters.current = filters;
         setLastCommittedQuery(query);
-        setLastCommittedFilters(filters);
         setQueryHash(null);
         setSearchSessionId(null);
         // Clear sessionStorage so stale results don't persist if search fails
@@ -487,16 +459,41 @@ export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstra
     // ---------------------------------------------------------------------------
 
     const handleToggleSelectAll = (checked: boolean) => {
-        setSelectedIds(checked ? new Set(results.map((r) => r.id)) : new Set());
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            results.forEach((item) => {
+                if (checked) next.add(item.id);
+                else next.delete(item.id);
+            });
+            return next;
+        });
+        setSelectedCandidatesById((prev) => {
+            const next = new Map(prev);
+            results.forEach((item) => {
+                if (checked) next.set(item.id, { item, page: uiPage });
+                else next.delete(item.id);
+            });
+            return next;
+        });
     };
 
     const handleToggleSelect = (id: number) => {
+        const selectedItem = results.find((item) => item.id === id);
         setSelectedIds((prev) => {
             const next = new Set(prev);
             if (next.has(id)) {
                 next.delete(id);
             } else {
                 next.add(id);
+            }
+            return next;
+        });
+        setSelectedCandidatesById((prev) => {
+            const next = new Map(prev);
+            if (next.has(id)) {
+                next.delete(id);
+            } else if (selectedItem) {
+                next.set(id, { item: selectedItem, page: uiPage });
             }
             return next;
         });
@@ -508,28 +505,28 @@ export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstra
 
     const isLoading = stage === "searching";
     const isPaginating = stage === "paginating";
+    const hasResultView = stage === "results" || stage === "paginating";
     const selectedImportPayload = useMemo(
         () =>
-            results
-                .filter((item) => selectedIds.has(item.id))
+            Array.from(selectedCandidatesById.values())
                 .map((item) =>
                     previewCandidateToImportPayload(
                         {
-                            ...item,
-                            page: uiPage,
+                            ...item.item,
+                            page: item.page,
                             query_hash: queryHash,
                             search_prompt: lastCommittedQuery || query,
                         },
                         {
                             queryHash,
                             searchPrompt: lastCommittedQuery || query,
-                            previewPage: uiPage,
+                            previewPage: item.page,
                             pipeline: "legacy_search",
                             searchedAt: new Date().toISOString(),
                         },
                     ),
                 ),
-        [lastCommittedQuery, query, queryHash, results, selectedIds, uiPage],
+        [lastCommittedQuery, query, queryHash, selectedCandidatesById],
     );
 
     return (
@@ -551,9 +548,24 @@ export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstra
                                 </TextField.Slot>
                             </TextField.Root>
                         </Box>
-                        <Button size="3" type="submit" disabled={isLoading || (!query.trim() && activeFilterCount === 0)}>
-                            {isLoading ? <Spinner /> : "Search"}
-                        </Button>
+                        {(stage === "results" || stage === "paginating") && totalResults > 0 ? (
+                            <PreviewCapBanner
+                                className={styles.inlineResultsCount}
+                                totalResults={totalResults}
+                                previewTotalResults={Math.min(totalResults, 100)}
+                                totalPages={totalPages || 5}
+                            />
+                        ) : null}
+                        {selectedIds.size > 0 ? (
+                            <Button size="3" type="button" onClick={() => setSaveDialogOpen(true)}>
+                                Save {selectedIds.size} to list
+                            </Button>
+                        ) : null}
+                        {!hasResultView ? (
+                            <Button size="3" type="submit" disabled={isLoading || (!query.trim() && activeFilterCount === 0)}>
+                                {isLoading ? <Spinner /> : "Search"}
+                            </Button>
+                        ) : null}
                         <Button
                             size="3"
                             variant={showFilters ? "solid" : "soft"}
@@ -767,14 +779,7 @@ export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstra
 
                     {/* Results */}
                     {(stage === "results" || stage === "paginating") && (
-                        <>
-                            {totalResults > 0 ? (
-                                <PreviewCapBanner
-                                    totalResults={totalResults}
-                                    previewTotalResults={Math.min(totalResults, 100)}
-                                    totalPages={totalPages || 5}
-                                />
-                            ) : null}
+                        <Box className={styles.legacyResultsLayout}>
                             {/* Results header */}
                             <Flex justify="between" align="center" mb="3" px="1">
                                 <Flex align="center" gap="3">
@@ -785,20 +790,10 @@ export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstra
                                     </Text>
                                     {isPaginating && <Spinner size="1" />}
                                 </Flex>
-                                <Flex gap="2" wrap="wrap">
-                                    <Button size="1" variant="soft" onClick={() => setSaveSearchDialogOpen(true)}>
-                                        Save search
-                                    </Button>
-                                    {selectedIds.size > 0 && (
-                                        <Button size="1" onClick={() => setSaveDialogOpen(true)}>
-                                            Save {selectedIds.size} to list
-                                        </Button>
-                                    )}
-                                </Flex>
                             </Flex>
 
                             {/* Results table */}
-                            <Box className={styles.tableContainer}>
+                            <Box className={`${styles.tableContainer} ${styles.scrollableTableContainer}`}>
                                 <Table.Root variant="surface">
                                     <Table.Header>
                                         <Table.Row>
@@ -927,7 +922,7 @@ export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstra
                             {(() => {
                                 const safeTotalPages = Math.min(totalPages, MAX_PREVIEW_PAGES);
                                 return safeTotalPages > 1 && (
-                                    <Flex className={styles.paginationBar} justify="center" align="center" gap="2" mt="4">
+                                    <Flex className={styles.paginationBar} justify="center" align="center" gap="2">
                                         <Button
                                             size="2"
                                             variant="soft"
@@ -982,7 +977,7 @@ export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstra
                                     </Flex>
                                 );
                             })()}
-                        </>
+                        </Box>
                     )}
                 </Box>
 
@@ -1000,15 +995,8 @@ export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstra
                     candidates={selectedImportPayload}
                     onSaved={async () => {
                         setSelectedIds(new Set());
+                        setSelectedCandidatesById(new Map());
                     }}
-                />
-                <SaveSearchDialog
-                    open={saveSearchDialogOpen}
-                    onOpenChange={setSaveSearchDialogOpen}
-                    mode="legacy"
-                    prompt={lastCommittedQuery || query}
-                    structuredFilters={lastCommittedFilters as unknown as Record<string, unknown>}
-                    defaultName={query.trim() || lastCommittedQuery.trim()}
                 />
             </Flex>
         </Box>
@@ -1044,8 +1032,10 @@ function SearchPageInner() {
             }
         }
         void loadBilling();
+        window.addEventListener('tahoe:credits-updated', loadBilling);
         return () => {
             cancelled = true;
+            window.removeEventListener('tahoe:credits-updated', loadBilling);
         };
     }, []);
 

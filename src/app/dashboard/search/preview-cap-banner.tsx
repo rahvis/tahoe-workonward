@@ -17,10 +17,8 @@ export function buildPreviewCapMessage(props: {
     totalResults: number;
     totalPages: number;
 }): string {
-    const previewTotal = Math.max(0, Math.min(props.previewTotalResults, PREVIEW_CAP));
     const totalResults = Math.max(0, props.totalResults || 0);
-    const totalPages = Math.max(1, Math.min(props.totalPages || PREVIEW_PAGE_LIMIT, PREVIEW_PAGE_LIMIT));
-    return `Preview window: top ${previewTotal} of ${totalResults.toLocaleString()} total matches across ${totalPages} pages.`;
+    return `Found ${totalResults.toLocaleString()} matches`;
 }
 
 export default function PreviewCapBanner({

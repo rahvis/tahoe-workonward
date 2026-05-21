@@ -4,9 +4,14 @@
     background: rgba(255, 255, 255, 0.94);
     overflow: hidden;
     box-shadow: var(--tahoe-shadow-soft);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .tableScroll {
+    flex: 1;
+    min-height: 0;
     overflow-x: auto;
     overflow-y: auto;
     max-width: 100%;

@@ -5,9 +5,7 @@ import PreviewCapBanner, { buildPreviewCapMessage } from "./preview-cap-banner";
 describe("PreviewCapBanner", () => {
     test("renders the canonical preview-cap copy", () => {
         render(<PreviewCapBanner totalResults={1234} previewTotalResults={100} totalPages={5} />);
-        expect(
-            screen.getByText("Preview window: top 100 of 1,234 total matches across 5 pages."),
-        ).toBeInTheDocument();
+        expect(screen.getByText("Found 1,234 matches")).toBeInTheDocument();
     });
 
     test("renders nothing when there are no results", () => {
@@ -17,12 +15,12 @@ describe("PreviewCapBanner", () => {
         expect(container).toBeEmptyDOMElement();
     });
 
-    test("buildPreviewCapMessage clamps preview total to PREVIEW_CAP", () => {
+    test("buildPreviewCapMessage formats total result count", () => {
         const message = buildPreviewCapMessage({
             previewTotalResults: 9999,
             totalResults: 50000,
             totalPages: 10,
         });
-        expect(message).toBe("Preview window: top 100 of 50,000 total matches across 5 pages.");
+        expect(message).toBe("Found 50,000 matches");
     });
 });
