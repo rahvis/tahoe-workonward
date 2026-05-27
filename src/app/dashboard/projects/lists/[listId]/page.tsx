@@ -252,10 +252,11 @@ export default function ListDetailPage() {
         if (!activeRunId || (activeRunStatus !== 'pending' && activeRunStatus !== 'in_progress')) {
             return;
         }
+        const runId = activeRunId;
         let cancelled = false;
         async function pollRun() {
             try {
-                const refreshed = await fetchEnrichmentRun(activeRunId);
+                const refreshed = await fetchEnrichmentRun(runId);
                 if (cancelled) {
                     return;
                 }
