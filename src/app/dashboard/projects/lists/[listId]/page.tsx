@@ -3,10 +3,17 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Flex, TextField } from '@/components/ui/tahoe-ui';
+import {
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    MagnifyingGlassIcon,
+    PersonIcon,
+} from '@/components/ui/icons';
+import { Box, Button, Flex, TextField } from '@/components/ui/tahoe-ui';
 import CreditsBadge from '@/app/dashboard/_components/CreditsBadge';
 import EnrichModal from '@/app/dashboard/_components/EnrichModal';
 import CandidatePanel, { type PreviewData } from '../../../search/CandidatePanel';
+import { buildPaginationTokens } from '../../../search/pagination';
 import PreviewGrid, { type PreviewGridExtraColumn, type PreviewGridRow } from '../../../search/preview-grid';
 import {
     fetchEnrichmentRun,
@@ -18,7 +25,10 @@ import {
     type ListCandidateRow,
     type ListSummary,
 } from '@/lib/organization';
-import styles from '../../projects.module.css';
+import layoutStyles from '../../../candidates/candidates.module.css';
+import projectStyles from '../../projects.module.css';
+
+const PAGE_SIZE = 20;
 
 function toPreviewData(candidate: ListCandidateRow): PreviewData {
     return {
@@ -48,8 +58,10 @@ export default function ListDetailPage() {
     const listId = String(params.listId);
     const [list, setList] = useState<ListSummary | null>(null);
     const [items, setItems] = useState<ListCandidateRow[]>([]);
-    const [nextCursor, setNextCursor] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
     const [searchInput, setSearchInput] = useState('');
     const [search, setSearch] = useState('');
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -59,20 +71,24 @@ export default function ListDetailPage() {
     const [activeRun, setActiveRun] = useState<EnrichmentRunSummary | null>(null);
     const [creditRefreshKey, setCreditRefreshKey] = useState(0);
 
-    const load = useCallback(async (cursor?: string | null, append = false) => {
-        setLoading(!append);
+    const load = useCallback(async () => {
+        setLoading(true);
         try {
             const [listItem, candidatePage] = await Promise.all([
                 fetchList(listId),
-                fetchListCandidates(listId, { cursor: cursor || undefined, search: search || undefined }),
+                fetchListCandidates(listId, { page, perPage: PAGE_SIZE, search: search || undefined }),
             ]);
             setList(listItem);
-            setItems((current) => (append ? [...current, ...candidatePage.items] : candidatePage.items));
-            setNextCursor(candidatePage.next_cursor);
+            setItems(candidatePage.items);
+            setTotal(candidatePage.total);
+            setTotalPages(candidatePage.total_pages);
+            if (candidatePage.page !== page) {
+                setPage(candidatePage.page);
+            }
         } finally {
             setLoading(false);
         }
-    }, [listId, search]);
+    }, [listId, page, search]);
 
     const loadRuns = useCallback(async () => {
         try {
@@ -85,7 +101,7 @@ export default function ListDetailPage() {
     }, [listId]);
 
     useEffect(() => {
-        void load(null, false);
+        void load();
     }, [load]);
 
     useEffect(() => {
@@ -93,9 +109,17 @@ export default function ListDetailPage() {
     }, [loadRuns]);
 
     useEffect(() => {
-        const timer = window.setTimeout(() => setSearch(searchInput), 250);
+        const timer = window.setTimeout(() => {
+            setSearch(searchInput);
+            setPage(1);
+        }, 250);
         return () => window.clearTimeout(timer);
     }, [searchInput]);
+
+    useEffect(() => {
+        setSelectedIds(new Set());
+        setActiveCandidateId(null);
+    }, [page, search]);
 
     const rows = useMemo<PreviewGridRow[]>(
         () => items.map((item) => ({
@@ -164,7 +188,7 @@ export default function ListDetailPage() {
                 }
                 setActiveRun(null);
                 setCreditRefreshKey((current) => current + 1);
-                await Promise.all([load(null, false), loadRuns()]);
+                await Promise.all([load(), loadRuns()]);
             } catch {
                 if (!cancelled) {
                     setActiveRun(null);
@@ -186,26 +210,26 @@ export default function ListDetailPage() {
             {
                 key: 'contact',
                 label: 'Contact',
-                className: styles.wideTextCell,
+                className: projectStyles.wideTextCell,
                 render: (row) => {
                     const item = rowsBySourceId.get(row.id);
                     const contact = item?.contact;
                     if (!contact) {
-                        return <span className={styles.contactPlaceholder}>—</span>;
+                        return <span className={projectStyles.contactPlaceholder}>—</span>;
                     }
                     return (
-                        <div className={styles.contactStack}>
+                        <div className={projectStyles.contactStack}>
                             {contact.work_email?.value ? (
-                                <span className={styles.contactEntry}>{contact.work_email.value}</span>
+                                <span className={projectStyles.contactEntry}>{contact.work_email.value}</span>
                             ) : null}
                             {contact.personal_email?.value ? (
-                                <span className={styles.contactEntry}>{contact.personal_email.value}</span>
+                                <span className={projectStyles.contactEntry}>{contact.personal_email.value}</span>
                             ) : null}
                             {contact.phone?.number ? (
-                                <span className={styles.contactEntry}>{contact.phone.number}</span>
+                                <span className={projectStyles.contactEntry}>{contact.phone.number}</span>
                             ) : null}
                             {!contact.work_email?.value && !contact.personal_email?.value && !contact.phone?.number ? (
-                                <span className={styles.contactPlaceholder}>—</span>
+                                <span className={projectStyles.contactPlaceholder}>—</span>
                             ) : null}
                         </div>
                     );
@@ -214,19 +238,19 @@ export default function ListDetailPage() {
             {
                 key: 'enrichment',
                 label: 'Enrichment',
-                className: styles.textCell,
+                className: projectStyles.textCell,
                 render: (row) => {
                     const item = rowsBySourceId.get(row.id);
                     const statusValue = item?.enrichment_status ?? 'NOT_REQUESTED';
                     const className = [
-                        styles.statusPill,
-                        statusValue === 'DONE' ? styles.statusPillDone : '',
-                        statusValue === 'PENDING' ? styles.statusPillPending : '',
+                        projectStyles.statusPill,
+                        statusValue === 'DONE' ? projectStyles.statusPillDone : '',
+                        statusValue === 'PENDING' ? projectStyles.statusPillPending : '',
                         statusValue === 'EMAIL_NOT_FOUND' || statusValue === 'PHONE_NOT_FOUND'
-                            ? styles.statusPillMuted
+                            ? projectStyles.statusPillMuted
                             : '',
-                        statusValue === 'PARTIAL' ? styles.statusPillWarning : '',
-                        statusValue === 'FAILED' ? styles.statusPillFailed : '',
+                        statusValue === 'PARTIAL' ? projectStyles.statusPillWarning : '',
+                        statusValue === 'FAILED' ? projectStyles.statusPillFailed : '',
                     ].filter(Boolean).join(' ');
                     return <span className={className}>{statusValue.replaceAll('_', ' ')}</span>;
                 },
@@ -241,136 +265,195 @@ export default function ListDetailPage() {
         try {
             await removeListCandidates(listId, candidateIdsToRemove);
             setSelectedIds(new Set());
-            await load(null, false);
+            await load();
         } finally {
             setRemoving(false);
         }
     }
 
-    const canEnrich = !loading && rows.length > 0;
+    const paginationTokens = buildPaginationTokens(page, totalPages, 10);
+    const listCandidateCount = list?.candidate_count ?? total;
+    const canEnrich = !loading && listCandidateCount > 0;
 
     return (
-        <section className={styles.page}>
-            <header className={styles.header}>
-                <div>
-                    <span className="tahoe-eyebrow">Durable candidate audience</span>
-                    <h1 className={styles.title}>{list?.name || 'List'}</h1>
-                    <div className={styles.pills}>
-                        <span className={styles.pill}>{list?.project_name || 'Project not loaded'}</span>
-                        <span className={styles.pill}>{list?.candidate_count ?? items.length} candidate{(list?.candidate_count ?? items.length) === 1 ? '' : 's'}</span>
+        <section className={layoutStyles.page}>
+            <header className={`${layoutStyles.header} ${layoutStyles.listHeader}`}>
+                <Flex className={layoutStyles.listHeaderTop} gap="3" align="center" justify="between" wrap="wrap">
+                    <div className={layoutStyles.listTitleGroup}>
+                        <span className="tahoe-eyebrow">Durable candidate audience</span>
+                        <h1 className={layoutStyles.listTitle}>{list?.name || 'List'}</h1>
+                        <div className={layoutStyles.listPills}>
+                            <span className={layoutStyles.listPill}>{list?.project_name || 'Project not loaded'}</span>
+                            <span className={layoutStyles.listPill}>{listCandidateCount} candidate{listCandidateCount === 1 ? '' : 's'}</span>
+                        </div>
                     </div>
-                </div>
-                <div className={styles.headerActions}>
-                    <CreditsBadge refreshKey={creditRefreshKey} />
-                    <button
-                        type="button"
-                        className="tahoe-button"
-                        disabled={!canEnrich}
-                        onClick={() => setEnrichOpen(true)}
-                    >
-                        Enrich
-                    </button>
-                    <Link href={`/dashboard/outreach/campaigns/new?list_id=${encodeURIComponent(listId)}`} className="tahoe-button-secondary">
-                        Push to campaign
-                    </Link>
-                    <Link href="/dashboard/projects/lists" className="tahoe-button-secondary">
-                        Back to all lists
-                    </Link>
-                </div>
+                    <div className={layoutStyles.listActions}>
+                        <CreditsBadge refreshKey={creditRefreshKey} />
+                        <button
+                            type="button"
+                            className="tahoe-button"
+                            disabled={!canEnrich}
+                            onClick={() => setEnrichOpen(true)}
+                        >
+                            Enrich
+                        </button>
+                        <Link href={`/dashboard/outreach/campaigns/new?list_id=${encodeURIComponent(listId)}`} className="tahoe-button-secondary">
+                            Push to campaign
+                        </Link>
+                        <Link href="/dashboard/projects/lists" className="tahoe-button-secondary">
+                            Back to all lists
+                        </Link>
+                    </div>
+                </Flex>
+
+                {activeRun ? (
+                    <div className={layoutStyles.listRunBanner}>
+                        An enrichment run for {activeRun.target_candidate_count} contact{activeRun.target_candidate_count === 1 ? '' : 's'} is in progress. Status is tracked from Tahoe run state.
+                    </div>
+                ) : null}
+
+                <Flex className={layoutStyles.headerRow} gap="3" align="center" wrap="wrap">
+                    <Box className={layoutStyles.searchFieldWrap}>
+                        <TextField.Root
+                            size="3"
+                            rootClassName={layoutStyles.searchShell}
+                            className={layoutStyles.searchInput}
+                            placeholder="Search this list"
+                            value={searchInput}
+                            onChange={(event) => setSearchInput(event.target.value)}
+                        >
+                            <TextField.Slot>
+                                <MagnifyingGlassIcon />
+                            </TextField.Slot>
+                        </TextField.Root>
+                    </Box>
+                    {selectedIds.size > 0 ? (
+                        <div className={layoutStyles.selectionActions}>
+                            <Button
+                                size="3"
+                                variant="soft"
+                                color="gray"
+                                type="button"
+                                onClick={() => setSelectedIds(new Set())}
+                            >
+                                Clear selection
+                            </Button>
+                            <Button
+                                size="3"
+                                color="red"
+                                type="button"
+                                onClick={() => void handleRemoveSelected()}
+                                disabled={removing}
+                            >
+                                {removing ? 'Removing...' : `Remove ${selectedIds.size} from list`}
+                            </Button>
+                        </div>
+                    ) : null}
+                </Flex>
             </header>
 
-            {activeRun ? (
-                <div className={styles.runBanner}>
-                    An enrichment run for {activeRun.target_candidate_count} contact{activeRun.target_candidate_count === 1 ? '' : 's'} is in progress. Status is tracked from Tahoe run state.
-                </div>
-            ) : null}
+            <div className={layoutStyles.shellGrid}>
+                <div className={layoutStyles.resultsArea}>
+                    {loading ? (
+                        <div className={layoutStyles.emptyState}>
+                            <span className="tahoe-spinner" />
+                            <p>Loading list candidates...</p>
+                        </div>
+                    ) : null}
 
-            <div className={styles.tableTools}>
-                <TextField.Root
-                    size="3"
-                    style={{ minWidth: 280 }}
-                    placeholder="Search this list"
-                    value={searchInput}
-                    onChange={(event) => setSearchInput(event.target.value)}
-                />
-                {selectedIds.size > 0 ? (
-                    <Flex gap="2">
-                        <Button
-                            size="3"
-                            variant="soft"
-                            color="gray"
-                            onClick={() => setSelectedIds(new Set())}
-                        >
-                            Clear selection
-                        </Button>
-                        <Button
-                            size="3"
-                            color="red"
-                            onClick={() => void handleRemoveSelected()}
-                            disabled={removing}
-                        >
-                            {removing ? 'Removing…' : `Remove ${selectedIds.size} from list`}
-                        </Button>
-                    </Flex>
+                    {!loading && rows.length === 0 ? (
+                        <div className={layoutStyles.emptyState}>
+                            <div className={layoutStyles.emptyIcon}><PersonIcon width="48" height="48" /></div>
+                            <h2 className={layoutStyles.emptyTitle}>No candidates found</h2>
+                            <p className={layoutStyles.emptyBody}>
+                                {search
+                                    ? 'No candidates match your search. Try a different query.'
+                                    : 'Save candidates from Search > New Search to populate this list.'}
+                            </p>
+                        </div>
+                    ) : null}
+
+                    {!loading && rows.length > 0 ? (
+                        <div className={layoutStyles.resultsLayout}>
+                            <div className={layoutStyles.resultsTableRegion}>
+                                <PreviewGrid
+                                    className={layoutStyles.resultsPreviewGrid}
+                                    rows={rows}
+                                    includeMetadata
+                                    hiddenColumnKeys={['id', 'headline', 'connections_count', 'followers_count', 'score', 'page', 'pipeline', 'search_prompt']}
+                                    extraColumns={extraColumns}
+                                    showCandidateSubtitle={false}
+                                    selectable
+                                    selectedRowIds={selectedIds}
+                                    activeRowId={activeCandidateId}
+                                    emptyMessage="No candidates found."
+                                    onToggleAllSelection={(checked) => {
+                                        setSelectedIds(checked ? new Set(rows.map((row) => row.id)) : new Set());
+                                    }}
+                                    onToggleRowSelection={(row) => {
+                                        setSelectedIds((current) => {
+                                            const next = new Set(current);
+                                            if (next.has(row.id)) {
+                                                next.delete(row.id);
+                                            } else {
+                                                next.add(row.id);
+                                            }
+                                            return next;
+                                        });
+                                    }}
+                                    onRowClick={(row) => setActiveCandidateId(activeCandidateId === row.id ? null : row.id)}
+                                />
+                            </div>
+
+                            {totalPages > 1 ? (
+                                <Flex className={layoutStyles.paginationFooter} justify="center" align="center" gap="2" wrap="wrap">
+                                    <Button
+                                        size="1"
+                                        variant="soft"
+                                        type="button"
+                                        disabled={page <= 1}
+                                        onClick={() => setPage(Math.max(1, page - 1))}
+                                    >
+                                        <ChevronLeftIcon />
+                                        Previous
+                                    </Button>
+                                    {paginationTokens.map((token) =>
+                                        typeof token === 'number' ? (
+                                            <Button
+                                                key={`page-${token}`}
+                                                size="1"
+                                                variant={token === page ? 'solid' : 'soft'}
+                                                type="button"
+                                                onClick={() => setPage(token)}
+                                            >
+                                                {token}
+                                            </Button>
+                                        ) : (
+                                            <Button key={token} size="1" variant="ghost" type="button" disabled>
+                                                …
+                                            </Button>
+                                        ),
+                                    )}
+                                    <Button
+                                        size="1"
+                                        variant="soft"
+                                        type="button"
+                                        disabled={page >= totalPages}
+                                        onClick={() => setPage(Math.min(totalPages, page + 1))}
+                                    >
+                                        Next
+                                        <ChevronRightIcon />
+                                    </Button>
+                                </Flex>
+                            ) : null}
+                        </div>
+                    ) : null}
+                </div>
+
+                {activeCandidate ? (
+                    <CandidatePanel preview={activeCandidate} onClose={() => setActiveCandidateId(null)} />
                 ) : null}
             </div>
-
-            {loading ? (
-                <div className={styles.emptyState}>
-                    <span className="tahoe-spinner" />
-                    <p>Loading list candidates…</p>
-                </div>
-            ) : null}
-
-            {!loading && rows.length === 0 ? (
-                <div className={styles.emptyState}>
-                    <h2>No candidates in this list</h2>
-                    <p>Save candidates from Search &gt; New Search to populate this list.</p>
-                </div>
-            ) : null}
-
-            {!loading && rows.length > 0 ? (
-                <div className={styles.tableShell}>
-                    <PreviewGrid
-                        rows={rows}
-                        includeMetadata
-                        hiddenColumnKeys={['id', 'headline', 'connections_count', 'followers_count', 'score', 'page', 'pipeline', 'search_prompt']}
-                        extraColumns={extraColumns}
-                        showCandidateSubtitle={false}
-                        selectable
-                        selectedRowIds={selectedIds}
-                        activeRowId={activeCandidateId}
-                        emptyMessage="No candidates found."
-                        onToggleAllSelection={(checked) => {
-                            setSelectedIds(checked ? new Set(rows.map((row) => row.id)) : new Set());
-                        }}
-                        onToggleRowSelection={(row) => {
-                            setSelectedIds((current) => {
-                                const next = new Set(current);
-                                if (next.has(row.id)) {
-                                    next.delete(row.id);
-                                } else {
-                                    next.add(row.id);
-                                }
-                                return next;
-                            });
-                        }}
-                        onRowClick={(row) => setActiveCandidateId(activeCandidateId === row.id ? null : row.id)}
-                    />
-                </div>
-            ) : null}
-
-            {nextCursor ? (
-                <Flex justify="center">
-                    <Button size="3" variant="soft" onClick={() => void load(nextCursor, true)}>
-                        Load more
-                    </Button>
-                </Flex>
-            ) : null}
-
-            {activeCandidate ? (
-                <CandidatePanel preview={activeCandidate} onClose={() => setActiveCandidateId(null)} />
-            ) : null}
 
             <EnrichModal
                 open={enrichOpen}
@@ -380,7 +463,7 @@ export default function ListDetailPage() {
                 onSubmitted={async (run) => {
                     setActiveRun(run);
                     setCreditRefreshKey((current) => current + 1);
-                    await Promise.all([load(null, false), loadRuns()]);
+                    await Promise.all([load(), loadRuns()]);
                 }}
             />
         </section>

@@ -144,6 +144,10 @@ beforeEach(() => {
     mockedFetchListCandidates.mockImplementation(async (listId: string) => ({
         items: listId === 'list-2' ? [candidateTwo] : [candidateOne],
         next_cursor: null,
+        total: 1,
+        page: 1,
+        per_page: 100,
+        total_pages: 1,
     }));
     mockedFetchSettings.mockResolvedValue({
         account: {
@@ -293,7 +297,7 @@ test('inline list creation selects the new empty list and keeps launch blocked',
         name: 'New audience',
         candidate_count: 0,
     } : listOne));
-    mockedFetchListCandidates.mockResolvedValue({ items: [], next_cursor: null });
+    mockedFetchListCandidates.mockResolvedValue({ items: [], next_cursor: null, total: 0, page: 1, per_page: 100, total_pages: 1 });
     const user = userEvent.setup();
     render(<NewCampaignPage />);
 

@@ -27,6 +27,79 @@
     flex-wrap: nowrap !important;
 }
 
+.listHeader {
+    display: grid;
+    gap: 16px;
+}
+
+.listHeaderTop {
+    width: 100%;
+}
+
+.listTitleGroup {
+    min-width: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.listTitle {
+    margin: 0;
+    max-width: min(760px, 100%);
+    overflow-wrap: anywhere;
+    font-family: var(--tahoe-font-display);
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: 0;
+    color: var(--tahoe-color-text-primary);
+}
+
+.listPills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.listPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    padding: 6px 10px;
+    border: 1px solid rgba(255, 104, 44, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 104, 44, 0.08);
+    color: var(--tahoe-color-text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.listActions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.listActions :global(.tui-button),
+.listActions :global(.tahoe-button),
+.listActions :global(.tahoe-button-secondary) {
+    min-height: var(--search-bar-control-height);
+    font-family: var(--tahoe-font-body);
+}
+
+.listRunBanner {
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 104, 44, 0.16);
+    border-radius: var(--tahoe-radius-md);
+    background: rgba(255, 104, 44, 0.08);
+    color: var(--tahoe-color-text-primary);
+    font-size: 14px;
+    line-height: 1.45;
+}
+
 .searchFieldWrap {
     flex: 1 1 auto;
     min-width: 0;
@@ -149,6 +222,15 @@
 @media (max-width: 1280px) {
     .headerRow {
         flex-wrap: wrap !important;
+    }
+
+    .listHeaderTop {
+        align-items: flex-start !important;
+    }
+
+    .listActions {
+        width: 100%;
+        justify-content: flex-start;
     }
 
     .selectionActions {

@@ -146,6 +146,10 @@ export interface ListCandidateRow extends SaveToListCandidatePayload {
 export interface PaginatedListCandidatesResponse {
     items: ListCandidateRow[];
     next_cursor: string | null;
+    total: number;
+    page: number;
+    per_page: number;
+    total_pages: number;
 }
 
 export interface CreditBalanceResponse {
@@ -1024,11 +1028,13 @@ export async function deleteList(listId: string) {
 
 export async function fetchListCandidates(
     listId: string,
-    params?: { cursor?: string | null; limit?: number; search?: string | null },
+    params?: { cursor?: string | null; limit?: number; page?: number; perPage?: number; search?: string | null },
 ) {
     const searchParams = new URLSearchParams();
     if (params?.cursor) searchParams.set('cursor', params.cursor);
     if (params?.limit) searchParams.set('limit', String(params.limit));
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.perPage) searchParams.set('per_page', String(params.perPage));
     if (params?.search) searchParams.set('search', params.search);
     const suffix = searchParams.toString() ? `?${searchParams.toString()}` : '';
     return apiRequest<PaginatedListCandidatesResponse>(`/lists/${listId}/candidates${suffix}`);
