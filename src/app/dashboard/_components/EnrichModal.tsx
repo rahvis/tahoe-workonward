@@ -237,7 +237,9 @@ export default function EnrichModal({
                     <div className="tahoe-banner">
                         <div style={{ display: 'grid', gap: 6 }}>
                             <Text size="2">
-                                Estimate: {loading ? 'Calculating…' : `${targetCount} × ${fields.reduce((sum, field) => sum + FIELD_COSTS[field], 0)} = ${estimatedCredits} credits`}
+                                Estimate: {loading
+                                    ? 'Calculating…'
+                                    : `${estimatedCredits} credit${estimatedCredits === 1 ? '' : 's'} for ${targetCount} candidate${targetCount === 1 ? '' : 's'}`}
                             </Text>
                             <Text size="2">Balance after run: {loading ? '—' : displayedBalanceAfter}</Text>
                             {skippedInflight > 0 ? (

@@ -21,6 +21,7 @@ import {
     fetchList,
     fetchListCandidates,
     removeListCandidates,
+    type ContactFieldState,
     type EnrichmentRunSummary,
     type ListCandidateRow,
     type ListSummary,
@@ -29,6 +30,28 @@ import layoutStyles from '../../../candidates/candidates.module.css';
 import projectStyles from '../../projects.module.css';
 
 const PAGE_SIZE = 20;
+type ContactField = 'phone' | 'work_email' | 'personal_email';
+type SelectedCandidate = { candidateId: string; name: string | null };
+
+const HIDDEN_LIST_COLUMN_KEYS = [
+    'id',
+    'profile_url',
+    'headline',
+    'location_full',
+    'location_country',
+    'connections_count',
+    'followers_count',
+    'company_name',
+    'company_url',
+    'company_website',
+    'company_industry',
+    'active_experience_title',
+    'department',
+    'management_level',
+    'company_hq_full_address',
+    'company_hq_country',
+    'score',
+];
 
 function toPreviewData(candidate: ListCandidateRow): PreviewData {
     return {
@@ -53,6 +76,39 @@ function toPreviewData(candidate: ListCandidateRow): PreviewData {
     };
 }
 
+function contactFieldValue(item: ListCandidateRow | undefined, field: ContactField) {
+    if (!item?.contact) return '';
+    if (field === 'phone') {
+        return item.contact.phone?.number ?? '';
+    }
+    return item.contact[field]?.value ?? '';
+}
+
+function contactFieldState(item: ListCandidateRow | undefined, field: ContactField): ContactFieldState {
+    const value = contactFieldValue(item, field);
+    if (value) {
+        const state = item?.contact_field_states?.[field] ?? item?.contact?.field_statuses?.[field];
+        return { ...(state ?? {}), status: 'found' as const };
+    }
+    return item?.contact_field_states?.[field] ?? item?.contact?.field_statuses?.[field] ?? { status: 'not_requested' };
+}
+
+function ContactFieldCell({ item, field }: { item: ListCandidateRow | undefined; field: ContactField }) {
+    const state = contactFieldState(item, field);
+    const value = contactFieldValue(item, field);
+
+    if (value) {
+        return <span className={projectStyles.contactEntry}>{value}</span>;
+    }
+    if (state.status === 'pending') {
+        return <span className={projectStyles.contactPending} aria-label="Enrichment pending" />;
+    }
+    if (state.status === 'not_found' || state.status === 'failed') {
+        return <span className={projectStyles.contactUnavailable}>N/A</span>;
+    }
+    return <span className={projectStyles.contactPlaceholder}>—</span>;
+}
+
 export default function ListDetailPage() {
     const params = useParams<{ listId: string }>();
     const listId = String(params.listId);
@@ -64,15 +120,19 @@ export default function ListDetailPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [searchInput, setSearchInput] = useState('');
     const [search, setSearch] = useState('');
-    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [selectedCandidates, setSelectedCandidates] = useState<Map<string, SelectedCandidate>>(new Map());
     const [activeCandidateId, setActiveCandidateId] = useState<number | null>(null);
     const [removing, setRemoving] = useState(false);
     const [enrichOpen, setEnrichOpen] = useState(false);
     const [activeRun, setActiveRun] = useState<EnrichmentRunSummary | null>(null);
+    const [enrichmentNotice, setEnrichmentNotice] = useState('');
     const [creditRefreshKey, setCreditRefreshKey] = useState(0);
 
-    const load = useCallback(async () => {
-        setLoading(true);
+    const load = useCallback(async (options?: { background?: boolean }) => {
+        const background = Boolean(options?.background);
+        if (!background) {
+            setLoading(true);
+        }
         try {
             const [listItem, candidatePage] = await Promise.all([
                 fetchList(listId),
@@ -86,7 +146,9 @@ export default function ListDetailPage() {
                 setPage(candidatePage.page);
             }
         } finally {
-            setLoading(false);
+            if (!background) {
+                setLoading(false);
+            }
         }
     }, [listId, page, search]);
 
@@ -117,13 +179,17 @@ export default function ListDetailPage() {
     }, [searchInput]);
 
     useEffect(() => {
-        setSelectedIds(new Set());
         setActiveCandidateId(null);
     }, [page, search]);
 
+    useEffect(() => {
+        setSelectedCandidates(new Map());
+        setActiveCandidateId(null);
+    }, [listId]);
+
     const rows = useMemo<PreviewGridRow[]>(
-        () => items.map((item) => ({
-            id: Number(item.source_id) || 0,
+        () => items.map((item, index) => ({
+            id: index + 1,
             full_name: item.full_name ?? null,
             websites_linkedin: item.websites_linkedin ?? null,
             headline: item.headline ?? null,
@@ -150,31 +216,42 @@ export default function ListDetailPage() {
         [items],
     );
 
-    const rowsBySourceId = useMemo(
-        () => new Map(items.map((item) => [Number(item.source_id) || 0, item])),
-        [items],
+    const itemsByRowId = useMemo(
+        () => new Map(rows.map((row, index) => [row.id, items[index]])),
+        [items, rows],
+    );
+
+    const selectedIds = useMemo(
+        () => new Set(rows.filter((row) => {
+            const item = itemsByRowId.get(row.id);
+            return item ? selectedCandidates.has(item.candidate_id) : false;
+        }).map((row) => row.id)),
+        [itemsByRowId, rows, selectedCandidates],
     );
 
     const activeCandidate = useMemo(() => {
-        const candidate = items.find((item) => (Number(item.source_id) || 0) === activeCandidateId);
+        const candidate = activeCandidateId == null ? null : itemsByRowId.get(activeCandidateId);
         return candidate ? toPreviewData(candidate) : null;
-    }, [activeCandidateId, items]);
+    }, [activeCandidateId, itemsByRowId]);
 
     const candidateIdsToRemove = useMemo(
-        () => items.filter((item) => selectedIds.has(Number(item.source_id) || 0)).map((item) => item.candidate_id),
-        [items, selectedIds],
+        () => Array.from(selectedCandidates.values()).map((candidate) => candidate.candidateId),
+        [selectedCandidates],
     );
+    const selectedCount = selectedCandidates.size;
 
     const selectedCandidateIdsForEnrichment = useMemo(
-        () => items.filter((item) => selectedIds.has(Number(item.source_id) || 0)).map((item) => item.candidate_id),
-        [items, selectedIds],
+        () => Array.from(selectedCandidates.values()).map((candidate) => candidate.candidateId),
+        [selectedCandidates],
     );
 
+    const activeRunId = activeRun?.id ?? null;
+    const activeRunStatus = activeRun?.status ?? null;
+
     useEffect(() => {
-        if (!activeRun || (activeRun.status !== 'pending' && activeRun.status !== 'in_progress')) {
+        if (!activeRunId || (activeRunStatus !== 'pending' && activeRunStatus !== 'in_progress')) {
             return;
         }
-        const activeRunId = activeRun.id;
         let cancelled = false;
         async function pollRun() {
             try {
@@ -184,9 +261,11 @@ export default function ListDetailPage() {
                 }
                 if (refreshed.status === 'pending' || refreshed.status === 'in_progress') {
                     setActiveRun(refreshed);
+                    await load({ background: true });
                     return;
                 }
                 setActiveRun(null);
+                setEnrichmentNotice('');
                 setCreditRefreshKey((current) => current + 1);
                 await Promise.all([load(), loadRuns()]);
             } catch {
@@ -203,44 +282,46 @@ export default function ListDetailPage() {
             cancelled = true;
             window.clearInterval(interval);
         };
-    }, [activeRun, load, loadRuns]);
+    }, [activeRunId, activeRunStatus, load, loadRuns]);
 
     const extraColumns = useMemo<PreviewGridExtraColumn[]>(
         () => [
             {
-                key: 'contact',
-                label: 'Contact',
-                className: projectStyles.wideTextCell,
-                render: (row) => {
-                    const item = rowsBySourceId.get(row.id);
-                    const contact = item?.contact;
-                    if (!contact) {
-                        return <span className={projectStyles.contactPlaceholder}>—</span>;
-                    }
-                    return (
-                        <div className={projectStyles.contactStack}>
-                            {contact.work_email?.value ? (
-                                <span className={projectStyles.contactEntry}>{contact.work_email.value}</span>
-                            ) : null}
-                            {contact.personal_email?.value ? (
-                                <span className={projectStyles.contactEntry}>{contact.personal_email.value}</span>
-                            ) : null}
-                            {contact.phone?.number ? (
-                                <span className={projectStyles.contactEntry}>{contact.phone.number}</span>
-                            ) : null}
-                            {!contact.work_email?.value && !contact.personal_email?.value && !contact.phone?.number ? (
-                                <span className={projectStyles.contactPlaceholder}>—</span>
-                            ) : null}
-                        </div>
-                    );
-                },
+                key: 'current_title',
+                label: 'Current Title',
+                className: projectStyles.textCell,
+                render: (row) => <span className={projectStyles.truncateText} title={row.job_title || ''}>{row.job_title || '—'}</span>,
+            },
+            {
+                key: 'company_name',
+                label: 'Company Name',
+                className: projectStyles.textCell,
+                render: (row) => <span className={projectStyles.truncateText} title={row.company_name || ''}>{row.company_name || '—'}</span>,
+            },
+            {
+                key: 'phone',
+                label: 'Phone',
+                className: projectStyles.contactCell,
+                render: (row) => <ContactFieldCell item={itemsByRowId.get(row.id)} field="phone" />,
+            },
+            {
+                key: 'work_email',
+                label: 'Work Email',
+                className: projectStyles.contactCell,
+                render: (row) => <ContactFieldCell item={itemsByRowId.get(row.id)} field="work_email" />,
+            },
+            {
+                key: 'personal_email',
+                label: 'Personal Email',
+                className: projectStyles.contactCell,
+                render: (row) => <ContactFieldCell item={itemsByRowId.get(row.id)} field="personal_email" />,
             },
             {
                 key: 'enrichment',
                 label: 'Enrichment',
                 className: projectStyles.textCell,
                 render: (row) => {
-                    const item = rowsBySourceId.get(row.id);
+                    const item = itemsByRowId.get(row.id);
                     const statusValue = item?.enrichment_status ?? 'NOT_REQUESTED';
                     const className = [
                         projectStyles.statusPill,
@@ -256,7 +337,7 @@ export default function ListDetailPage() {
                 },
             },
         ],
-        [rowsBySourceId],
+        [itemsByRowId],
     );
 
     async function handleRemoveSelected() {
@@ -264,7 +345,7 @@ export default function ListDetailPage() {
         setRemoving(true);
         try {
             await removeListCandidates(listId, candidateIdsToRemove);
-            setSelectedIds(new Set());
+            setSelectedCandidates(new Map());
             await load();
         } finally {
             setRemoving(false);
@@ -274,6 +355,7 @@ export default function ListDetailPage() {
     const paginationTokens = buildPaginationTokens(page, totalPages, 10);
     const listCandidateCount = list?.candidate_count ?? total;
     const canEnrich = !loading && listCandidateCount > 0;
+    const activeRunIsOpen = activeRun?.status === 'pending' || activeRun?.status === 'in_progress';
 
     return (
         <section className={layoutStyles.page}>
@@ -306,9 +388,14 @@ export default function ListDetailPage() {
                     </div>
                 </Flex>
 
-                {activeRun ? (
+                {activeRunIsOpen && activeRun ? (
                     <div className={layoutStyles.listRunBanner}>
                         An enrichment run for {activeRun.target_candidate_count} contact{activeRun.target_candidate_count === 1 ? '' : 's'} is in progress. Status is tracked from Tahoe run state.
+                    </div>
+                ) : null}
+                {enrichmentNotice ? (
+                    <div className={layoutStyles.listRunBanner} role="status" aria-live="polite">
+                        {enrichmentNotice}
                     </div>
                 ) : null}
 
@@ -327,14 +414,14 @@ export default function ListDetailPage() {
                             </TextField.Slot>
                         </TextField.Root>
                     </Box>
-                    {selectedIds.size > 0 ? (
+                    {selectedCount > 0 ? (
                         <div className={layoutStyles.selectionActions}>
                             <Button
                                 size="3"
                                 variant="soft"
                                 color="gray"
                                 type="button"
-                                onClick={() => setSelectedIds(new Set())}
+                                onClick={() => setSelectedCandidates(new Map())}
                             >
                                 Clear selection
                             </Button>
@@ -345,7 +432,7 @@ export default function ListDetailPage() {
                                 onClick={() => void handleRemoveSelected()}
                                 disabled={removing}
                             >
-                                {removing ? 'Removing...' : `Remove ${selectedIds.size} from list`}
+                                {removing ? 'Removing...' : `Remove ${selectedCount} from list`}
                             </Button>
                         </div>
                     ) : null}
@@ -379,8 +466,7 @@ export default function ListDetailPage() {
                                 <PreviewGrid
                                     className={layoutStyles.resultsPreviewGrid}
                                     rows={rows}
-                                    includeMetadata
-                                    hiddenColumnKeys={['id', 'headline', 'connections_count', 'followers_count', 'score', 'page', 'pipeline', 'search_prompt']}
+                                    hiddenColumnKeys={HIDDEN_LIST_COLUMN_KEYS}
                                     extraColumns={extraColumns}
                                     showCandidateSubtitle={false}
                                     selectable
@@ -388,15 +474,36 @@ export default function ListDetailPage() {
                                     activeRowId={activeCandidateId}
                                     emptyMessage="No candidates found."
                                     onToggleAllSelection={(checked) => {
-                                        setSelectedIds(checked ? new Set(rows.map((row) => row.id)) : new Set());
+                                        setSelectedCandidates((current) => {
+                                            const next = new Map(current);
+                                            for (const row of rows) {
+                                                const item = itemsByRowId.get(row.id);
+                                                if (checked && item) {
+                                                    next.set(item.candidate_id, {
+                                                        candidateId: item.candidate_id,
+                                                        name: item.full_name ?? null,
+                                                    });
+                                                } else if (item) {
+                                                    next.delete(item.candidate_id);
+                                                }
+                                            }
+                                            return next;
+                                        });
                                     }}
                                     onToggleRowSelection={(row) => {
-                                        setSelectedIds((current) => {
-                                            const next = new Set(current);
-                                            if (next.has(row.id)) {
-                                                next.delete(row.id);
+                                        setSelectedCandidates((current) => {
+                                            const item = itemsByRowId.get(row.id);
+                                            if (!item) {
+                                                return current;
+                                            }
+                                            const next = new Map(current);
+                                            if (next.has(item.candidate_id)) {
+                                                next.delete(item.candidate_id);
                                             } else {
-                                                next.add(row.id);
+                                                next.set(item.candidate_id, {
+                                                    candidateId: item.candidate_id,
+                                                    name: item.full_name ?? null,
+                                                });
                                             }
                                             return next;
                                         });
@@ -461,7 +568,17 @@ export default function ListDetailPage() {
                 listId={listId}
                 selectedCandidateIds={selectedCandidateIdsForEnrichment}
                 onSubmitted={async (run) => {
-                    setActiveRun(run);
+                    if (run.status === 'pending' || run.status === 'in_progress') {
+                        setActiveRun(run);
+                        setEnrichmentNotice(
+                            `Enrichment has started for ${run.target_candidate_count} candidate${run.target_candidate_count === 1 ? '' : 's'}. You can keep working or come back to this list later; contact details will appear here as FullEnrich returns them.`,
+                        );
+                    } else {
+                        setActiveRun(null);
+                        setEnrichmentNotice(
+                            'No new enrichment was started because the selected contact fields are already complete or currently in progress.',
+                        );
+                    }
                     setCreditRefreshKey((current) => current + 1);
                     await Promise.all([load(), loadRuns()]);
                 }}

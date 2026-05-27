@@ -5,18 +5,18 @@ import EnrichModal from './EnrichModal';
 import {
     createEnrichmentRun,
     estimateEnrichmentRun,
-    fetchCreditBalance,
+    fetchBillingSummary,
 } from '@/lib/organization';
 
 vi.mock('@/lib/organization', () => ({
     createEnrichmentRun: vi.fn(),
     estimateEnrichmentRun: vi.fn(),
-    fetchCreditBalance: vi.fn(),
+    fetchBillingSummary: vi.fn(),
 }));
 
 const mockedCreateEnrichmentRun = vi.mocked(createEnrichmentRun);
 const mockedEstimateEnrichmentRun = vi.mocked(estimateEnrichmentRun);
-const mockedFetchCreditBalance = vi.mocked(fetchCreditBalance);
+const mockedFetchBillingSummary = vi.mocked(fetchBillingSummary);
 
 function deferred<T>() {
     let resolve!: (value: T) => void;
@@ -31,11 +31,11 @@ function deferred<T>() {
 beforeEach(() => {
     mockedCreateEnrichmentRun.mockReset();
     mockedEstimateEnrichmentRun.mockReset();
-    mockedFetchCreditBalance.mockReset();
-    mockedFetchCreditBalance.mockResolvedValue({
+    mockedFetchBillingSummary.mockReset();
+    mockedFetchBillingSummary.mockResolvedValue({
         workspace_id: 'ws-1',
-        balance: 500,
-        currency: 'credits',
+        available_credits: 500,
+        low_credit_state: 'healthy',
     });
     mockedEstimateEnrichmentRun.mockResolvedValue({
         target_candidate_count: 5,
@@ -64,7 +64,7 @@ test('estimate updates when fields toggle', async () => {
         <EnrichModal open onOpenChange={() => {}} listId="list-1" selectedCandidateIds={['cand-1', 'cand-2']} />
     );
 
-    expect(await screen.findByText(/Estimate:/i)).toHaveTextContent('5 × 1 = 5 credits');
+    expect(await screen.findByText(/Estimate:/i)).toHaveTextContent('5 credits for 5 candidates');
 
     mockedEstimateEnrichmentRun.mockResolvedValueOnce({
         target_candidate_count: 5,
@@ -76,7 +76,7 @@ test('estimate updates when fields toggle', async () => {
     await user.click(screen.getByLabelText(/Mobile phone/i));
 
     await waitFor(() => {
-        expect(screen.getByText(/Estimate:/i)).toHaveTextContent('5 × 11 = 70 credits');
+        expect(screen.getByText(/Estimate:/i)).toHaveTextContent('70 credits for 5 candidates');
     });
 });
 
@@ -121,7 +121,7 @@ test('submit posts the chosen scope fields and idempotency key', async () => {
 });
 
 test('balance-after stays on the estimate result when the balance request resolves later', async () => {
-    const balanceRequest = deferred<{ workspace_id: string; balance: number; currency: 'credits' }>();
+    const balanceRequest = deferred<{ workspace_id: string; available_credits: number; low_credit_state: 'healthy' }>();
     const estimateRequest = deferred<{
         target_candidate_count: number;
         estimated_credits: number;
@@ -129,7 +129,7 @@ test('balance-after stays on the estimate result when the balance request resolv
         balance_after: number;
         skipped_inflight: number;
     }>();
-    mockedFetchCreditBalance.mockReturnValueOnce(balanceRequest.promise);
+    mockedFetchBillingSummary.mockReturnValueOnce(balanceRequest.promise);
     mockedEstimateEnrichmentRun.mockReturnValueOnce(estimateRequest.promise);
 
     render(
@@ -152,8 +152,8 @@ test('balance-after stays on the estimate result when the balance request resolv
     await act(async () => {
         balanceRequest.resolve({
             workspace_id: 'ws-1',
-            balance: 500,
-            currency: 'credits',
+            available_credits: 500,
+            low_credit_state: 'healthy',
         });
         await balanceRequest.promise;
     });
@@ -173,7 +173,7 @@ test('balance-after falls back to the raw balance when no fields are selected', 
     await user.click(screen.getByLabelText(/Work email/i));
 
     await waitFor(() => {
-        expect(screen.getByText(/Estimate:/i)).toHaveTextContent('0 × 0 = 0 credits');
+        expect(screen.getByText(/Estimate:/i)).toHaveTextContent('0 credits for 0 candidates');
         expect(screen.getByText(/Balance after run:/i)).toHaveTextContent('Balance after run: 500');
     });
 });

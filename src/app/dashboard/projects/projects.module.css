@@ -197,6 +197,52 @@
     word-break: break-word;
 }
 
+.contactCell {
+    min-width: 190px;
+    max-width: 260px;
+}
+
+.truncateText {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    vertical-align: top;
+}
+
+.contactPending {
+    display: block;
+    width: 100%;
+    min-width: 132px;
+    height: 28px;
+    border-radius: var(--tahoe-radius-sm);
+    background: linear-gradient(
+        90deg,
+        rgba(33, 110, 78, 0.08) 0%,
+        rgba(33, 110, 78, 0.20) 45%,
+        rgba(33, 110, 78, 0.08) 100%
+    );
+    background-size: 220% 100%;
+    animation: contactPendingFlow 1.25s ease-in-out infinite;
+}
+
+.contactUnavailable {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 72px;
+    min-height: 28px;
+    padding: 4px 10px;
+    border-radius: var(--tahoe-radius-sm);
+    background: rgba(255, 104, 44, 0.12);
+    color: var(--tahoe-color-warning);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    text-align: center;
+}
+
 .contactPlaceholder {
     color: var(--tahoe-color-text-tertiary);
     font-size: 13px;
@@ -245,6 +291,16 @@
 
 .wideTextCell {
     min-width: 240px;
+}
+
+@keyframes contactPendingFlow {
+    0% {
+        background-position: 120% 0;
+    }
+
+    100% {
+        background-position: -120% 0;
+    }
 }
 
 @media (max-width: 980px) {

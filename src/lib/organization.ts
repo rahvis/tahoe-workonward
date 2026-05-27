@@ -115,10 +115,19 @@ export interface EnrichedPhoneValue {
     enriched_at?: string | null;
 }
 
+export type ContactFieldStateStatus = 'not_requested' | 'pending' | 'found' | 'not_found' | 'failed';
+
+export interface ContactFieldState {
+    status: ContactFieldStateStatus;
+    run_id?: string | null;
+    updated_at?: string | null;
+}
+
 export interface CandidateContact {
     work_email?: EnrichedEmailValue | null;
     personal_email?: EnrichedEmailValue | null;
     phone?: EnrichedPhoneValue | null;
+    field_statuses?: Record<string, ContactFieldState> | null;
     last_run_id?: string | null;
     last_status?: string | null;
     last_enriched_at?: string | null;
@@ -140,6 +149,7 @@ export interface ListCandidateRow extends SaveToListCandidatePayload {
     source_id: string;
     added_at?: string | null;
     contact?: CandidateContact | null;
+    contact_field_states?: Record<string, ContactFieldState> | null;
     enrichment_status?: EnrichmentStatus | null;
 }
 
