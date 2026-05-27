@@ -202,6 +202,63 @@
     max-width: 260px;
 }
 
+.contactEditableButton {
+    display: flex;
+    width: 100%;
+    min-height: 30px;
+    align-items: center;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    padding: 0;
+    text-align: left;
+    cursor: text;
+}
+
+.contactEditableButton:focus-visible {
+    outline: 2px solid rgba(255, 104, 44, 0.36);
+    outline-offset: 2px;
+}
+
+.contactEditWrap {
+    display: grid;
+    gap: 4px;
+    width: 100%;
+}
+
+.contactInput {
+    width: 100%;
+    min-height: 30px;
+    border: 1px solid rgba(32, 32, 32, 0.16);
+    border-radius: var(--tahoe-radius-sm);
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--tahoe-color-text-primary);
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.35;
+    padding: 5px 8px;
+}
+
+.contactInput:focus {
+    border-color: rgba(255, 104, 44, 0.48);
+    outline: 2px solid rgba(255, 104, 44, 0.16);
+}
+
+.contactSaving,
+.contactError {
+    font-size: 11px;
+    line-height: 1.25;
+}
+
+.contactSaving {
+    color: var(--tahoe-color-text-tertiary);
+}
+
+.contactError {
+    color: var(--tahoe-color-danger);
+}
+
 .truncateText {
     display: inline-block;
     max-width: 100%;

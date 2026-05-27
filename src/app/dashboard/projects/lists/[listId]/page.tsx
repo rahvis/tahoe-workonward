@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ChevronLeftIcon,
     ChevronRightIcon,
@@ -21,6 +21,7 @@ import {
     fetchList,
     fetchListCandidates,
     removeListCandidates,
+    updateListCandidateContact,
     type ContactFieldState,
     type EnrichmentRunSummary,
     type ListCandidateRow,
@@ -93,7 +94,16 @@ function contactFieldState(item: ListCandidateRow | undefined, field: ContactFie
     return item?.contact_field_states?.[field] ?? item?.contact?.field_statuses?.[field] ?? { status: 'not_requested' };
 }
 
-function ContactFieldCell({ item, field }: { item: ListCandidateRow | undefined; field: ContactField }) {
+function mergeContactOverride(item: ListCandidateRow, override: ListCandidateRow): ListCandidateRow {
+    return {
+        ...item,
+        contact: override.contact,
+        contact_field_states: override.contact_field_states,
+        enrichment_status: override.enrichment_status,
+    };
+}
+
+function ContactFieldDisplay({ item, field }: { item: ListCandidateRow | undefined; field: ContactField }) {
     const state = contactFieldState(item, field);
     const value = contactFieldValue(item, field);
 
@@ -107,6 +117,105 @@ function ContactFieldCell({ item, field }: { item: ListCandidateRow | undefined;
         return <span className={projectStyles.contactUnavailable}>N/A</span>;
     }
     return <span className={projectStyles.contactPlaceholder}>—</span>;
+}
+
+function ContactFieldCell({
+    item,
+    field,
+    listId,
+    onSaved,
+}: {
+    item: ListCandidateRow | undefined;
+    field: ContactField;
+    listId: string;
+    onSaved: (updated: ListCandidateRow) => void;
+}) {
+    const value = contactFieldValue(item, field);
+    const [editing, setEditing] = useState(false);
+    const [draft, setDraft] = useState(value);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (!editing && !saving) {
+            setDraft(value);
+        }
+    }, [editing, saving, value]);
+
+    async function commitDraft(nextDraft: string) {
+        if (!item || saving) {
+            return;
+        }
+        const trimmed = nextDraft.trim();
+        if (trimmed === value) {
+            setDraft(value);
+            setError('');
+            setEditing(false);
+            return;
+        }
+        setSaving(true);
+        setError('');
+        try {
+            const payload: { phone?: string | null; work_email?: string | null; personal_email?: string | null } = {};
+            payload[field] = trimmed || null;
+            const updated = await updateListCandidateContact(listId, item.candidate_id, payload);
+            onSaved(updated);
+            setDraft(contactFieldValue(updated, field));
+            setEditing(false);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Unable to save';
+            setError(message);
+            setEditing(true);
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    if (editing) {
+        return (
+            <div className={projectStyles.contactEditWrap} onClick={(event) => event.stopPropagation()}>
+                <input
+                    className={projectStyles.contactInput}
+                    value={draft}
+                    type={field === 'phone' ? 'tel' : 'email'}
+                    autoFocus
+                    aria-label={`Edit ${field.replaceAll('_', ' ')}`}
+                    disabled={saving}
+                    onChange={(event) => setDraft(event.target.value)}
+                    onBlur={() => void commitDraft(draft)}
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                            event.preventDefault();
+                            void commitDraft(draft);
+                        }
+                        if (event.key === 'Escape') {
+                            event.preventDefault();
+                            setDraft(value);
+                            setError('');
+                            setEditing(false);
+                        }
+                    }}
+                />
+                {saving ? <span className={projectStyles.contactSaving}>Saving...</span> : null}
+                {error ? <span className={projectStyles.contactError}>{error}</span> : null}
+            </div>
+        );
+    }
+
+    return (
+        <button
+            type="button"
+            className={projectStyles.contactEditableButton}
+            onClick={(event) => {
+                event.stopPropagation();
+                setDraft(value);
+                setError('');
+                setEditing(true);
+            }}
+        >
+            <ContactFieldDisplay item={item} field={field} />
+        </button>
+    );
 }
 
 export default function ListDetailPage() {
@@ -127,6 +236,7 @@ export default function ListDetailPage() {
     const [activeRun, setActiveRun] = useState<EnrichmentRunSummary | null>(null);
     const [enrichmentNotice, setEnrichmentNotice] = useState('');
     const [creditRefreshKey, setCreditRefreshKey] = useState(0);
+    const contactOverridesRef = useRef(new Map<string, ListCandidateRow>());
 
     const load = useCallback(async (options?: { background?: boolean }) => {
         const background = Boolean(options?.background);
@@ -139,7 +249,11 @@ export default function ListDetailPage() {
                 fetchListCandidates(listId, { page, perPage: PAGE_SIZE, search: search || undefined }),
             ]);
             setList(listItem);
-            setItems(candidatePage.items);
+            const contactOverrides = contactOverridesRef.current;
+            setItems(candidatePage.items.map((item) => {
+                const override = contactOverrides.get(item.candidate_id);
+                return override ? mergeContactOverride(item, override) : item;
+            }));
             setTotal(candidatePage.total);
             setTotalPages(candidatePage.total_pages);
             if (candidatePage.page !== page) {
@@ -183,6 +297,7 @@ export default function ListDetailPage() {
     }, [page, search]);
 
     useEffect(() => {
+        contactOverridesRef.current = new Map();
         setSelectedCandidates(new Map());
         setActiveCandidateId(null);
     }, [listId]);
@@ -248,6 +363,13 @@ export default function ListDetailPage() {
     const activeRunId = activeRun?.id ?? null;
     const activeRunStatus = activeRun?.status ?? null;
 
+    const handleContactSaved = useCallback((updated: ListCandidateRow) => {
+        contactOverridesRef.current.set(updated.candidate_id, updated);
+        setItems((current) => current.map((item) => (
+            item.candidate_id === updated.candidate_id ? mergeContactOverride(item, updated) : item
+        )));
+    }, []);
+
     useEffect(() => {
         if (!activeRunId || (activeRunStatus !== 'pending' && activeRunStatus !== 'in_progress')) {
             return;
@@ -303,19 +425,40 @@ export default function ListDetailPage() {
                 key: 'phone',
                 label: 'Phone',
                 className: projectStyles.contactCell,
-                render: (row) => <ContactFieldCell item={itemsByRowId.get(row.id)} field="phone" />,
+                render: (row) => (
+                    <ContactFieldCell
+                        item={itemsByRowId.get(row.id)}
+                        field="phone"
+                        listId={listId}
+                        onSaved={handleContactSaved}
+                    />
+                ),
             },
             {
                 key: 'work_email',
                 label: 'Work Email',
                 className: projectStyles.contactCell,
-                render: (row) => <ContactFieldCell item={itemsByRowId.get(row.id)} field="work_email" />,
+                render: (row) => (
+                    <ContactFieldCell
+                        item={itemsByRowId.get(row.id)}
+                        field="work_email"
+                        listId={listId}
+                        onSaved={handleContactSaved}
+                    />
+                ),
             },
             {
                 key: 'personal_email',
                 label: 'Personal Email',
                 className: projectStyles.contactCell,
-                render: (row) => <ContactFieldCell item={itemsByRowId.get(row.id)} field="personal_email" />,
+                render: (row) => (
+                    <ContactFieldCell
+                        item={itemsByRowId.get(row.id)}
+                        field="personal_email"
+                        listId={listId}
+                        onSaved={handleContactSaved}
+                    />
+                ),
             },
             {
                 key: 'enrichment',
@@ -328,7 +471,7 @@ export default function ListDetailPage() {
                         projectStyles.statusPill,
                         statusValue === 'DONE' ? projectStyles.statusPillDone : '',
                         statusValue === 'PENDING' ? projectStyles.statusPillPending : '',
-                        statusValue === 'EMAIL_NOT_FOUND' || statusValue === 'PHONE_NOT_FOUND'
+                        statusValue === 'EMAIL_NOT_FOUND' || statusValue === 'PHONE_NOT_FOUND' || statusValue === 'NO_DATA_FOUND'
                             ? projectStyles.statusPillMuted
                             : '',
                         statusValue === 'PARTIAL' ? projectStyles.statusPillWarning : '',
@@ -338,7 +481,7 @@ export default function ListDetailPage() {
                 },
             },
         ],
-        [itemsByRowId],
+        [handleContactSaved, itemsByRowId, listId],
     );
 
     async function handleRemoveSelected() {

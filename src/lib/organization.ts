@@ -103,16 +103,20 @@ export interface SaveToListResponse {
 export interface EnrichedEmailValue {
     value: string;
     status?: string | null;
+    source?: 'manual' | 'provider' | null;
     run_id?: string | null;
     enriched_at?: string | null;
+    updated_at?: string | null;
 }
 
 export interface EnrichedPhoneValue {
     number: string;
     region?: string | null;
     status?: string | null;
+    source?: 'manual' | 'provider' | null;
     run_id?: string | null;
     enriched_at?: string | null;
+    updated_at?: string | null;
 }
 
 export type ContactFieldStateStatus = 'not_requested' | 'pending' | 'found' | 'not_found' | 'failed';
@@ -139,6 +143,7 @@ export type EnrichmentStatus =
     | 'DONE'
     | 'EMAIL_NOT_FOUND'
     | 'PHONE_NOT_FOUND'
+    | 'NO_DATA_FOUND'
     | 'PARTIAL'
     | 'FAILED';
 
@@ -1048,6 +1053,17 @@ export async function fetchListCandidates(
     if (params?.search) searchParams.set('search', params.search);
     const suffix = searchParams.toString() ? `?${searchParams.toString()}` : '';
     return apiRequest<PaginatedListCandidatesResponse>(`/lists/${listId}/candidates${suffix}`);
+}
+
+export async function updateListCandidateContact(
+    listId: string,
+    candidateId: string,
+    payload: { phone?: string | null; work_email?: string | null; personal_email?: string | null },
+) {
+    return apiRequest<ListCandidateRow>(
+        `/lists/${listId}/candidates/${candidateId}/contact`,
+        { method: 'PATCH', body: payload },
+    );
 }
 
 export async function importListCandidates(listId: string, candidates: SaveToListCandidatePayload[]) {

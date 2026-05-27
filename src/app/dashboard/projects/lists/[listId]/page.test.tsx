@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import ListDetailPage from './page';
@@ -11,6 +11,7 @@ import {
     fetchList,
     fetchListCandidates,
     removeListCandidates,
+    updateListCandidateContact,
 } from '@/lib/organization';
 
 let lastPreviewGridProps: Record<string, unknown> | null = null;
@@ -28,6 +29,7 @@ vi.mock('@/lib/organization', () => ({
     fetchList: vi.fn(),
     fetchListCandidates: vi.fn(),
     removeListCandidates: vi.fn(),
+    updateListCandidateContact: vi.fn(),
 }));
 
 vi.mock('../../../search/CandidatePanel', () => ({
@@ -89,6 +91,7 @@ const mockedFetchEnrichmentRuns = vi.mocked(fetchEnrichmentRuns);
 const mockedFetchEnrichmentRun = vi.mocked(fetchEnrichmentRun);
 const mockedFetchBillingSummary = vi.mocked(fetchBillingSummary);
 const mockedRemoveListCandidates = vi.mocked(removeListCandidates);
+const mockedUpdateListCandidateContact = vi.mocked(updateListCandidateContact);
 const mockedEstimateEnrichmentRun = vi.mocked(estimateEnrichmentRun);
 const mockedCreateEnrichmentRun = vi.mocked(createEnrichmentRun);
 
@@ -100,6 +103,7 @@ beforeEach(() => {
     mockedFetchEnrichmentRun.mockReset();
     mockedFetchBillingSummary.mockReset();
     mockedRemoveListCandidates.mockReset();
+    mockedUpdateListCandidateContact.mockReset();
     mockedEstimateEnrichmentRun.mockReset();
     mockedCreateEnrichmentRun.mockReset();
 
@@ -280,6 +284,244 @@ test('renders contact status and refreshes list data when the active run complet
             'score',
         ],
     });
+});
+
+test('inline contact edit autosaves on blur and updates the row', async () => {
+    const user = userEvent.setup();
+    mockedFetchEnrichmentRuns.mockResolvedValue({ items: [] });
+    mockedUpdateListCandidateContact.mockResolvedValueOnce({
+        membership_id: 'membership-1',
+        candidate_id: 'candidate-1',
+        id: 101,
+        source: 'coresignal',
+        source_id: '101',
+        full_name: 'Jane Doe',
+        job_title: 'Backend Engineer',
+        company_name: 'Tahoe',
+        source_preview_page: 1,
+        contact: {
+            work_email: { value: 'new@tahoe.ai', status: 'MANUAL', source: 'manual' },
+            field_statuses: {
+                work_email: { status: 'found' },
+            },
+        },
+        contact_field_states: {
+            work_email: { status: 'found' },
+        },
+        enrichment_status: 'DONE',
+    });
+
+    render(<ListDetailPage />);
+
+    await user.click(await screen.findByRole('button', { name: 'jane@tahoe.ai' }));
+    const input = screen.getByRole('textbox', { name: /Edit work email/i });
+    await user.clear(input);
+    await user.type(input, 'new@tahoe.ai');
+    await user.tab();
+
+    await waitFor(() => {
+        expect(mockedUpdateListCandidateContact).toHaveBeenCalledWith(
+            'list-1',
+            'candidate-1',
+            { work_email: 'new@tahoe.ai' },
+        );
+    });
+    expect(await screen.findByText('new@tahoe.ai')).toBeInTheDocument();
+});
+
+test('inline contact edit clears a value on enter and renders dash', async () => {
+    const user = userEvent.setup();
+    mockedFetchEnrichmentRuns.mockResolvedValue({ items: [] });
+    mockedFetchListCandidates.mockResolvedValue({
+        items: [
+            {
+                membership_id: 'membership-1',
+                candidate_id: 'candidate-1',
+                id: 101,
+                source: 'coresignal',
+                source_id: '101',
+                full_name: 'Jane Doe',
+                job_title: 'Backend Engineer',
+                company_name: 'Tahoe',
+                source_preview_page: 1,
+                contact: {
+                    phone: { number: '+14155550101', status: 'MANUAL', source: 'manual' },
+                    field_statuses: {
+                        phone: { status: 'found' },
+                    },
+                },
+                contact_field_states: {
+                    phone: { status: 'found' },
+                },
+                enrichment_status: 'DONE',
+            },
+        ],
+        next_cursor: null,
+        total: 1,
+        page: 1,
+        per_page: 20,
+        total_pages: 1,
+    });
+    mockedUpdateListCandidateContact.mockResolvedValueOnce({
+        membership_id: 'membership-1',
+        candidate_id: 'candidate-1',
+        id: 101,
+        source: 'coresignal',
+        source_id: '101',
+        full_name: 'Jane Doe',
+        job_title: 'Backend Engineer',
+        company_name: 'Tahoe',
+        source_preview_page: 1,
+        contact: {
+            phone: null,
+            field_statuses: {
+                phone: { status: 'not_requested' },
+            },
+        },
+        contact_field_states: {
+            phone: { status: 'not_requested' },
+        },
+        enrichment_status: 'DONE',
+    });
+
+    render(<ListDetailPage />);
+
+    await user.click(await screen.findByRole('button', { name: '+14155550101' }));
+    const input = screen.getByRole('textbox', { name: /Edit phone/i });
+    await user.clear(input);
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+        expect(mockedUpdateListCandidateContact).toHaveBeenCalledWith(
+            'list-1',
+            'candidate-1',
+            { phone: null },
+        );
+    });
+    expect(within(screen.getByTestId('cell-phone-1')).getByText('—')).toBeInTheDocument();
+});
+
+test('inline contact edit keeps draft during polling refresh and shows save errors', async () => {
+    const user = userEvent.setup();
+    let resolveBackgroundLoad: ((value: Awaited<ReturnType<typeof fetchListCandidates>>) => void) | null = null;
+    const initialPage = {
+        items: [
+            {
+                membership_id: 'membership-1',
+                candidate_id: 'candidate-1',
+                id: 101,
+                source: 'coresignal',
+                source_id: '101',
+                full_name: 'Jane Doe',
+                job_title: 'Backend Engineer',
+                company_name: 'Tahoe',
+                source_preview_page: 1,
+                contact: {
+                    work_email: { value: 'jane@tahoe.ai', status: 'DELIVERABLE' },
+                },
+                contact_field_states: {
+                    work_email: { status: 'found' as const },
+                },
+                enrichment_status: 'PENDING' as const,
+            },
+        ],
+        next_cursor: null,
+        total: 1,
+        page: 1,
+        per_page: 20,
+        total_pages: 1,
+    };
+    const refreshedPage = {
+        ...initialPage,
+        items: [
+            {
+                ...initialPage.items[0],
+                contact: {
+                    work_email: { value: 'provider@tahoe.ai', status: 'DELIVERABLE' },
+                },
+            },
+        ],
+    };
+    mockedFetchListCandidates
+        .mockResolvedValueOnce(initialPage)
+        .mockReturnValueOnce(new Promise((resolve) => {
+            resolveBackgroundLoad = resolve;
+        }));
+    mockedFetchEnrichmentRun.mockResolvedValue({
+        id: 'run-1',
+        workspace_id: 'ws-1',
+        list_id: 'list-1',
+        status: 'in_progress',
+        requested_fields: ['work_email'],
+        target_candidate_count: 1,
+        estimated_credits: 1,
+        actual_credits: 0,
+        skipped_inflight: 0,
+        webhook_events_received: 0,
+        task_summary: { total: 1, pending: 0, claimed: 0, submitted: 1, completed: 0, failed: 0 },
+    });
+    mockedUpdateListCandidateContact.mockRejectedValueOnce(new Error('Invalid work_email'));
+
+    render(<ListDetailPage />);
+
+    await user.click(await screen.findByRole('button', { name: 'jane@tahoe.ai' }));
+    const input = screen.getByRole('textbox', { name: /Edit work email/i });
+    await user.clear(input);
+    await user.type(input, 'draft@tahoe.ai');
+    resolveBackgroundLoad?.(refreshedPage);
+
+    await waitFor(() => {
+        expect(mockedFetchListCandidates.mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
+    expect(screen.getByRole('textbox', { name: /Edit work email/i })).toHaveValue('draft@tahoe.ai');
+
+    await user.tab();
+
+    expect(await screen.findByText('Invalid work_email')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /Edit work email/i })).toHaveValue('draft@tahoe.ai');
+});
+
+test('renders no-data-found separately from failed enrichment status', async () => {
+    mockedFetchEnrichmentRuns.mockResolvedValue({ items: [] });
+    mockedFetchListCandidates.mockResolvedValue({
+        items: [
+            {
+                membership_id: 'membership-1',
+                candidate_id: 'candidate-1',
+                id: 101,
+                source: 'coresignal',
+                source_id: '101',
+                full_name: 'No Data Candidate',
+                job_title: 'HR Manager',
+                company_name: 'Tahoe',
+                source_preview_page: 1,
+                enrichment_status: 'NO_DATA_FOUND',
+            },
+            {
+                membership_id: 'membership-2',
+                candidate_id: 'candidate-2',
+                id: 102,
+                source: 'coresignal',
+                source_id: '102',
+                full_name: 'Failed Candidate',
+                job_title: 'HR Manager',
+                company_name: 'Tahoe',
+                source_preview_page: 1,
+                enrichment_status: 'FAILED',
+            },
+        ],
+        next_cursor: null,
+        total: 2,
+        page: 1,
+        per_page: 20,
+        total_pages: 1,
+    });
+
+    render(<ListDetailPage />);
+
+    expect(await screen.findByText('NO DATA FOUND')).toBeInTheDocument();
+    expect(screen.getByText('NO DATA FOUND').className).toContain('statusPillMuted');
+    expect(screen.getByText('FAILED').className).toContain('statusPillFailed');
 });
 
 test('active run polling refreshes candidates without replacing the table with loading state', async () => {
