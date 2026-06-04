@@ -244,13 +244,18 @@ function SpendContent() {
 
     return (
         <section className={`${styles.page} ${styles.animateIn}`}>
-            <div className={styles.header}>
-                <div className={styles.headerTools}>
-                    {revalidating ? <span className={styles.finePrint}>Refreshing…</span> : null}
-                    <RangeTabs value={range} onChange={(nextRange) => updateUrl({ range: nextRange })} />
-                </div>
-            </div>
-            <AnalyticsTabs tabs={spendTabs} value={tab} onChange={(nextTab) => updateUrl({ tab: nextTab })} label="Spend sections" />
+            <AnalyticsTabs
+                tabs={spendTabs}
+                value={tab}
+                onChange={(nextTab) => updateUrl({ tab: nextTab })}
+                label="Spend sections"
+                actions={(
+                    <>
+                        {revalidating ? <span className={styles.finePrint}>Refreshing…</span> : null}
+                        <RangeTabs value={range} onChange={(nextRange) => updateUrl({ range: nextRange })} />
+                    </>
+                )}
+            />
 
             <div className={styles.contentRegion}>
                 {error && !data ? (

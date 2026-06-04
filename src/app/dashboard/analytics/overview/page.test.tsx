@@ -121,6 +121,9 @@ test('defaults to 7D and does not load forecasts until the forecasts tab opens',
 
     expect(await screen.findByText('Credits spent')).toBeInTheDocument();
     expect(screen.getByText('Fresh')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Summary' }).closest('nav')).toContainElement(
+        screen.getByRole('button', { name: '7D' }),
+    );
     expect(screen.queryByRole('tab', { name: 'Credits' })).not.toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Health' })).not.toBeInTheDocument();
     expect(mockedFetchAnalyticsPredictions).not.toHaveBeenCalled();

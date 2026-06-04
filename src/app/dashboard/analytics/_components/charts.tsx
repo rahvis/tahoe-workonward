@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import styles from '../analytics.module.css';
 import type {
     AnalyticsBreakdownRow,
@@ -54,26 +55,31 @@ export function AnalyticsTabs<T extends string>({
     value,
     onChange,
     label,
+    actions,
 }: {
     tabs: Array<{ key: T; label: string }>;
     value: T;
     onChange: (value: T) => void;
     label: string;
+    actions?: ReactNode;
 }) {
     return (
-        <nav className={styles.pageTabs} aria-label={label} role="tablist">
-            {tabs.map((tab) => (
-                <button
-                    key={tab.key}
-                    type="button"
-                    role="tab"
-                    aria-selected={value === tab.key}
-                    className={value === tab.key ? styles.pageTabActive : styles.pageTab}
-                    onClick={() => onChange(tab.key)}
-                >
-                    {tab.label}
-                </button>
-            ))}
+        <nav className={styles.pageTabs} aria-label={label}>
+            <div className={styles.pageTabList} role="tablist">
+                {tabs.map((tab) => (
+                    <button
+                        key={tab.key}
+                        type="button"
+                        role="tab"
+                        aria-selected={value === tab.key}
+                        className={value === tab.key ? styles.pageTabActive : styles.pageTab}
+                        onClick={() => onChange(tab.key)}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+            {actions ? <div className={styles.pageTabActions}>{actions}</div> : null}
         </nav>
     );
 }

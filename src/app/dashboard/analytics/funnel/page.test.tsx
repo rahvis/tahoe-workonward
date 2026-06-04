@@ -60,6 +60,9 @@ test('renders funnel and timing tabs with compact rollup state', async () => {
 
     expect(await screen.findByText('Conversion ladder')).toBeInTheDocument();
     expect(screen.getByText('Fresh')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Funnel' }).closest('nav')).toContainElement(
+        screen.getByRole('button', { name: '7D' }),
+    );
 
     await user.click(screen.getByRole('tab', { name: 'Timing' }));
 

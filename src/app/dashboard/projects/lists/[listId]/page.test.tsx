@@ -274,7 +274,9 @@ test('enables enrich auto-open from candidate page total when list count is stal
     render(<ListDetailPage />);
 
     expect(await screen.findByRole('heading', { name: 'Enrich contacts' })).toBeInTheDocument();
-    expect(mockedEstimateEnrichmentRun).toHaveBeenCalled();
+    await waitFor(() => {
+        expect(mockedEstimateEnrichmentRun).toHaveBeenCalled();
+    });
 });
 
 test('renders contact status and refreshes list data when the active run completes', async () => {

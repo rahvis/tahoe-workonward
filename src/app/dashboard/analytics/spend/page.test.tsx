@@ -88,6 +88,9 @@ test('paginates spend events at 20 rows', async () => {
     render(<AnalyticsSpendPage />);
 
     expect(await screen.findByText('Event 1')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Events' }).closest('nav')).toContainElement(
+        screen.getByRole('button', { name: '7D' }),
+    );
     expect(screen.getByText('Rows 1-20 of 25 events')).toBeInTheDocument();
     expect(screen.queryByText('Event 21')).not.toBeInTheDocument();
 

@@ -141,6 +141,9 @@ test('removes drilldown tab and paginates the leaderboard', async () => {
     render(<AnalyticsCampaignsPage />);
 
     expect(await screen.findByText('Campaign 1')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Leaderboard' }).closest('nav')).toContainElement(
+        screen.getByRole('button', { name: '7D' }),
+    );
     expect(screen.queryByRole('tab', { name: 'Drilldown' })).not.toBeInTheDocument();
     expect(screen.getByText('Rows 1-20 of 25 campaigns')).toBeInTheDocument();
     expect(screen.queryByText('Campaign 21')).not.toBeInTheDocument();
@@ -173,6 +176,7 @@ test('opens campaign drawer from leaderboard and paginates delivery rows', async
     );
 
     const drawer = screen.getByLabelText('Campaign analytics detail');
+    expect(within(drawer).queryByRole('button', { name: '7D' })).not.toBeInTheDocument();
     await user.click(within(drawer).getByRole('tab', { name: 'Delivery' }));
 
     expect(within(drawer).getByText('Rows 1-20 of 25 enrollments')).toBeInTheDocument();

@@ -360,13 +360,18 @@ function CampaignsContent() {
 
     return (
         <section className={`${styles.page} ${styles.animateIn}`}>
-            <div className={styles.header}>
-                <div className={styles.headerTools}>
-                    {revalidating ? <span className={styles.finePrint}>Refreshing…</span> : null}
-                    <RangeTabs value={range} onChange={(nextRange) => updateUrl({ range: nextRange })} />
-                </div>
-            </div>
-            <AnalyticsTabs tabs={campaignTabs} value={tab} onChange={(nextTab) => updateUrl({ tab: nextTab })} label="Campaign performance sections" />
+            <AnalyticsTabs
+                tabs={campaignTabs}
+                value={tab}
+                onChange={(nextTab) => updateUrl({ tab: nextTab })}
+                label="Campaign performance sections"
+                actions={(
+                    <>
+                        {revalidating ? <span className={styles.finePrint}>Refreshing…</span> : null}
+                        <RangeTabs value={range} onChange={(nextRange) => updateUrl({ range: nextRange })} />
+                    </>
+                )}
+            />
             <div className={styles.contentRegion}>
                 {error && !data ? (
                     <div className={styles.emptyState}><h2>Campaign analytics unavailable</h2><p>{error}</p></div>

@@ -73,7 +73,8 @@
 }
 
 .rangeTabs,
-.pageTabs {
+.pageTabList,
+.pageTabActions {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -88,9 +89,24 @@
 
 .pageTabs {
     flex: 0 0 auto;
-    overflow-x: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     padding: 8px 20px;
     border-bottom: 1px solid var(--tahoe-color-border-subtle);
+    background: #ffffff;
+}
+
+.pageTabList {
+    min-width: 0;
+    overflow-x: auto;
+}
+
+.pageTabActions {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    margin-left: auto;
 }
 
 .pageTab,
@@ -780,15 +796,29 @@
         height: calc(100vh - 64px);
     }
 
-    .header,
     .contentRegion,
     .pageTabs {
         padding-left: 12px;
         padding-right: 12px;
     }
 
-    .header {
-        align-items: flex-start;
+    .pageTabs {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .pageTabList,
+    .pageTabActions {
+        width: 100%;
+    }
+
+    .pageTabList {
+        justify-content: flex-start;
+    }
+
+    .pageTabActions {
+        justify-content: stretch;
     }
 
     .rangeTabs {
