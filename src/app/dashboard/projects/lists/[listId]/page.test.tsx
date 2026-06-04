@@ -15,9 +15,12 @@ import {
 } from '@/lib/organization';
 
 let lastPreviewGridProps: Record<string, unknown> | null = null;
+let currentSearchParams = new URLSearchParams();
+let currentListId = 'list-1';
 
 vi.mock('next/navigation', () => ({
-    useParams: () => ({ listId: 'list-1' }),
+    useParams: () => ({ listId: currentListId }),
+    useSearchParams: () => currentSearchParams,
 }));
 
 vi.mock('@/lib/organization', () => ({
@@ -96,6 +99,8 @@ const mockedEstimateEnrichmentRun = vi.mocked(estimateEnrichmentRun);
 const mockedCreateEnrichmentRun = vi.mocked(createEnrichmentRun);
 
 beforeEach(() => {
+    currentSearchParams = new URLSearchParams();
+    currentListId = 'list-1';
     lastPreviewGridProps = null;
     mockedFetchList.mockReset();
     mockedFetchListCandidates.mockReset();
@@ -137,14 +142,14 @@ beforeEach(() => {
         skipped_inflight: 0,
         webhook_events_received: 0,
     });
-    mockedFetchList.mockResolvedValue({
-        id: 'list-1',
+    mockedFetchList.mockImplementation(async () => ({
+        id: currentListId,
         workspace_id: 'ws-1',
         project_id: 'project-1',
-        name: 'Outreach Round 1',
+        name: currentListId === 'list-2' ? 'Backup Outreach' : 'Outreach Round 1',
         candidate_count: 2020,
         project_name: 'Series-B Backend Engineers',
-    });
+    }));
     mockedFetchListCandidates.mockResolvedValue({
         items: [
             {
@@ -195,6 +200,79 @@ beforeEach(() => {
         ],
     });
     mockedFetchEnrichmentRun.mockReset();
+});
+
+test('opens enrichment modal once when routed with enrich query param', async () => {
+    currentSearchParams = new URLSearchParams('enrich=1');
+
+    render(<ListDetailPage />);
+
+    expect(await screen.findByRole('heading', { name: 'Enrich contacts' })).toBeInTheDocument();
+    expect(mockedEstimateEnrichmentRun).toHaveBeenCalled();
+});
+
+test('opens enrich route action once per list id', async () => {
+    const user = userEvent.setup();
+    currentSearchParams = new URLSearchParams('enrich=1');
+    const { rerender } = render(<ListDetailPage />);
+
+    expect(await screen.findByRole('heading', { name: 'Enrich contacts' })).toBeInTheDocument();
+    await waitFor(() => {
+        expect(mockedEstimateEnrichmentRun).toHaveBeenCalled();
+    });
+    const estimateCallsAfterFirstList = mockedEstimateEnrichmentRun.mock.calls.length;
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => {
+        expect(screen.queryByRole('heading', { name: 'Enrich contacts' })).not.toBeInTheDocument();
+    });
+
+    currentListId = 'list-2';
+    rerender(<ListDetailPage />);
+
+    expect(await screen.findByRole('heading', { name: 'Enrich contacts' })).toBeInTheDocument();
+    await waitFor(() => {
+        expect(mockedEstimateEnrichmentRun.mock.calls.length).toBeGreaterThan(estimateCallsAfterFirstList);
+    });
+});
+
+test('enables enrich auto-open from candidate page total when list count is stale', async () => {
+    currentSearchParams = new URLSearchParams('enrich=1');
+    mockedFetchList.mockResolvedValue({
+        id: 'list-1',
+        workspace_id: 'ws-1',
+        project_id: 'project-1',
+        name: 'Outreach Round 1',
+        candidate_count: 0,
+        project_name: 'Series-B Backend Engineers',
+    });
+    mockedFetchListCandidates.mockResolvedValue({
+        items: [
+            {
+                membership_id: 'membership-1',
+                candidate_id: 'candidate-1',
+                id: 101,
+                source: 'coresignal',
+                source_id: '101',
+                full_name: 'Jane Doe',
+                job_title: 'Backend Engineer',
+                company_name: 'Tahoe',
+                source_preview_page: 1,
+                enrichment_status: 'NOT_REQUESTED',
+            },
+        ],
+        next_cursor: null,
+        total: 1,
+        page: 1,
+        per_page: 20,
+        total_pages: 1,
+    });
+    mockedFetchEnrichmentRuns.mockResolvedValue({ items: [] });
+
+    render(<ListDetailPage />);
+
+    expect(await screen.findByRole('heading', { name: 'Enrich contacts' })).toBeInTheDocument();
+    expect(mockedEstimateEnrichmentRun).toHaveBeenCalled();
 });
 
 test('renders contact status and refreshes list data when the active run completes', async () => {

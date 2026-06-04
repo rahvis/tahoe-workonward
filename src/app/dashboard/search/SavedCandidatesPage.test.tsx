@@ -17,6 +17,10 @@ vi.mock('../_components/SaveToListDialog', () => ({
     default: () => null,
 }));
 
+vi.mock('next/navigation', () => ({
+    useRouter: () => ({ push: vi.fn() }),
+}));
+
 const mockedFetchSavedCandidates = vi.mocked(fetchSavedCandidates);
 
 const savedCandidatesResponse = {

@@ -237,3 +237,47 @@ test('the list picker filters project-scoped lists and selecting one clears the 
     expect(screen.getByLabelText('List')).toHaveTextContent('Initial Reach');
     expect(newListInput).toHaveValue('');
 });
+
+test('shows next-step success actions after importing selected candidates', async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    const onSaved = vi.fn();
+    const onOpenList = vi.fn();
+    const onEnrichList = vi.fn();
+
+    render(
+        <SaveToListDialog
+            open
+            onOpenChange={onOpenChange}
+            candidates={[
+                {
+                    id: 101,
+                    full_name: 'Ada Lovelace',
+                },
+            ]}
+            onSaved={onSaved}
+            onOpenList={onOpenList}
+            onEnrichList={onEnrichList}
+        />,
+    );
+
+    await waitFor(() => expect(mockedFetchProjects).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByLabelText('Project'));
+    await user.click(screen.getByRole('option', { name: /Quantum Computing/i }));
+    await waitFor(() => expect(mockedFetchProjectLists).toHaveBeenCalledWith('project-1'));
+
+    await user.click(screen.getByLabelText('List'));
+    await user.click(screen.getByRole('option', { name: /Contact engineers/i }));
+    await user.click(screen.getByRole('button', { name: 'Save candidates' }));
+
+    expect(await screen.findByRole('heading', { name: 'Saved 1 candidate' })).toBeInTheDocument();
+    expect(screen.getByText(/1 added, 0 already in this list/i)).toBeInTheDocument();
+    expect(onSaved).toHaveBeenCalledWith(expect.any(Object), expect.objectContaining({ id: 'list-1' }));
+
+    await user.click(screen.getByRole('button', { name: 'Open list' }));
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onOpenList).toHaveBeenCalledWith(expect.objectContaining({ id: 'list-1' }));
+    expect(onEnrichList).not.toHaveBeenCalled();
+});

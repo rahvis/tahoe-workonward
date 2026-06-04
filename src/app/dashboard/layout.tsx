@@ -12,6 +12,7 @@ import {
     HamburgerMenuIcon,
     LayersIcon,
     MagnifyingGlassIcon,
+    PaperPlaneIcon,
     CardStackIcon,
     BarChartIcon,
     GearIcon,
@@ -41,6 +42,15 @@ const sectionConfig = {
             { href: '/dashboard/projects/archived', label: 'Archived' },
         ],
     },
+    outreach: {
+        label: 'Outreach',
+        href: '/dashboard/outreach/campaigns',
+        icon: <PaperPlaneIcon width="18" height="18" />,
+        subnav: [
+            { href: '/dashboard/outreach/campaigns', label: 'Campaigns' },
+            { href: '/dashboard/outreach/replies', label: 'Replies' },
+        ],
+    },
     mailboxes: {
         label: 'Mailboxes',
         href: '/dashboard/mailboxes',
@@ -48,15 +58,6 @@ const sectionConfig = {
         subnav: [
             { href: '/dashboard/mailboxes', label: 'Connected Mailboxes' },
             { href: '/dashboard/mailboxes/send-health', label: 'Send Health' },
-        ],
-    },
-    outreach: {
-        label: 'Outreach',
-        href: '/dashboard/outreach/campaigns',
-        icon: <EnvelopeClosedIcon width="18" height="18" />,
-        subnav: [
-            { href: '/dashboard/outreach/campaigns', label: 'Campaigns' },
-            { href: '/dashboard/outreach/replies', label: 'Replies' },
         ],
     },
     billing: {

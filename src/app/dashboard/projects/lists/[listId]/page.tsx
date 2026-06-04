@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ChevronLeftIcon,
     ChevronRightIcon,
@@ -218,9 +218,11 @@ function ContactFieldCell({
     );
 }
 
-export default function ListDetailPage() {
+function ListDetailPageInner() {
     const params = useParams<{ listId: string }>();
+    const searchParams = useSearchParams();
     const listId = String(params.listId);
+    const shouldAutoOpenEnrich = searchParams.get('enrich') === '1';
     const [list, setList] = useState<ListSummary | null>(null);
     const [items, setItems] = useState<ListCandidateRow[]>([]);
     const [loading, setLoading] = useState(true);
@@ -237,6 +239,7 @@ export default function ListDetailPage() {
     const [enrichmentNotice, setEnrichmentNotice] = useState('');
     const [creditRefreshKey, setCreditRefreshKey] = useState(0);
     const contactOverridesRef = useRef(new Map<string, ListCandidateRow>());
+    const autoOpenedEnrichListIdRef = useRef<string | null>(null);
 
     const load = useCallback(async (options?: { background?: boolean }) => {
         const background = Boolean(options?.background);
@@ -497,9 +500,19 @@ export default function ListDetailPage() {
     }
 
     const paginationTokens = buildPaginationTokens(page, totalPages, 10);
-    const listCandidateCount = list?.candidate_count ?? total;
+    const listCandidateCount = Math.max(list?.candidate_count ?? 0, total);
     const canEnrich = !loading && listCandidateCount > 0;
     const activeRunIsOpen = activeRun?.status === 'pending' || activeRun?.status === 'in_progress';
+
+    useEffect(() => {
+        if (!shouldAutoOpenEnrich) {
+            autoOpenedEnrichListIdRef.current = null;
+            return;
+        }
+        if (autoOpenedEnrichListIdRef.current === listId || !canEnrich) return;
+        autoOpenedEnrichListIdRef.current = listId;
+        setEnrichOpen(true);
+    }, [canEnrich, listId, shouldAutoOpenEnrich]);
 
     return (
         <section className={layoutStyles.page}>
@@ -728,5 +741,13 @@ export default function ListDetailPage() {
                 }}
             />
         </section>
+    );
+}
+
+export default function ListDetailPage() {
+    return (
+        <Suspense fallback={<section className={layoutStyles.page}><span className="tahoe-spinner" /></section>}>
+            <ListDetailPageInner />
+        </Suspense>
     );
 }

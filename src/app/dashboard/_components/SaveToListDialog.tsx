@@ -26,6 +26,8 @@ interface SaveToListDialogProps {
     onOpenChange: (open: boolean) => void;
     candidates: SaveToListCandidatePayload[];
     onSaved?: (result: SaveToListResponse, list: ListSummary) => void | Promise<void>;
+    onOpenList?: (list: ListSummary) => void;
+    onEnrichList?: (list: ListSummary) => void;
 }
 
 type PickerOption = {
@@ -219,6 +221,8 @@ export default function SaveToListDialog({
     onOpenChange,
     candidates,
     onSaved,
+    onOpenList,
+    onEnrichList,
 }: SaveToListDialogProps) {
     const [projects, setProjects] = useState<ProjectSummary[]>([]);
     const [lists, setLists] = useState<ListSummary[]>([]);
@@ -234,6 +238,13 @@ export default function SaveToListDialog({
     const [listPickerOpen, setListPickerOpen] = useState(false);
     const [projectSearch, setProjectSearch] = useState('');
     const [listSearch, setListSearch] = useState('');
+    const [afterSaveAction, setAfterSaveAction] = useState<'next_steps' | 'stay'>('next_steps');
+    const [savedState, setSavedState] = useState<{
+        result: SaveToListResponse;
+        list: ListSummary;
+        projectName: string;
+        candidateCount: number;
+    } | null>(null);
     const projectPickerRef = useRef<HTMLDivElement | null>(null);
     const listPickerRef = useRef<HTMLDivElement | null>(null);
     const projectSearchInputRef = useRef<HTMLInputElement | null>(null);
@@ -256,6 +267,8 @@ export default function SaveToListDialog({
             setLoadingLists(false);
             setProjectSearch('');
             setListSearch('');
+            setAfterSaveAction('next_steps');
+            setSavedState(null);
             setProjectPickerOpen(false);
             setListPickerOpen(false);
             try {
@@ -423,12 +436,14 @@ export default function SaveToListDialog({
         setError('');
         try {
             let projectId = selectedProjectId;
+            let projectName = selectedProject?.name ?? newProjectName.trim();
             if (!projectId) {
                 if (!newProjectName.trim()) {
                     throw new Error('Choose a project or enter a new project name.');
                 }
                 const createdProject = await createProject({ name: newProjectName.trim() });
                 projectId = createdProject.id;
+                projectName = createdProject.name;
                 setProjects((current) => [createdProject, ...current]);
                 setSelectedProjectId(projectId);
             }
@@ -445,7 +460,16 @@ export default function SaveToListDialog({
 
             const result = await importListCandidates(targetList.id, candidates);
             await onSaved?.(result, targetList);
-            onOpenChange(false);
+            if (afterSaveAction === 'stay') {
+                onOpenChange(false);
+            } else {
+                setSavedState({
+                    result,
+                    list: targetList,
+                    projectName: projectName || selectedProject?.name || targetList.project_name || 'Project',
+                    candidateCount,
+                });
+            }
             setNewProjectName('');
             setNewListName('');
         } catch (err) {
@@ -458,119 +482,201 @@ export default function SaveToListDialog({
     return (
         <Dialog.Root open={open} onOpenChange={onOpenChange}>
             <Dialog.Content maxWidth="560px" style={{ padding: 24 }}>
-                <Dialog.Title>Save candidates to a list</Dialog.Title>
-                <Dialog.Description size="2" mb="4">
-                    Move selected preview candidates into a durable project list so they can be reused across Tahoe.
-                </Dialog.Description>
+                {savedState ? (
+                    <>
+                        <Dialog.Title>Saved {savedState.candidateCount} candidate{savedState.candidateCount === 1 ? '' : 's'}</Dialog.Title>
+                        <Dialog.Description size="2" mb="4">
+                            Tahoe moved the selected candidates into a reusable project list.
+                        </Dialog.Description>
 
-                <Flex direction="column" gap="4">
-                    <Flex direction="column" gap="2">
-                        <label className="tahoe-label" htmlFor={projectPickerId}>Project</label>
-                        <InlinePicker
-                            id={projectPickerId}
-                            label="Choose a project"
-                            open={projectPickerOpen}
-                            disabled={loadingProjects}
-                            loading={loadingProjects}
-                            valueLabel={selectedProject?.name}
-                            placeholder={loadingProjects ? 'Loading projects…' : 'Choose a project'}
-                            searchPlaceholder="Search projects"
-                            searchValue={projectSearch}
-                            onSearchChange={setProjectSearch}
-                            onToggle={() => {
-                                setListPickerOpen(false);
-                                setProjectPickerOpen((current) => !current);
-                            }}
-                            options={filteredProjectOptions}
-                            selectedId={selectedProjectId}
-                            onSelect={handleProjectSelect}
-                            emptyMessage={projectSearch.trim() ? 'No matching projects.' : 'No projects available yet.'}
-                            loadingMessage="Loading projects…"
-                            panelRef={projectPickerRef}
-                            searchInputRef={projectSearchInputRef}
-                        />
-                        <TextField.Root
-                            size="3"
-                            placeholder="Or create a new project"
-                            value={newProjectName}
-                            onChange={(event) => handleProjectInputChange(event.target.value)}
-                        />
-                    </Flex>
+                        <Flex direction="column" gap="4">
+                            <div className="tahoe-banner">
+                                <Flex direction="column" gap="1">
+                                    <Text size="2"><strong>Project:</strong> {savedState.projectName}</Text>
+                                    <Text size="2"><strong>List:</strong> {savedState.list.name}</Text>
+                                    <Text size="2" color="gray">
+                                        {savedState.result.new_membership_count} added, {savedState.result.already_in_list_count} already in this list.
+                                    </Text>
+                                </Flex>
+                            </div>
 
-                    <Flex direction="column" gap="2">
-                        <label className="tahoe-label" htmlFor={listPickerId}>List</label>
-                        <InlinePicker
-                            id={listPickerId}
-                            label="Choose a list"
-                            open={listPickerOpen}
-                            disabled={!selectedProjectId || loadingProjects}
-                            loading={loadingLists}
-                            valueLabel={selectedList?.name}
-                            placeholder={
-                                !selectedProjectId
-                                    ? 'Choose a project first'
-                                    : loadingLists
-                                        ? 'Loading lists…'
-                                        : 'Choose a list'
-                            }
-                            searchPlaceholder="Search lists"
-                            searchValue={listSearch}
-                            onSearchChange={setListSearch}
-                            onToggle={() => {
-                                if (!selectedProjectId || loadingProjects) return;
-                                setProjectPickerOpen(false);
-                                setListPickerOpen((current) => !current);
-                            }}
-                            options={filteredListOptions}
-                            selectedId={selectedListId}
-                            onSelect={handleListSelect}
-                            emptyMessage={
-                                listSearch.trim()
-                                    ? 'No matching lists in this project.'
-                                    : 'No lists in this project yet.'
-                            }
-                            loadingMessage="Loading lists…"
-                            panelRef={listPickerRef}
-                            searchInputRef={listSearchInputRef}
-                        />
-                        <TextField.Root
-                            size="3"
-                            placeholder="Or create a new list"
-                            value={newListName}
-                            onChange={(event) => handleListInputChange(event.target.value)}
-                        />
-                    </Flex>
+                            <Flex direction="column" gap="2">
+                                <Text size="2" weight="medium">Next step</Text>
+                                <Flex gap="2" wrap="wrap">
+                                    <Button
+                                        size="3"
+                                        type="button"
+                                        onClick={() => {
+                                            onOpenChange(false);
+                                            onOpenList?.(savedState.list);
+                                        }}
+                                    >
+                                        Open list
+                                    </Button>
+                                    <Button
+                                        size="3"
+                                        variant="soft"
+                                        type="button"
+                                        disabled={savedState.list.candidate_count === 0 && savedState.result.new_membership_count === 0}
+                                        onClick={() => {
+                                            onOpenChange(false);
+                                            onEnrichList?.(savedState.list);
+                                        }}
+                                    >
+                                        Enrich contacts
+                                    </Button>
+                                    <Button
+                                        size="3"
+                                        variant="soft"
+                                        color="gray"
+                                        type="button"
+                                        onClick={() => onOpenChange(false)}
+                                    >
+                                        Keep searching
+                                    </Button>
+                                </Flex>
+                            </Flex>
+                        </Flex>
+                    </>
+                ) : (
+                    <>
+                        <Dialog.Title>Save candidates to a list</Dialog.Title>
+                        <Dialog.Description size="2" mb="4">
+                            Move selected preview candidates into a durable project list so they can be reused across Tahoe.
+                        </Dialog.Description>
 
-                    <Flex direction="column" gap="1">
-                        <Text size="2" weight="medium">
-                            {candidateCount} candidate{candidateCount === 1 ? '' : 's'} selected
-                        </Text>
-                        <Text size="2" color="gray">
-                            Tahoe will keep the originating search prompt, query hash, preview page, and save timestamp with each imported candidate.
-                        </Text>
-                    </Flex>
+                        <Flex direction="column" gap="4">
+                            <Flex direction="column" gap="2">
+                                <label className="tahoe-label" htmlFor={projectPickerId}>Project</label>
+                                <InlinePicker
+                                    id={projectPickerId}
+                                    label="Choose a project"
+                                    open={projectPickerOpen}
+                                    disabled={loadingProjects}
+                                    loading={loadingProjects}
+                                    valueLabel={selectedProject?.name}
+                                    placeholder={loadingProjects ? 'Loading projects…' : 'Choose a project'}
+                                    searchPlaceholder="Search projects"
+                                    searchValue={projectSearch}
+                                    onSearchChange={setProjectSearch}
+                                    onToggle={() => {
+                                        setListPickerOpen(false);
+                                        setProjectPickerOpen((current) => !current);
+                                    }}
+                                    options={filteredProjectOptions}
+                                    selectedId={selectedProjectId}
+                                    onSelect={handleProjectSelect}
+                                    emptyMessage={projectSearch.trim() ? 'No matching projects.' : 'No projects available yet.'}
+                                    loadingMessage="Loading projects…"
+                                    panelRef={projectPickerRef}
+                                    searchInputRef={projectSearchInputRef}
+                                />
+                                <TextField.Root
+                                    size="3"
+                                    placeholder="Or create a new project"
+                                    value={newProjectName}
+                                    onChange={(event) => handleProjectInputChange(event.target.value)}
+                                />
+                            </Flex>
 
-                    {error ? (
-                        <Text size="2" color="red">
-                            {error}
-                        </Text>
-                    ) : null}
-                </Flex>
+                            <Flex direction="column" gap="2">
+                                <label className="tahoe-label" htmlFor={listPickerId}>List</label>
+                                <InlinePicker
+                                    id={listPickerId}
+                                    label="Choose a list"
+                                    open={listPickerOpen}
+                                    disabled={!selectedProjectId || loadingProjects}
+                                    loading={loadingLists}
+                                    valueLabel={selectedList?.name}
+                                    placeholder={
+                                        !selectedProjectId
+                                            ? 'Choose a project first'
+                                            : loadingLists
+                                                ? 'Loading lists…'
+                                                : 'Choose a list'
+                                    }
+                                    searchPlaceholder="Search lists"
+                                    searchValue={listSearch}
+                                    onSearchChange={setListSearch}
+                                    onToggle={() => {
+                                        if (!selectedProjectId || loadingProjects) return;
+                                        setProjectPickerOpen(false);
+                                        setListPickerOpen((current) => !current);
+                                    }}
+                                    options={filteredListOptions}
+                                    selectedId={selectedListId}
+                                    onSelect={handleListSelect}
+                                    emptyMessage={
+                                        listSearch.trim()
+                                            ? 'No matching lists in this project.'
+                                            : 'No lists in this project yet.'
+                                    }
+                                    loadingMessage="Loading lists…"
+                                    panelRef={listPickerRef}
+                                    searchInputRef={listSearchInputRef}
+                                />
+                                <TextField.Root
+                                    size="3"
+                                    placeholder="Or create a new list"
+                                    value={newListName}
+                                    onChange={(event) => handleListInputChange(event.target.value)}
+                                />
+                            </Flex>
 
-                <Flex gap="3" justify="end" mt="5">
-                    <Dialog.Close>
-                        <Button size="3" variant="soft" color="gray">
-                            Cancel
-                        </Button>
-                    </Dialog.Close>
-                    <Button
-                        size="3"
-                        onClick={() => void handleSave()}
-                        disabled={saving || candidateCount === 0}
-                    >
-                        {saving ? 'Saving…' : 'Save candidates'}
-                    </Button>
-                </Flex>
+                            <Flex direction="column" gap="2">
+                                <Text size="2" weight="medium">After saving</Text>
+                                <label className={styles.radioRow}>
+                                    <input
+                                        type="radio"
+                                        name="save-to-list-after-save"
+                                        checked={afterSaveAction === 'next_steps'}
+                                        onChange={() => setAfterSaveAction('next_steps')}
+                                    />
+                                    <span>Show next steps</span>
+                                </label>
+                                <label className={styles.radioRow}>
+                                    <input
+                                        type="radio"
+                                        name="save-to-list-after-save"
+                                        checked={afterSaveAction === 'stay'}
+                                        onChange={() => setAfterSaveAction('stay')}
+                                    />
+                                    <span>Stay on search</span>
+                                </label>
+                            </Flex>
+
+                            <Flex direction="column" gap="1">
+                                <Text size="2" weight="medium">
+                                    {candidateCount} candidate{candidateCount === 1 ? '' : 's'} selected
+                                </Text>
+                                <Text size="2" color="gray">
+                                    Tahoe will keep the originating search prompt, query hash, preview page, and save timestamp with each imported candidate.
+                                </Text>
+                            </Flex>
+
+                            {error ? (
+                                <Text size="2" color="red">
+                                    {error}
+                                </Text>
+                            ) : null}
+                        </Flex>
+
+                        <Flex gap="3" justify="end" mt="5">
+                            <Dialog.Close>
+                                <Button size="3" variant="soft" color="gray">
+                                    Cancel
+                                </Button>
+                            </Dialog.Close>
+                            <Button
+                                size="3"
+                                onClick={() => void handleSave()}
+                                disabled={saving || candidateCount === 0}
+                            >
+                                {saving ? 'Saving…' : 'Save candidates'}
+                            </Button>
+                        </Flex>
+                    </>
+                )}
             </Dialog.Content>
         </Dialog.Root>
     );

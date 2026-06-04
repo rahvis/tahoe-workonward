@@ -1182,6 +1182,10 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
         window.setTimeout(() => searchInputRef.current?.focus(), 0);
     }
 
+    function openSavedList(listId: string, options?: { enrich?: boolean }) {
+        router.push(`/dashboard/projects/lists/${listId}${options?.enrich ? "?enrich=1" : ""}`);
+    }
+
     function renderField(field: FilterField) {
         const value = getNestedValue(popupModel as unknown as Record<string, unknown>, field.key);
         const placeholder = getFieldPlaceholder();
@@ -1451,6 +1455,14 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                         ) : null}
                     </Flex>
                 </form>
+                <div className={styles.workflowRail} aria-label="Recruiter workflow">
+                    <span>Search</span>
+                    <span>Review filters</span>
+                    <span>Results</span>
+                    <span>Save to list</span>
+                    <span>Enrich</span>
+                    <span>Campaign</span>
+                </div>
             </Box>
 
             {state.error && (
@@ -1559,7 +1571,14 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                 </Box>
 
                 {activeCandidate && (
-                    <CandidatePanel preview={activeCandidate} onClose={() => dispatch({ type: "toggle_candidate", candidateId: null })} />
+                    <CandidatePanel
+                        preview={activeCandidate}
+                        onClose={() => dispatch({ type: "toggle_candidate", candidateId: null })}
+                        onSaveToList={(id) => {
+                            setSelectedIds(new Set([id]));
+                            setSaveDialogOpen(true);
+                        }}
+                    />
                 )}
             </Box>
 
@@ -1654,6 +1673,8 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                 onSaved={async () => {
                     setSelectedIds(new Set());
                 }}
+                onOpenList={(list) => openSavedList(list.id)}
+                onEnrichList={(list) => openSavedList(list.id, { enrich: true })}
             />
 
             {state.mobileFiltersOpen && (

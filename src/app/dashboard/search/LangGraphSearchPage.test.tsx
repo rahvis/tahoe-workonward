@@ -16,7 +16,30 @@ vi.mock("@/lib/api", () => ({
 
 vi.mock("./CandidatePanel", () => ({
     __esModule: true,
-    default: () => null,
+    default: (props: {
+        preview: { id: number; full_name: string | null };
+        onSaveToList?: (id: number) => void;
+    }) => (
+        <aside aria-label="Candidate panel">
+            <h2>{props.preview.full_name}</h2>
+            {props.onSaveToList ? (
+                <button type="button" onClick={() => props.onSaveToList?.(props.preview.id)}>
+                    Save panel candidate
+                </button>
+            ) : null}
+        </aside>
+    ),
+}));
+
+vi.mock("../_components/SaveToListDialog", () => ({
+    __esModule: true,
+    default: (props: { open: boolean; candidates: Array<{ full_name?: string | null }> }) => (
+        props.open ? (
+            <div role="dialog" aria-label="Save candidates dialog">
+                {props.candidates.map((candidate) => candidate.full_name).join(", ")}
+            </div>
+        ) : null
+    ),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -375,6 +398,23 @@ test("clicking Find candidates parses + runs in one shot and syncs session url",
     await waitFor(() => {
         expect(mockRouterReplace).toHaveBeenCalledWith("/dashboard/search/new?session=session-1");
     });
+});
+
+test("candidate side panel can save the active result to a list", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "backend engineer");
+    await user.click(screen.getByRole("button", { name: "Find candidates" }));
+
+    await screen.findByText("Casey Cho");
+    const candidateRow = screen.getByRole("checkbox", { name: "Select Casey Cho" }).closest("tr");
+    expect(candidateRow).not.toBeNull();
+    await user.click(candidateRow as HTMLTableRowElement);
+    await user.click(screen.getByRole("button", { name: "Save panel candidate" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Save candidates dialog" });
+    expect(dialog).toHaveTextContent("Casey Cho");
 });
 
 test("desktop popup can run a filter-only search and then show results", async () => {

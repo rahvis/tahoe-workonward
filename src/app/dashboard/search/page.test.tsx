@@ -24,6 +24,7 @@ vi.mock("../_components/SaveToListDialog", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
+    useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
     useSearchParams: () => new URLSearchParams(),
 }));
 

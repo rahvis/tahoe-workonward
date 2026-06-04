@@ -169,6 +169,14 @@
     gap: var(--space-5);
 }
 
+.headerAnimation {
+    display: block;
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+    object-fit: contain;
+}
+
 .textAction,
 .ghostAction,
 .inverseGhostAction {
@@ -1532,6 +1540,7 @@
 
     .desktopNav,
     .headerActions .textAction,
+    .headerActions .headerAnimation,
     .headerActions .secondaryAction {
         display: none;
     }

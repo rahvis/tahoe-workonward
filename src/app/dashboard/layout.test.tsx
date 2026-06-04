@@ -122,6 +122,24 @@ test('dashboard nav includes the outreach section', async () => {
     expect(screen.getByRole('link', { name: /replies/i })).toBeInTheDocument();
 });
 
+test('dashboard nav keeps mailboxes below outreach with distinct icons', async () => {
+    render(
+        <DashboardLayout>
+            <div>Dashboard Content</div>
+        </DashboardLayout>,
+    );
+
+    const outreachButton = await screen.findByRole('button', { name: /outreach/i });
+    const mailboxesButton = screen.getByRole('button', { name: /mailboxes/i });
+    const outreachIcon = outreachButton.querySelector('svg')?.innerHTML;
+    const mailboxesIcon = mailboxesButton.querySelector('svg')?.innerHTML;
+
+    expect(outreachButton.compareDocumentPosition(mailboxesButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(outreachIcon).toBeTruthy();
+    expect(mailboxesIcon).toBeTruthy();
+    expect(outreachIcon).not.toEqual(mailboxesIcon);
+});
+
 test('dashboard nav includes the analytics section', async () => {
     const user = userEvent.setup();
     render(

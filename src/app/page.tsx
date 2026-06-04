@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Inter, Montserrat } from 'next/font/google';
 import { useEffect, useMemo, useState } from 'react';
 import { HamburgerMenuIcon, Cross1Icon } from '@/components/ui/icons';
@@ -595,6 +596,15 @@ export default function LandingPage() {
                             <Link href="/login" className={styles.textAction} onClick={() => trackAuthCta('sign_in', 'header_desktop')}>
                                 Sign in
                             </Link>
+                            <Image
+                                src="/loading_animations_transparent_all/fade_transparent.gif"
+                                alt=""
+                                width={46}
+                                height={46}
+                                unoptimized
+                                aria-hidden="true"
+                                className={styles.headerAnimation}
+                            />
                             <Link href="/signup" className={styles.secondaryAction} onClick={() => trackAuthCta('start_free_trial', 'header_desktop')}>
                                 Start free trial <ArrowUpRightIcon />
                             </Link>

@@ -58,6 +58,15 @@ export function EnvelopeClosedIcon(props: IconProps) {
     );
 }
 
+export function PaperPlaneIcon(props: IconProps) {
+    return (
+        <SvgIcon viewBox="0 0 20 20" {...props}>
+            <path d="M17 3 8.5 17l-1.75-6.25L3 8.5 17 3z" />
+            <path d="m7 10.5 4-2.5" />
+        </SvgIcon>
+    );
+}
+
 export function LockClosedIcon(props: IconProps) {
     return (
         <SvgIcon {...props}>

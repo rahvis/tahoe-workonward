@@ -17,6 +17,30 @@
     backdrop-filter: blur(12px);
 }
 
+.workflowRail {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    color: var(--tahoe-color-text-tertiary);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow-x: auto;
+}
+
+.workflowRail span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.workflowRail span:not(:last-child)::after {
+    content: ">";
+    color: rgba(32, 32, 32, 0.34);
+}
+
 .shellGrid {
     flex: 1;
     min-height: 0;
