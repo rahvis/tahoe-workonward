@@ -36,19 +36,20 @@ beforeEach(() => {
     ));
 });
 
-test('renders projects as a compact directory table with drawer actions', async () => {
+test('renders projects as a full-width compact table with row actions', async () => {
     const user = userEvent.setup();
     render(<ProjectsPage />);
 
-    expect(await screen.findAllByText('Quantum Computing')).toHaveLength(2);
+    expect(await screen.findByText('Quantum Computing')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Search projects...').closest('label')).toHaveClass('tui-textfield--size-3');
     expect(screen.getByRole('columnheader', { name: 'Project' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Lists' })).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'Open' })[0]).toHaveAttribute('href', '/dashboard/projects/project-1');
-    expect(screen.getAllByRole('link', { name: 'Lists' })[0]).toHaveAttribute('href', '/dashboard/projects/lists?project_id=project-1');
-    expect(screen.getByRole('link', { name: 'View lists' })).toHaveAttribute('href', '/dashboard/projects/lists?project_id=project-1');
+    expect(screen.getByRole('link', { name: 'Quantum Computing' })).toHaveAttribute('href', '/dashboard/projects/project-1');
+    expect(screen.getByRole('link', { name: 'Open' })).toHaveAttribute('href', '/dashboard/projects/project-1');
+    expect(screen.getByRole('link', { name: 'Lists' })).toHaveAttribute('href', '/dashboard/projects/lists?project_id=project-1');
     expect(screen.getByRole('link', { name: 'New list' })).toHaveAttribute('href', '/dashboard/projects/lists?project_id=project-1&new=1');
     expect(screen.getByRole('button', { name: 'Archive' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Project details')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '+ Project' }));
 
@@ -92,10 +93,10 @@ test('keeps a created project when optional first-list creation fails', async ()
     });
     expect(await screen.findByText('Project created. First list was not created: List API failed')).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: 'New Project' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'New Project' })).toHaveAttribute('href', '/dashboard/projects/project-new');
 });
 
-test('drawer falls back to a visible project after search hides the selected row', async () => {
+test('filters project rows without showing a detail drawer', async () => {
     const user = userEvent.setup();
     mockedFetchProjects.mockImplementation(({ archived = false }: { archived?: boolean } = {}) => Promise.resolve(
         archived
@@ -116,13 +117,13 @@ test('drawer falls back to a visible project after search hides the selected row
 
     render(<ProjectsPage />);
 
-    await user.click(await screen.findByRole('button', { name: 'Backend Platform' }));
-    expect(screen.getByRole('heading', { level: 2, name: 'Backend Platform' })).toBeInTheDocument();
+    expect(await screen.findByText('Backend Platform')).toBeInTheDocument();
 
     await user.type(screen.getByPlaceholderText('Search projects...'), 'Quantum');
 
     await waitFor(() => {
-        expect(screen.getByRole('heading', { level: 2, name: 'Quantum Computing' })).toBeInTheDocument();
+        expect(screen.queryByText('Backend Platform')).not.toBeInTheDocument();
     });
-    expect(screen.queryByRole('heading', { level: 2, name: 'Backend Platform' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Quantum Computing' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Project details')).not.toBeInTheDocument();
 });

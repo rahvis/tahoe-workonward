@@ -169,14 +169,6 @@
     gap: var(--space-5);
 }
 
-.headerAnimation {
-    display: block;
-    width: 46px;
-    height: 46px;
-    flex: 0 0 46px;
-    object-fit: contain;
-}
-
 .textAction,
 .ghostAction,
 .inverseGhostAction {
@@ -378,6 +370,15 @@
     gap: var(--space-6);
     flex-wrap: wrap;
     margin-top: var(--space-10);
+}
+
+.heroActionAnimation {
+    display: block;
+    width: 56px;
+    height: 56px;
+    flex: 0 0 56px;
+    object-fit: contain;
+    margin-left: -8px;
 }
 
 .heroMeta {

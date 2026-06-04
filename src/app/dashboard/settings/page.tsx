@@ -647,16 +647,6 @@ function SettingsPageContent() {
 
     return (
         <main className={styles.page}>
-            <header className={styles.header}>
-                <div>
-                    <p className={styles.eyebrow}>Settings</p>
-                    <h1 className={styles.title}>Workspace settings</h1>
-                    <p className={styles.subtitle}>
-                        Manage identity, workspace defaults, outreach compliance, referral rewards, integrations, notifications, and security from one trust surface.
-                    </p>
-                </div>
-            </header>
-
             <nav className={styles.tabs} aria-label="Settings sections">
                 {tabs.map((tab) => (
                     <button key={tab.key} type="button" className={activeTab === tab.key ? styles.activeTab : styles.tab} onClick={() => switchTab(tab.key)}>

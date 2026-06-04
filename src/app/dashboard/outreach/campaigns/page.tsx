@@ -41,13 +41,6 @@ export default function CampaignsPage() {
     return (
         <section className={styles.page}>
             <header className={styles.header}>
-                <div>
-                    <span className="tahoe-eyebrow">Gmail send-only outreach</span>
-                    <h1 className={styles.title}>Campaigns</h1>
-                    <p className={styles.subtitle}>
-                        Build AI-assisted recruiter sequences from enriched lists. Replies remain in Gmail; Tahoe tracks sends and manual outcomes.
-                    </p>
-                </div>
                 <div className={styles.headerActions}>
                     <Link href="/dashboard/outreach/campaigns/new">
                         <Button size="3">New campaign</Button>
@@ -75,27 +68,46 @@ export default function CampaignsPage() {
             ) : null}
 
             {!loading && campaigns.length > 0 ? (
-                <div className={styles.grid}>
-                    {campaigns.map((campaign) => (
-                        <article key={campaign.id} className={styles.card}>
-                            <div className={styles.header}>
-                                <div>
-                                    <h2 className={styles.sectionTitle}>{campaign.name}</h2>
-                                    <div className={styles.pills}>
-                                        <span className={styles.statusPill}>{campaign.status}</span>
-                                        <span className={styles.pill}>{campaign.list_name || 'List'}</span>
-                                        <span className={styles.pill}>{campaign.mailbox_email || 'Mailbox not selected'}</span>
-                                    </div>
-                                </div>
-                                <Link href={`/dashboard/outreach/campaigns/${campaign.id}`}>
-                                    <Button size="3" variant="soft">Open</Button>
-                                </Link>
-                            </div>
-                            <p className={styles.muted}>
-                                {campaign.sent_count} sent · {campaign.replied_count} replied · {campaign.bounced_count} bounced · launched {formatDate(campaign.launched_at)}
-                            </p>
-                        </article>
-                    ))}
+                <div className={styles.tableCard}>
+                    <table className={`${styles.table} ${styles.compactTable}`}>
+                        <thead>
+                            <tr>
+                                <th>Campaign</th>
+                                <th>Status</th>
+                                <th>Audience</th>
+                                <th>Sent</th>
+                                <th>Replies</th>
+                                <th>Bounced</th>
+                                <th>Launched</th>
+                                <th>Next</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {campaigns.map((campaign) => (
+                                <tr key={campaign.id}>
+                                    <td>
+                                        <Link href={`/dashboard/outreach/campaigns/${campaign.id}`} className={styles.rowNameLink}>
+                                            {campaign.name}
+                                        </Link>
+                                        <div className={styles.rowSubtext}>
+                                            {campaign.list_name || 'List'} · {campaign.mailbox_email || 'Mailbox not selected'}
+                                        </div>
+                                    </td>
+                                    <td><span className={styles.statusPill}>{campaign.status}</span></td>
+                                    <td>{campaign.audience_count}</td>
+                                    <td>{campaign.sent_count}</td>
+                                    <td>{campaign.replied_count}</td>
+                                    <td>{campaign.bounced_count}</td>
+                                    <td>{formatDate(campaign.launched_at)}</td>
+                                    <td>
+                                        <Link href={`/dashboard/outreach/campaigns/${campaign.id}`}>
+                                            <Button size="3" variant="soft">Open</Button>
+                                        </Link>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             ) : null}
         </section>

@@ -338,11 +338,6 @@ function BillingPlanContent() {
     return (
         <section className={styles.page}>
             <div className={styles.header}>
-                <div>
-                    <div className={styles.eyebrow}>Billing</div>
-                    <h1 className={styles.heroTitle}>Plan and credits</h1>
-                    <p className={styles.heroCopy}>Manage subscription, top-ups, credits, and billing rules without losing billing transparency.</p>
-                </div>
                 <div className={styles.buttonRow}>
                     <Link href="/dashboard/billing/ledger" className="tahoe-button-secondary">
                         View ledger

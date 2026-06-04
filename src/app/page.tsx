@@ -596,15 +596,6 @@ export default function LandingPage() {
                             <Link href="/login" className={styles.textAction} onClick={() => trackAuthCta('sign_in', 'header_desktop')}>
                                 Sign in
                             </Link>
-                            <Image
-                                src="/loading_animations_transparent_all/fade_transparent.gif"
-                                alt=""
-                                width={46}
-                                height={46}
-                                unoptimized
-                                aria-hidden="true"
-                                className={styles.headerAnimation}
-                            />
                             <Link href="/signup" className={styles.secondaryAction} onClick={() => trackAuthCta('start_free_trial', 'header_desktop')}>
                                 Start free trial <ArrowUpRightIcon />
                             </Link>
@@ -660,6 +651,15 @@ export default function LandingPage() {
                                 <Link href="/login" className={styles.ghostAction} onClick={() => trackAuthCta('sign_in', 'hero')}>
                                     Sign in <ArrowUpRightIcon />
                                 </Link>
+                                <Image
+                                    src="/loading_animations_transparent_all/fade_transparent.gif"
+                                    alt=""
+                                    width={56}
+                                    height={56}
+                                    unoptimized
+                                    aria-hidden="true"
+                                    className={styles.heroActionAnimation}
+                                />
                             </div>
                             <p className={styles.heroMeta}>Continue with Google or email. No credit card.</p>
 

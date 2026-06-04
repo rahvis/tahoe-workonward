@@ -41,7 +41,6 @@ export default function ProjectsPage() {
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<ProjectStatusFilter>('open');
     const [sortBy, setSortBy] = useState<ProjectSort>('updated_desc');
-    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
     const [projectName, setProjectName] = useState('');
     const [firstListName, setFirstListName] = useState('');
@@ -100,22 +99,6 @@ export default function ProjectsPage() {
         return next;
     }, [projects, search, sortBy, statusFilter]);
 
-    const selectedProject = useMemo(
-        () => {
-            const filteredSelection = selectedProjectId
-                ? filteredProjects.find((project) => project.id === selectedProjectId)
-                : null;
-            return filteredSelection ?? filteredProjects[0] ?? null;
-        },
-        [filteredProjects, selectedProjectId],
-    );
-
-    useEffect(() => {
-        if (selectedProjectId && !filteredProjects.some((project) => project.id === selectedProjectId)) {
-            setSelectedProjectId(null);
-        }
-    }, [filteredProjects, selectedProjectId]);
-
     const openCount = projects.filter((project) => !project.archived).length;
     const archivedCount = projects.filter((project) => project.archived).length;
 
@@ -139,7 +122,6 @@ export default function ProjectsPage() {
             setCreateOpen(false);
             setProjectName('');
             setFirstListName('');
-            setSelectedProjectId(createdProject.id);
             await loadProjects();
             if (firstListError) {
                 setDirectoryWarning(`Project created. First list was not created: ${firstListError}`);
@@ -158,9 +140,6 @@ export default function ProjectsPage() {
         setDirectoryWarning('');
         try {
             await archiveProject(project.id);
-            if (selectedProjectId === project.id) {
-                setSelectedProjectId(null);
-            }
             await loadProjects();
         } catch (err) {
             setDirectoryError(err instanceof Error ? err.message : 'Unable to archive project.');
@@ -181,10 +160,6 @@ export default function ProjectsPage() {
     return (
         <section className={styles.directoryPage}>
             <header className={styles.directoryHeader}>
-                <div className={styles.directoryTitleGroup}>
-                    <span className="tahoe-eyebrow">Projects</span>
-                    <h1 className={styles.directoryTitle}>All projects</h1>
-                </div>
                 <div className={styles.directoryToolbar}>
                     <TextField.Root
                         size="3"
@@ -226,10 +201,10 @@ export default function ProjectsPage() {
                 {directoryError ? <span className={styles.inlineError}>{directoryError}</span> : null}
             </div>
 
-            <div className={styles.directoryWorkspace}>
+            <div className={styles.singleDirectoryWorkspace}>
                 <div className={styles.directoryTableShell}>
                     <div className={styles.directoryTableScroll}>
-                        <table className={styles.directoryTable}>
+                        <table className={`${styles.directoryTable} ${styles.projectsDirectoryTable}`}>
                             <thead>
                                 <tr>
                                     <th>Project</th>
@@ -249,54 +224,48 @@ export default function ProjectsPage() {
                                         </tr>
                                     ))
                                 ) : filteredProjects.length > 0 ? (
-                                    filteredProjects.map((project) => {
-                                        const selected = selectedProject?.id === project.id;
-                                        return (
-                                            <tr
-                                                key={project.id}
-                                                className={selected ? styles.selectedRow : undefined}
-                                                onClick={() => setSelectedProjectId(project.id)}
-                                            >
-                                                <td>
+                                    filteredProjects.map((project) => (
+                                        <tr key={project.id}>
+                                            <td>
+                                                <Link href={`/dashboard/projects/${project.id}`} className={styles.rowNameLink}>
+                                                    <span
+                                                        className={styles.projectDot}
+                                                        style={{ background: project.color || 'var(--tahoe-color-accent)' }}
+                                                        aria-hidden="true"
+                                                    />
+                                                    <span className={styles.rowName}>{project.name}</span>
+                                                </Link>
+                                            </td>
+                                            <td>{project.list_count}</td>
+                                            <td>{formatDate(getProjectUpdatedAt(project))}</td>
+                                            <td>
+                                                <span className={project.archived ? styles.statusMuted : styles.statusActive}>
+                                                    {project.archived ? 'Archived' : 'Open'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div className={styles.rowActions} onClick={(event) => event.stopPropagation()}>
+                                                    <Link href={`/dashboard/projects/${project.id}`} className="tahoe-button-secondary">
+                                                        Open
+                                                    </Link>
+                                                    <Link href={`/dashboard/projects/lists?project_id=${encodeURIComponent(project.id)}`} className="tahoe-button-ghost">
+                                                        Lists
+                                                    </Link>
+                                                    <Link href={`/dashboard/projects/lists?project_id=${encodeURIComponent(project.id)}&new=1`} className="tahoe-button-ghost">
+                                                        New list
+                                                    </Link>
                                                     <button
                                                         type="button"
-                                                        className={styles.rowNameButton}
-                                                        onClick={() => setSelectedProjectId(project.id)}
+                                                        className="tahoe-button-ghost"
+                                                        disabled={project.archived || archivingId === project.id}
+                                                        onClick={() => void handleArchive(project)}
                                                     >
-                                                        <span
-                                                            className={styles.projectDot}
-                                                            style={{ background: project.color || 'var(--tahoe-color-accent)' }}
-                                                            aria-hidden="true"
-                                                        />
-                                                        <span className={styles.rowName}>{project.name}</span>
+                                                        {project.archived ? 'Archived' : archivingId === project.id ? 'Archiving...' : 'Archive'}
                                                     </button>
-                                                </td>
-                                                <td>{project.list_count}</td>
-                                                <td>{formatDate(getProjectUpdatedAt(project))}</td>
-                                                <td>
-                                                    <span className={project.archived ? styles.statusMuted : styles.statusActive}>
-                                                        {project.archived ? 'Archived' : 'Open'}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <div className={styles.rowActions} onClick={(event) => event.stopPropagation()}>
-                                                        <Link href={`/dashboard/projects/${project.id}`} className="tahoe-button-secondary">
-                                                            Open
-                                                        </Link>
-                                                        {project.list_count > 0 ? (
-                                                            <Link href={`/dashboard/projects/lists?project_id=${encodeURIComponent(project.id)}`} className="tahoe-button-ghost">
-                                                                Lists
-                                                            </Link>
-                                                        ) : (
-                                                            <Link href={`/dashboard/projects/lists?project_id=${encodeURIComponent(project.id)}&new=1`} className="tahoe-button-ghost">
-                                                                Create list
-                                                            </Link>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
                                 ) : (
                                     <tr>
                                         <td colSpan={5}>
@@ -324,54 +293,6 @@ export default function ProjectsPage() {
                     </div>
                 </div>
 
-                <aside className={styles.detailDrawer} aria-label="Project details">
-                    {selectedProject ? (
-                        <>
-                            <div className={styles.drawerHeader}>
-                                <span className="tahoe-eyebrow">Project</span>
-                                <h2>{selectedProject.name}</h2>
-                            </div>
-                            <div className={styles.drawerStats}>
-                                <div>
-                                    <span>Lists</span>
-                                    <strong>{selectedProject.list_count}</strong>
-                                </div>
-                                <div>
-                                    <span>Updated</span>
-                                    <strong>{formatDate(getProjectUpdatedAt(selectedProject))}</strong>
-                                </div>
-                                <div>
-                                    <span>Status</span>
-                                    <strong>{selectedProject.archived ? 'Archived' : 'Open'}</strong>
-                                </div>
-                            </div>
-                            <div className={styles.drawerActions}>
-                                <Link href={`/dashboard/projects/${selectedProject.id}`} className="tahoe-button">
-                                    Open
-                                </Link>
-                                <Link href={`/dashboard/projects/lists?project_id=${encodeURIComponent(selectedProject.id)}`} className="tahoe-button-secondary">
-                                    View lists
-                                </Link>
-                                <Link href={`/dashboard/projects/lists?project_id=${encodeURIComponent(selectedProject.id)}&new=1`} className="tahoe-button-secondary">
-                                    New list
-                                </Link>
-                                <button
-                                    type="button"
-                                    className="tahoe-button-ghost"
-                                    disabled={selectedProject.archived || archivingId === selectedProject.id}
-                                    onClick={() => void handleArchive(selectedProject)}
-                                >
-                                    {selectedProject.archived ? 'Archived' : archivingId === selectedProject.id ? 'Archiving...' : 'Archive'}
-                                </button>
-                            </div>
-                        </>
-                    ) : (
-                        <div className={styles.drawerPlaceholder}>
-                            <h2>Select a project</h2>
-                            <p>Open the row panel to view lists or create the next list.</p>
-                        </div>
-                    )}
-                </aside>
             </div>
 
             <Dialog.Root open={createOpen} onOpenChange={handleCreateOpenChange}>

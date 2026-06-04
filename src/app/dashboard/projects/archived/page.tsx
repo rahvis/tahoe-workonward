@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Card, Flex, Text } from '@/components/ui/tahoe-ui';
 import { fetchProjects, updateProject, type ProjectSummary } from '@/lib/organization';
@@ -25,12 +24,6 @@ export default function ArchivedProjectsPage() {
 
     return (
         <section className={styles.page}>
-            <header className={styles.header}>
-                <Link href="/dashboard/projects" className="tahoe-button-secondary">
-                    Back to active projects
-                </Link>
-            </header>
-
             {loading ? (
                 <div className={styles.emptyState}>
                     <span className="tahoe-spinner" />

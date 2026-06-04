@@ -50,6 +50,10 @@
     flex-wrap: wrap;
 }
 
+.headerActions {
+    margin-left: auto;
+}
+
 .title {
     margin: 8px 0 10px;
     font-family: var(--tahoe-font-display);
@@ -123,6 +127,14 @@
     border: 1px solid var(--tahoe-color-border-subtle);
     border-radius: var(--tahoe-radius-md);
     background: rgba(255, 255, 255, 0.96);
+}
+
+.tableCard {
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: var(--tahoe-radius-md);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: var(--tahoe-shadow-soft);
+    overflow: auto;
 }
 
 .cardHeader {
@@ -281,6 +293,12 @@
     border-collapse: collapse;
 }
 
+.compactTable {
+    min-width: 920px;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
 .table th,
 .table td {
     padding: 12px;
@@ -294,6 +312,33 @@
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
+}
+
+.compactTable th,
+.compactTable td {
+    padding: 9px 12px;
+    vertical-align: middle;
+}
+
+.compactTable tbody tr:hover {
+    background: rgba(255, 104, 44, 0.05);
+}
+
+.rowNameLink {
+    color: var(--tahoe-color-text-primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.rowNameLink:hover {
+    color: var(--tahoe-color-accent);
+}
+
+.rowSubtext {
+    margin-top: 3px;
+    color: var(--tahoe-color-text-tertiary);
+    font-size: 12px;
+    line-height: 1.35;
 }
 
 @media (max-width: 768px) {

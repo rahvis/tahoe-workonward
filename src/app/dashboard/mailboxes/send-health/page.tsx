@@ -44,16 +44,6 @@ export default function SendHealthPage() {
 
     return (
         <section className={styles.page}>
-            <header className={styles.header}>
-                <div>
-                    <span className="tahoe-eyebrow">Operational visibility</span>
-                    <h1 className={styles.title}>Send Health</h1>
-                    <p className={styles.subtitle}>
-                        Track mailbox connection state, conservative Tahoe daily caps, and the latest send or test-send activity without requesting mailbox read access.
-                    </p>
-                </div>
-            </header>
-
             {error ? <div className={`${styles.banner} ${styles.bannerError}`}>{error}</div> : null}
 
             <div className={styles.summaryStrip}>

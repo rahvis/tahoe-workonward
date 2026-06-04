@@ -96,16 +96,6 @@ export default function BillingLedgerPage() {
 
     return (
         <section className={styles.page}>
-            <div className={styles.header}>
-                <div>
-                    <div className={styles.eyebrow}>Billing</div>
-                    <h1 className={styles.heroTitle}>Credit ledger</h1>
-                    <p className={styles.heroCopy}>
-                        Every grant, charge, hold, and release is recorded here so recruiters can inspect exactly how Tahoe moved credits over time.
-                    </p>
-                </div>
-            </div>
-
             <div className={styles.tableCard}>
                 <div className={styles.filterRow}>
                     <div>

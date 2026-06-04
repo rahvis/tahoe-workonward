@@ -96,10 +96,6 @@ function FunnelContent() {
     return (
         <section className={`${styles.page} ${styles.animateIn}`}>
             <div className={styles.header}>
-                <div>
-                    <div className={styles.eyebrow}>Analytics</div>
-                    <h1 className={styles.title}>Workflow funnel</h1>
-                </div>
                 <div className={styles.headerTools}>
                     {revalidating ? <span className={styles.finePrint}>Refreshing…</span> : null}
                     <RangeTabs value={range} onChange={(nextRange) => updateUrl({ range: nextRange })} />
@@ -169,4 +165,3 @@ export default function AnalyticsFunnelPage() {
         </Suspense>
     );
 }
-

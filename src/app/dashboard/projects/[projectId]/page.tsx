@@ -3,39 +3,42 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Card, Flex, Text, TextField } from '@/components/ui/tahoe-ui';
+import { Button, TextField } from '@/components/ui/tahoe-ui';
 import {
     createList,
-    fetchProject,
     fetchProjectLists,
-    fetchSavedSearches,
     type ListSummary,
-    type ProjectSummary,
-    type SavedSearchSummary,
 } from '@/lib/organization';
 import styles from '../projects.module.css';
+
+function formatDate(value?: string | null) {
+    if (!value) return 'Recent';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Recent';
+    return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
+}
+
+function getListUpdatedAt(list: ListSummary) {
+    return list.updated_at ?? list.created_at ?? '';
+}
 
 export default function ProjectDetailPage() {
     const params = useParams<{ projectId: string }>();
     const projectId = String(params.projectId);
-    const [project, setProject] = useState<ProjectSummary | null>(null);
     const [lists, setLists] = useState<ListSummary[]>([]);
-    const [savedSearches, setSavedSearches] = useState<SavedSearchSummary[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [newListName, setNewListName] = useState('');
     const [creatingList, setCreatingList] = useState(false);
 
     const load = useCallback(async () => {
         setLoading(true);
         try {
-            const [projectItem, listItems, savedSearchItems] = await Promise.all([
-                fetchProject(projectId),
-                fetchProjectLists(projectId),
-                fetchSavedSearches(projectId),
-            ]);
-            setProject(projectItem);
-            setLists(listItems);
-            setSavedSearches(savedSearchItems);
+            setLists(await fetchProjectLists(projectId));
+            setError('');
+        } catch (err) {
+            setLists([]);
+            setError(err instanceof Error ? err.message : 'Unable to load project lists.');
         } finally {
             setLoading(false);
         }
@@ -52,103 +55,102 @@ export default function ProjectDetailPage() {
             await createList(projectId, { name: newListName.trim() });
             setNewListName('');
             await load();
+            setError('');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unable to create list.');
         } finally {
             setCreatingList(false);
         }
     }
 
     return (
-        <section className={styles.page}>
-            {loading ? (
-                <div className={styles.emptyState}>
-                    <span className="tahoe-spinner" />
-                    <p>Loading project…</p>
+        <section className={styles.directoryPage}>
+            <header className={styles.directoryHeader}>
+                <div className={styles.directoryToolbar}>
+                    <TextField.Root
+                        size="3"
+                        rootClassName={styles.directorySearch}
+                        placeholder="New list name..."
+                        value={newListName}
+                        onChange={(event) => setNewListName(event.target.value)}
+                    />
+                    <Button size="3" type="button" onClick={() => void handleCreateList()} disabled={creatingList || !newListName.trim()}>
+                        {creatingList ? 'Creating...' : '+ List'}
+                    </Button>
+                    <Link href="/dashboard/projects" className="tahoe-button-secondary">
+                        Back
+                    </Link>
                 </div>
-            ) : null}
+            </header>
 
-            {!loading && project ? (
-                <>
-                    <header className={styles.header}>
-                        <div>
-                            <span className="tahoe-eyebrow">Project workspace</span>
-                            <h1 className={styles.title}>{project.name}</h1>
-                            <div className={styles.pills}>
-                                <span className={styles.pill}>{lists.length} list{lists.length === 1 ? '' : 's'}</span>
-                                <span className={styles.pill}>{savedSearches.length} saved search{savedSearches.length === 1 ? '' : 'es'}</span>
-                            </div>
-                        </div>
-                        <Link href="/dashboard/projects" className="tahoe-button-secondary">
-                            Back to projects
-                        </Link>
-                    </header>
+            <div className={styles.directoryMetaBar}>
+                <span>{lists.length} list{lists.length === 1 ? '' : 's'}</span>
+                {error ? <span className={styles.inlineError}>{error}</span> : null}
+            </div>
 
-                    <div className={styles.splitGrid}>
-                        <div className={styles.grid}>
-                            <div className={styles.formCard}>
-                                <Flex direction="column" gap="3">
-                                    <Text size="2" weight="medium">Create a list inside this project</Text>
-                                    <Flex gap="3" wrap="wrap">
-                                        <TextField.Root
-                                            size="3"
-                                            style={{ minWidth: 240, flex: 1 }}
-                                            placeholder="Outreach Round 1"
-                                            value={newListName}
-                                            onChange={(event) => setNewListName(event.target.value)}
-                                        />
-                                        <Button size="3" onClick={() => void handleCreateList()} disabled={creatingList || !newListName.trim()}>
-                                            {creatingList ? 'Creating…' : 'Create list'}
-                                        </Button>
-                                    </Flex>
-                                </Flex>
-                            </div>
-
-                            <Card className={styles.card}>
-                                <Flex direction="column" gap="4">
-                                    <Text as="div" size="3" weight="medium">Lists</Text>
-                                    {lists.length === 0 ? (
-                                        <Text size="2" color="gray">No lists yet.</Text>
-                                    ) : (
-                                        lists.map((list) => (
-                                            <Flex key={list.id} justify="between" align="center" wrap="wrap" gap="3">
-                                                <div>
-                                                    <Text as="div" size="2" weight="medium">{list.name}</Text>
-                                                    <Text as="div" size="2" color="gray">
-                                                        {list.candidate_count} candidate{list.candidate_count === 1 ? '' : 's'}
-                                                    </Text>
-                                                </div>
-                                                <Link href={`/dashboard/projects/lists/${list.id}`} className="tahoe-button-secondary">
-                                                    Open list
-                                                </Link>
-                                            </Flex>
-                                        ))
-                                    )}
-                                </Flex>
-                            </Card>
-                        </div>
-
-                        <Card className={styles.card}>
-                            <Flex direction="column" gap="4">
-                                <Text as="div" size="3" weight="medium">Saved searches</Text>
-                                {savedSearches.length === 0 ? (
-                                    <Text size="2" color="gray">
-                                        No saved searches are attached to this project yet.
-                                    </Text>
-                                ) : (
-                                    savedSearches.map((savedSearch) => (
-                                        <div key={savedSearch.id}>
-                                            <Text as="div" size="2" weight="medium">{savedSearch.name}</Text>
-                                            <Text as="div" size="2" color="gray">{savedSearch.prompt}</Text>
-                                        </div>
+            <div className={styles.singleDirectoryWorkspace}>
+                <div className={styles.directoryTableShell}>
+                    <div className={styles.directoryTableScroll}>
+                        <table className={`${styles.directoryTable} ${styles.projectListTable}`}>
+                            <thead>
+                                <tr>
+                                    <th>List</th>
+                                    <th>Candidates</th>
+                                    <th>Updated</th>
+                                    <th>Next</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    Array.from({ length: 7 }).map((_, index) => (
+                                        <tr key={`project-list-skeleton-${index}`}>
+                                            <td colSpan={4}>
+                                                <span className={styles.skeletonLine} />
+                                            </td>
+                                        </tr>
                                     ))
+                                ) : lists.length > 0 ? (
+                                    lists.map((list) => (
+                                        <tr key={list.id}>
+                                            <td>
+                                                <Link href={`/dashboard/projects/lists/${list.id}`} className={styles.rowNameLink}>
+                                                    <span className={styles.rowName}>{list.name}</span>
+                                                </Link>
+                                            </td>
+                                            <td>{list.candidate_count}</td>
+                                            <td>{formatDate(getListUpdatedAt(list))}</td>
+                                            <td>
+                                                <div className={styles.rowActions}>
+                                                    <Link href={`/dashboard/projects/lists/${list.id}`} className="tahoe-button-secondary">
+                                                        Open
+                                                    </Link>
+                                                    {list.candidate_count > 0 ? (
+                                                        <Link href={`/dashboard/projects/lists/${list.id}?enrich=1`} className="tahoe-button-ghost">
+                                                            Enrich
+                                                        </Link>
+                                                    ) : null}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={4}>
+                                            <div className={styles.directoryEmpty}>
+                                                <h2>No lists yet</h2>
+                                                <p>Create a list or save candidates from Search.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 )}
-                                <Link href="/dashboard/search/saved-searches" className="tahoe-button-secondary">
-                                    Manage saved searches
-                                </Link>
-                            </Flex>
-                        </Card>
+                            </tbody>
+                        </table>
                     </div>
-                </>
-            ) : null}
+                    <div className={styles.directoryFooter}>
+                        <span>{lists.length} list{lists.length === 1 ? '' : 's'}</span>
+                    </div>
+                </div>
+            </div>
         </section>
     );
 }

@@ -49,9 +49,9 @@ function ListsDirectoryPageInner() {
     const [search, setSearch] = useState('');
     const [projectFilter, setProjectFilter] = useState(projectIdFromUrl);
     const [sortBy, setSortBy] = useState<ListSort>('updated_desc');
-    const [selectedListId, setSelectedListId] = useState<string | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
     const [renameOpen, setRenameOpen] = useState(false);
+    const [renameList, setRenameList] = useState<ListSummary | null>(null);
     const [createProjectId, setCreateProjectId] = useState(projectIdFromUrl === 'all' ? '' : projectIdFromUrl);
     const [newListName, setNewListName] = useState('');
     const [renameListName, setRenameListName] = useState('');
@@ -130,28 +130,6 @@ function ListsDirectoryPageInner() {
         return next;
     }, [lists, projectFilter, search, sortBy]);
 
-    const selectedList = useMemo(
-        () => {
-            const filteredSelection = selectedListId
-                ? filteredLists.find((list) => list.id === selectedListId)
-                : null;
-            return filteredSelection ?? filteredLists[0] ?? null;
-        },
-        [filteredLists, selectedListId],
-    );
-
-    useEffect(() => {
-        if (selectedListId && !filteredLists.some((list) => list.id === selectedListId)) {
-            setSelectedListId(null);
-        }
-    }, [filteredLists, selectedListId]);
-
-    useEffect(() => {
-        if (renameOpen && selectedList) {
-            setRenameListName(selectedList.name);
-        }
-    }, [renameOpen, selectedList]);
-
     function handleCreateOpenChange(open: boolean) {
         setCreateOpen(open);
         setModalError('');
@@ -172,13 +150,14 @@ function ListsDirectoryPageInner() {
         setModalError('');
         if (!open) {
             setRenameListName('');
+            setRenameList(null);
         }
     }
 
-    function openRenameModal() {
-        if (!selectedList) return;
+    function openRenameModal(list: ListSummary) {
         setModalError('');
-        setRenameListName(selectedList.name);
+        setRenameList(list);
+        setRenameListName(list.name);
         setRenameOpen(true);
     }
 
@@ -188,10 +167,9 @@ function ListsDirectoryPageInner() {
         setSubmitting(true);
         setModalError('');
         try {
-            const createdList = await createList(createProjectId, { name: trimmedName });
+            await createList(createProjectId, { name: trimmedName });
             setCreateOpen(false);
             setNewListName('');
-            setSelectedListId(createdList.id);
             await load();
         } catch (err) {
             setModalError(err instanceof Error ? err.message : 'Unable to create list.');
@@ -202,13 +180,14 @@ function ListsDirectoryPageInner() {
 
     async function handleRenameList() {
         const trimmedName = renameListName.trim();
-        if (!selectedList || !trimmedName || submitting) return;
+        if (!renameList || !trimmedName || submitting) return;
         setSubmitting(true);
         setModalError('');
         try {
-            const updated = await updateList(selectedList.id, { name: trimmedName });
+            const updated = await updateList(renameList.id, { name: trimmedName });
             setLists((current) => current.map((list) => list.id === updated.id ? updated : list));
             setRenameOpen(false);
+            setRenameList(null);
             setModalError('');
         } catch (err) {
             setModalError(err instanceof Error ? err.message : 'Unable to rename list.');
@@ -220,10 +199,6 @@ function ListsDirectoryPageInner() {
     return (
         <section className={styles.directoryPage}>
             <header className={styles.directoryHeader}>
-                <div className={styles.directoryTitleGroup}>
-                    <span className="tahoe-eyebrow">Projects</span>
-                    <h1 className={styles.directoryTitle}>Lists</h1>
-                </div>
                 <div className={styles.directoryToolbar}>
                     <TextField.Root
                         size="3"
@@ -271,10 +246,10 @@ function ListsDirectoryPageInner() {
                 {directoryError ? <span className={styles.inlineError}>{directoryError}</span> : null}
             </div>
 
-            <div className={styles.directoryWorkspace}>
+            <div className={styles.singleDirectoryWorkspace}>
                 <div className={styles.directoryTableShell}>
                     <div className={styles.directoryTableScroll}>
-                        <table className={styles.directoryTable}>
+                        <table className={`${styles.directoryTable} ${styles.listsDirectoryTable}`}>
                             <thead>
                                 <tr>
                                     <th>List</th>
@@ -294,41 +269,47 @@ function ListsDirectoryPageInner() {
                                         </tr>
                                     ))
                                 ) : filteredLists.length > 0 ? (
-                                    filteredLists.map((list) => {
-                                        const selected = selectedList?.id === list.id;
-                                        return (
-                                            <tr
-                                                key={list.id}
-                                                className={selected ? styles.selectedRow : undefined}
-                                                onClick={() => setSelectedListId(list.id)}
-                                            >
-                                                <td>
-                                                    <button
-                                                        type="button"
-                                                        className={styles.rowNameButton}
-                                                        onClick={() => setSelectedListId(list.id)}
-                                                    >
-                                                        <span className={styles.rowName}>{list.name}</span>
-                                                    </button>
-                                                </td>
-                                                <td>{list.project_name || 'Project'}</td>
-                                                <td>{list.candidate_count}</td>
-                                                <td>{formatDate(getListUpdatedAt(list))}</td>
-                                                <td>
-                                                    <div className={styles.rowActions} onClick={(event) => event.stopPropagation()}>
-                                                        <Link href={`/dashboard/projects/lists/${list.id}`} className="tahoe-button-secondary">
-                                                            Open
+                                    filteredLists.map((list) => (
+                                        <tr key={list.id}>
+                                            <td>
+                                                <Link href={`/dashboard/projects/lists/${list.id}`} className={styles.rowNameLink}>
+                                                    <span className={styles.rowName}>{list.name}</span>
+                                                </Link>
+                                            </td>
+                                            <td>{list.project_name || 'Project'}</td>
+                                            <td>{list.candidate_count}</td>
+                                            <td>{formatDate(getListUpdatedAt(list))}</td>
+                                            <td>
+                                                <div className={styles.rowActions} onClick={(event) => event.stopPropagation()}>
+                                                    <Link href={`/dashboard/projects/lists/${list.id}`} className="tahoe-button-secondary">
+                                                        Open
                                                     </Link>
                                                     {list.candidate_count > 0 ? (
-                                                        <Link href={`/dashboard/projects/lists/${list.id}?enrich=1`} className="tahoe-button-ghost">
-                                                            Enrich
-                                                        </Link>
-                                                    ) : null}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
+                                                        <>
+                                                            <Link href={`/dashboard/projects/lists/${list.id}?enrich=1`} className="tahoe-button-ghost">
+                                                                Enrich
+                                                            </Link>
+                                                            <Link href={`/dashboard/outreach/campaigns/new?list_id=${encodeURIComponent(list.id)}`} className="tahoe-button-ghost">
+                                                                Campaign
+                                                            </Link>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <button type="button" className="tahoe-button-ghost" disabled>
+                                                                Enrich
+                                                            </button>
+                                                            <button type="button" className="tahoe-button-ghost" disabled>
+                                                                Campaign
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    <button type="button" className="tahoe-button-ghost" onClick={() => openRenameModal(list)}>
+                                                        Rename
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
                                 ) : (
                                     <tr>
                                         <td colSpan={5}>
@@ -356,62 +337,6 @@ function ListsDirectoryPageInner() {
                     </div>
                 </div>
 
-                <aside className={styles.detailDrawer} aria-label="List details">
-                    {selectedList ? (
-                        <>
-                            <div className={styles.drawerHeader}>
-                                <span className="tahoe-eyebrow">List</span>
-                                <h2>{selectedList.name}</h2>
-                            </div>
-                            <div className={styles.drawerStats}>
-                                <div>
-                                    <span>Project</span>
-                                    <strong>{selectedList.project_name || 'Project'}</strong>
-                                </div>
-                                <div>
-                                    <span>Candidates</span>
-                                    <strong>{selectedList.candidate_count}</strong>
-                                </div>
-                                <div>
-                                    <span>Updated</span>
-                                    <strong>{formatDate(getListUpdatedAt(selectedList))}</strong>
-                                </div>
-                            </div>
-                            <div className={styles.drawerActions}>
-                                <Link href={`/dashboard/projects/lists/${selectedList.id}`} className="tahoe-button">
-                                    Open
-                                </Link>
-                                {selectedList.candidate_count > 0 ? (
-                                    <>
-                                        <Link href={`/dashboard/projects/lists/${selectedList.id}?enrich=1`} className="tahoe-button-secondary">
-                                            Enrich
-                                        </Link>
-                                        <Link href={`/dashboard/outreach/campaigns/new?list_id=${encodeURIComponent(selectedList.id)}`} className="tahoe-button-secondary">
-                                            Campaign
-                                        </Link>
-                                    </>
-                                ) : (
-                                    <>
-                                        <button type="button" className="tahoe-button-secondary" disabled>
-                                            Enrich
-                                        </button>
-                                        <button type="button" className="tahoe-button-secondary" disabled>
-                                            Campaign
-                                        </button>
-                                    </>
-                                )}
-                                <button type="button" className="tahoe-button-ghost" onClick={openRenameModal}>
-                                    Rename
-                                </button>
-                            </div>
-                        </>
-                    ) : (
-                        <div className={styles.drawerPlaceholder}>
-                            <h2>Select a list</h2>
-                            <p>Inspect the audience, then open it for enrichment or campaign work.</p>
-                        </div>
-                    )}
-                </aside>
             </div>
 
             <Dialog.Root open={createOpen} onOpenChange={handleCreateOpenChange}>

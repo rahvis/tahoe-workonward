@@ -372,11 +372,6 @@ function MailboxesPageContent() {
     return (
         <section className={styles.page}>
             <header className={styles.header}>
-                <div>
-                    <span className="tahoe-eyebrow">Gmail send-only</span>
-                    <h1 className={styles.title}>Connected Mailboxes</h1>
-                    <p className={styles.subtitle}>Send from connected Gmail accounts. Replies remain in Gmail.</p>
-                </div>
                 <div className={styles.headerActions}>
                     <Button size="3" onClick={() => void handleConnect()} disabled={connecting}>
                         {connecting ? 'Connecting...' : 'Connect Gmail'}

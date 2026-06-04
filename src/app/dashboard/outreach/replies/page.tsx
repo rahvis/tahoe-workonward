@@ -49,16 +49,6 @@ export default function RepliesPage() {
 
     return (
         <section className={styles.page}>
-            <header className={styles.header}>
-                <div>
-                    <span className="tahoe-eyebrow">Manual reply handling</span>
-                    <h1 className={styles.title}>Replies</h1>
-                    <p className={styles.subtitle}>
-                        Tahoe stays Gmail send-only in this phase. Use Gmail deep links, then mark replied or bounced from the campaign detail page.
-                    </p>
-                </div>
-            </header>
-
             {error ? <div className={`${styles.banner} ${styles.bannerError}`}>{error}</div> : null}
             {!loading && unavailableCount > 0 ? (
                 <div className={styles.banner} role="status">
