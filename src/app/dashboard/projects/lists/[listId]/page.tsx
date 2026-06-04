@@ -288,12 +288,13 @@ function ListDetailPageInner() {
     }, [loadRuns]);
 
     useEffect(() => {
+        if (searchInput === search) return;
         const timer = window.setTimeout(() => {
             setSearch(searchInput);
             setPage(1);
         }, 250);
         return () => window.clearTimeout(timer);
-    }, [searchInput]);
+    }, [search, searchInput]);
 
     useEffect(() => {
         setActiveCandidateId(null);

@@ -98,8 +98,22 @@ test('defaults to the overview tab and hides plan actions until the Plans tab is
 
     expect(await screen.findByText('Starter')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.queryByRole('tab', { name: 'Rules' })).not.toBeInTheDocument();
     expect(screen.getByText('Available credits')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Choose monthly' })).not.toBeInTheDocument();
+});
+
+test('normalizes the removed rules tab to overview', async () => {
+    searchParams = new URLSearchParams('tab=rules');
+
+    render(<BillingPlanPage />);
+
+    expect(await screen.findByText('Available credits')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.queryByRole('tab', { name: 'Rules' })).not.toBeInTheDocument();
+    await waitFor(() => {
+        expect(replaceMock).toHaveBeenCalledWith('/dashboard/billing/plan?tab=overview', { scroll: false });
+    });
 });
 
 test('switches sections with settings-style tabs and updates the URL', async () => {

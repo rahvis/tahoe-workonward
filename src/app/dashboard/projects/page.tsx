@@ -188,8 +188,8 @@ export default function ProjectsPage() {
                         <option value="name_asc">Name A-Z</option>
                         <option value="list_count_desc">Most lists</option>
                     </TahoeSelect>
-                    <Button size="3" type="button" onClick={() => handleCreateOpenChange(true)}>
-                        + Project
+                    <Button size="3" type="button" className={styles.directoryCreateButton} onClick={() => handleCreateOpenChange(true)}>
+                        Create Project
                     </Button>
                 </div>
             </header>
@@ -211,7 +211,7 @@ export default function ProjectsPage() {
                                     <th>Lists</th>
                                     <th>Updated</th>
                                     <th>Status</th>
-                                    <th>Next</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>

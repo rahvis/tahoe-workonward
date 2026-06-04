@@ -208,7 +208,9 @@ test('opens enrichment modal once when routed with enrich query param', async ()
     render(<ListDetailPage />);
 
     expect(await screen.findByRole('heading', { name: 'Enrich contacts' })).toBeInTheDocument();
-    expect(mockedEstimateEnrichmentRun).toHaveBeenCalled();
+    await waitFor(() => {
+        expect(mockedEstimateEnrichmentRun).toHaveBeenCalled();
+    });
 });
 
 test('opens enrich route action once per list id', async () => {

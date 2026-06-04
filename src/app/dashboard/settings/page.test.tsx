@@ -14,13 +14,22 @@ import {
     fetchSettings,
     requestAccountDeletion,
     updateWorkspaceSettings,
+    type DataRequest,
+    type InvoiceSummary,
+    type ReferralInvite,
+    type SettingsAuditEvent,
+    type SettingsPayload,
 } from '@/lib/organization';
 
-let searchParams = new URLSearchParams('tab=workspace');
+const navigationMocks = vi.hoisted(() => ({
+    replace: vi.fn(),
+    searchParams: new URLSearchParams('tab=workspace'),
+}));
 
 vi.mock('next/navigation', () => ({
-    useRouter: () => ({ replace: vi.fn() }),
-    useSearchParams: () => searchParams,
+    usePathname: () => '/dashboard/settings',
+    useRouter: () => ({ replace: navigationMocks.replace }),
+    useSearchParams: () => navigationMocks.searchParams,
 }));
 
 vi.mock('@/lib/organization', () => ({
@@ -61,8 +70,8 @@ function deferred<T>() {
     return { promise, resolve };
 }
 
-function settingsPayload(overrides: Record<string, unknown> = {}) {
-    return {
+function settingsPayload(overrides: Partial<SettingsPayload> & { workspace?: Partial<SettingsPayload['workspace']> } = {}): SettingsPayload {
+    const base: SettingsPayload = {
         account: {
             first_name: 'Rahul',
             last_name: 'Vishwakarma',
@@ -124,12 +133,90 @@ function settingsPayload(overrides: Record<string, unknown> = {}) {
         },
         data_requests: [],
         audit_events: [],
+    };
+
+    return {
+        ...base,
         ...overrides,
+        workspace: {
+            ...base.workspace,
+            ...(overrides.workspace || {}),
+        },
     };
 }
 
+function makeInvoices(count: number): InvoiceSummary[] {
+    return Array.from({ length: count }, (_, index) => {
+        const number = index + 1;
+        return {
+            id: `in_${number}`,
+            number: `T-${String(number).padStart(4, '0')}`,
+            status: 'paid',
+            currency: 'usd',
+            amount_due: 6000,
+            amount_paid: 6000,
+            hosted_invoice_url: `https://invoice.test/in_${number}`,
+            invoice_pdf: null,
+            created_at: `2026-05-${String(Math.min(number, 28)).padStart(2, '0')}T00:00:00Z`,
+            due_date: null,
+        };
+    });
+}
+
+function makeDataRequests(count: number): DataRequest[] {
+    return Array.from({ length: count }, (_, index) => {
+        const number = index + 1;
+        return {
+            id: `dr_${number}`,
+            workspace_id: 'ws-1',
+            request_type: 'workspace_export',
+            status: 'requested',
+            subject_email_masked: `candidate-${number}@example.com`,
+            candidate_id: null,
+            notes: null,
+            created_at: `2026-05-${String(Math.min(number, 28)).padStart(2, '0')}T00:00:00Z`,
+            updated_at: `2026-05-${String(Math.min(number, 28)).padStart(2, '0')}T00:00:00Z`,
+            completed_at: null,
+        };
+    });
+}
+
+function makeReferralInvites(count: number): ReferralInvite[] {
+    return Array.from({ length: count }, (_, index) => {
+        const number = index + 1;
+        return {
+            id: `ref_${number}`,
+            email_masked: `referral-${number}@example.com`,
+            status: 'invited',
+            referral_code: 'TAHOE-TEST',
+            referee_discount_percent: 15,
+            referrer_reward_percent: 15,
+            sent_at: `2026-05-${String(Math.min(number, 28)).padStart(2, '0')}T00:00:00Z`,
+            expires_at: null,
+            converted_at: null,
+            reward_issued_at: null,
+        };
+    });
+}
+
+function makeSecurityEvents(count: number): SettingsAuditEvent[] {
+    return Array.from({ length: count }, (_, index) => {
+        const number = index + 1;
+        return {
+            id: `audit_${number}`,
+            workspace_id: 'ws-1',
+            actor_user_id: 'user-1',
+            event_type: `settings.updated.${number}`,
+            target: `workspace-${number}`,
+            created_at: `2026-05-${String(Math.min(number, 28)).padStart(2, '0')}T00:00:00Z`,
+            metadata: {},
+        };
+    });
+}
+
 beforeEach(() => {
-    searchParams = new URLSearchParams('tab=workspace');
+    navigationMocks.searchParams = new URLSearchParams('tab=workspace');
+    navigationMocks.replace.mockReset();
     mockedFetchSettings.mockReset();
     mockedAutocompleteAddress.mockReset();
     mockedCreateBillingPortal.mockReset();
@@ -309,7 +396,7 @@ test('manual edit after selection starts prevents stale details from overwriting
 });
 
 test('account deletion danger zone creates request only after typed confirmation', async () => {
-    searchParams = new URLSearchParams('tab=account');
+    navigationMocks.searchParams = new URLSearchParams('tab=account');
     const user = userEvent.setup();
     render(<SettingsPage />);
 
@@ -329,7 +416,7 @@ test('account deletion danger zone creates request only after typed confirmation
 });
 
 test('subscription tab starts checkout when there is no active subscription', async () => {
-    searchParams = new URLSearchParams('tab=subscription');
+    navigationMocks.searchParams = new URLSearchParams('tab=subscription');
     const user = userEvent.setup();
     render(<SettingsPage />);
 
@@ -347,7 +434,7 @@ test('subscription tab starts checkout when there is no active subscription', as
 });
 
 test('payment tab renders safe card summary and opens Stripe portal flow', async () => {
-    searchParams = new URLSearchParams('tab=payment');
+    navigationMocks.searchParams = new URLSearchParams('tab=payment');
     const user = userEvent.setup();
     render(<SettingsPage />);
 
@@ -361,4 +448,119 @@ test('payment tab renders safe card summary and opens Stripe portal flow', async
             'payment_method_update',
         );
     });
+});
+
+test('invalid tab falls back to account and normalizes the URL without scrolling', async () => {
+    navigationMocks.searchParams = new URLSearchParams('tab=not-real');
+    render(<SettingsPage />);
+
+    expect(await screen.findByRole('heading', { name: 'Account' })).toBeInTheDocument();
+    await waitFor(() => {
+        expect(navigationMocks.replace).toHaveBeenCalledWith('/dashboard/settings?tab=account', { scroll: false });
+    });
+});
+
+test('payment invoices paginate at 20 rows', async () => {
+    navigationMocks.searchParams = new URLSearchParams('tab=payment');
+    mockedFetchPaymentSettings.mockResolvedValue({
+        stripe_configured: true,
+        stripe_customer_id: 'cus_123',
+        billing_email: 'billing@example.com',
+        default_payment_method: null,
+        payment_methods: [],
+        recent_invoices: makeInvoices(25),
+        can_update_payment_method: true,
+        can_remove_payment_method: false,
+        can_view_invoices: true,
+        message: null,
+    });
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+
+    expect(await screen.findByText('T-0001')).toBeInTheDocument();
+    expect(screen.getByText('Rows 1-20 of 25 invoices')).toBeInTheDocument();
+    expect(screen.queryByText('T-0021')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+
+    expect(await screen.findByText('T-0021')).toBeInTheDocument();
+    expect(screen.getByText('Rows 21-25 of 25 invoices')).toBeInTheDocument();
+});
+
+test('compliance data requests paginate at 20 rows', async () => {
+    navigationMocks.searchParams = new URLSearchParams('tab=compliance');
+    mockedFetchSettings.mockResolvedValue(settingsPayload({ data_requests: makeDataRequests(22) }));
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+
+    expect(await screen.findByText('candidate-1@example.com')).toBeInTheDocument();
+    expect(screen.getByText('Rows 1-20 of 22 requests')).toBeInTheDocument();
+    expect(screen.queryByText('candidate-21@example.com')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+
+    expect(await screen.findByText('candidate-21@example.com')).toBeInTheDocument();
+    expect(screen.getByText('Rows 21-22 of 22 requests')).toBeInTheDocument();
+});
+
+test('referral activity paginates at 20 rows', async () => {
+    navigationMocks.searchParams = new URLSearchParams('tab=referrals');
+    mockedFetchSettings.mockResolvedValue(settingsPayload({
+        referral: {
+            ...settingsPayload().referral,
+            invites: makeReferralInvites(23),
+        },
+    }));
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+
+    expect(await screen.findByText('referral-1@example.com')).toBeInTheDocument();
+    expect(screen.getByText('Rows 1-20 of 23 invites')).toBeInTheDocument();
+    expect(screen.queryByText('referral-21@example.com')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+
+    expect(await screen.findByText('referral-21@example.com')).toBeInTheDocument();
+    expect(screen.getByText('Rows 21-23 of 23 invites')).toBeInTheDocument();
+});
+
+test('security audit events paginate at 20 rows', async () => {
+    navigationMocks.searchParams = new URLSearchParams('tab=security');
+    mockedFetchSettings.mockResolvedValue(settingsPayload({
+        security: {
+            ...settingsPayload().security,
+            recent_sensitive_events: makeSecurityEvents(24),
+        },
+    }));
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+
+    expect(await screen.findByText('settings.updated.1')).toBeInTheDocument();
+    expect(screen.getByText('Rows 1-20 of 24 events')).toBeInTheDocument();
+    expect(screen.queryByText('settings.updated.21')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+
+    expect(await screen.findByText('settings.updated.21')).toBeInTheDocument();
+    expect(screen.getByText('Rows 21-24 of 24 events')).toBeInTheDocument();
+});
+
+test('successful referral copy clears a stale error banner', async () => {
+    navigationMocks.searchParams = new URLSearchParams('tab=referrals');
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: { writeText },
+    });
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+
+    await screen.findByText('TAHOE-TEST');
+    await user.click(screen.getByRole('button', { name: 'Send referral invite' }));
+    expect(await screen.findByText('Enter an email address to invite.')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Copy code' }));
+
+    expect(await screen.findByText('Copied.')).toBeInTheDocument();
+    expect(screen.queryByText('Enter an email address to invite.')).not.toBeInTheDocument();
 });

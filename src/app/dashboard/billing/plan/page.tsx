@@ -15,22 +15,13 @@ import {
     type BillingSummary,
 } from '@/lib/organization';
 
-type BillingTab = 'overview' | 'plans' | 'topups' | 'credits' | 'rules';
+type BillingTab = 'overview' | 'plans' | 'topups' | 'credits';
 
 const tabs: Array<{ key: BillingTab; label: string }> = [
     { key: 'overview', label: 'Overview' },
     { key: 'plans', label: 'Plans' },
     { key: 'topups', label: 'Top-ups' },
     { key: 'credits', label: 'Credits' },
-    { key: 'rules', label: 'Rules' },
-];
-
-const billingRules = [
-    { title: 'Monthly grants', copy: 'Subscription credits renew monthly on your billing anchor.' },
-    { title: 'Top-ups persist', copy: 'Top-up credits never expire and are used after expiring credits.' },
-    { title: 'Oldest credits first', copy: 'Tahoe spends expiring credits before non-expiring credits.' },
-    { title: 'Search charges', copy: 'Search charges apply only on new provider-backed preview fetches.' },
-    { title: 'Enrichment charges', copy: 'Enrichment charges apply only when contact data is found.' },
 ];
 
 function formatPrice(value: number) {
@@ -65,7 +56,9 @@ function BillingPlanContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const rawTab = searchParams.get('tab');
-    const urlTab: BillingTab = isBillingTab(rawTab) ? rawTab : 'overview';
+    const validUrlTab = isBillingTab(rawTab);
+    const urlTab: BillingTab = validUrlTab ? rawTab : 'overview';
+    const searchParamsString = searchParams.toString();
     const [activeTab, setActiveTab] = useState<BillingTab>(urlTab);
     const [summary, setSummary] = useState<BillingSummary | null>(null);
     const [catalog, setCatalog] = useState<BillingCatalogResponse | null>(null);
@@ -97,6 +90,14 @@ function BillingPlanContent() {
     useEffect(() => {
         setActiveTab(urlTab);
     }, [urlTab]);
+
+    useEffect(() => {
+        if (rawTab && !validUrlTab) {
+            const params = new URLSearchParams(searchParamsString);
+            params.set('tab', 'overview');
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+        }
+    }, [pathname, rawTab, router, searchParamsString, validUrlTab]);
 
     const activePlan = useMemo(() => {
         if (!catalog || !summary?.billing.plan_key) return null;
@@ -167,7 +168,7 @@ function BillingPlanContent() {
                 <div className={styles.row}>
                     <div>
                         <div className={styles.eyebrow}>Current plan</div>
-                        <div className={styles.planPrice}>
+                        <div className={styles.valueText}>
                             {hasActiveEntitlements ? activePlan?.name ?? 'Starter' : 'No active subscription'}
                         </div>
                         <div className={styles.planPriceMeta}>
@@ -221,10 +222,15 @@ function BillingPlanContent() {
             <div className={styles.planGrid}>
                 {catalog.plans.map((plan) => (
                     <div key={plan.key} className={styles.card}>
-                        <div>
-                            <div className={styles.eyebrow}>{plan.name}</div>
-                            <div className={styles.planPrice}>{formatPrice(plan.monthly_price_usd)}</div>
-                            <div className={styles.planPriceMeta}>or {formatPrice(plan.yearly_price_usd)} / year</div>
+                        <div className={styles.cardHeader}>
+                            <div>
+                                <div className={styles.eyebrow}>{plan.name}</div>
+                                <div className={styles.finePrint}>Subscription plan</div>
+                            </div>
+                            <div className={styles.priceBlock}>
+                                <div className={styles.priceValue}>{formatPrice(plan.monthly_price_usd)} / month</div>
+                                <div className={styles.planPriceMeta}>or {formatPrice(plan.yearly_price_usd)} / year</div>
+                            </div>
                         </div>
                         <div className={styles.row}><span>Credits / month</span><strong>{plan.monthly_credits.toLocaleString()}</strong></div>
                         <div className={styles.row}><span>Mailboxes</span><strong>{plan.limits.mailboxes}</strong></div>
@@ -262,12 +268,16 @@ function BillingPlanContent() {
             <div className={styles.topupGrid}>
                 {catalog.topups.map((pack) => (
                     <div key={pack.key} className={styles.card}>
-                        <div>
-                            <div className={styles.eyebrow}>Top-up credits</div>
-                            <div className={styles.planPrice}>{pack.credits.toLocaleString()}</div>
-                            <div className={styles.planPriceMeta}>{formatPrice(pack.price_usd)} one time</div>
+                        <div className={styles.cardHeader}>
+                            <div>
+                                <div className={styles.eyebrow}>Top-up credits</div>
+                                <div className={styles.finePrint}>Non-expiring credits for burst capacity.</div>
+                            </div>
+                            <div className={styles.priceBlock}>
+                                <div className={styles.priceValue}>{pack.credits.toLocaleString()}</div>
+                                <div className={styles.planPriceMeta}>{formatPrice(pack.price_usd)} one time</div>
+                            </div>
                         </div>
-                        <div className={styles.finePrint}>Non-expiring credits for burst capacity.</div>
                         <button
                             type="button"
                             className="tahoe-button"
@@ -314,24 +324,10 @@ function BillingPlanContent() {
         );
     }
 
-    function renderRules() {
-        return (
-            <div className={styles.rulesGrid}>
-                {billingRules.map((rule) => (
-                    <div key={rule.title} className={styles.card}>
-                        <h2 className={styles.cardTitle}>{rule.title}</h2>
-                        <p className={styles.finePrint}>{rule.copy}</p>
-                    </div>
-                ))}
-            </div>
-        );
-    }
-
     function renderActiveTab() {
         if (activeTab === 'plans') return renderPlans();
         if (activeTab === 'topups') return renderTopUps();
         if (activeTab === 'credits') return renderCredits();
-        if (activeTab === 'rules') return renderRules();
         return renderOverview();
     }
 

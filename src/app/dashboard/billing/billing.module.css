@@ -5,6 +5,13 @@
     min-width: 0;
 }
 
+.ledgerPage {
+    height: calc(100vh - 70px);
+    min-height: 0;
+    overflow: hidden;
+    grid-template-rows: minmax(0, 1fr);
+}
+
 .page,
 .page * {
     box-sizing: border-box;
@@ -129,31 +136,38 @@
     border: 1px solid var(--tahoe-color-border-subtle);
     border-radius: 12px;
     background: #fbfaf7;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 12px;
+    align-items: start;
 }
 
 .metricLabel {
-    font-size: 13px;
+    font-size: 14px;
+    line-height: var(--tahoe-dashboard-control-line-height);
     color: var(--tahoe-color-text-tertiary);
 }
 
 .metricValue {
-    margin-top: 6px;
-    font-size: 28px;
-    line-height: 1.1;
-    font-weight: 600;
+    margin-top: 0;
+    font-size: var(--tahoe-dashboard-control-font-size);
+    line-height: var(--tahoe-dashboard-control-line-height);
+    font-weight: 500;
     color: var(--tahoe-color-text-primary);
+    text-align: right;
+    white-space: nowrap;
 }
 
 .metricMeta {
-    margin-top: 6px;
+    grid-column: 1 / -1;
+    margin-top: 0;
     font-size: 13px;
     color: var(--tahoe-color-text-secondary);
 }
 
 .summaryGrid,
 .planGrid,
-.topupGrid,
-.rulesGrid {
+.topupGrid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
@@ -163,10 +177,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.rulesGrid {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-}
-
 .card {
     padding: 20px;
     display: flex;
@@ -174,10 +184,18 @@
     gap: 14px;
 }
 
+.cardHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
 .cardTitle {
     margin: 0;
-    font-size: 18px;
-    line-height: 1.2;
+    font-size: var(--tahoe-dashboard-control-font-size);
+    line-height: var(--tahoe-dashboard-control-line-height);
+    font-weight: 500;
     color: var(--tahoe-color-text-primary);
 }
 
@@ -186,6 +204,12 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    font-size: var(--tahoe-dashboard-control-font-size);
+    line-height: var(--tahoe-dashboard-control-line-height);
+}
+
+.row strong {
+    font-weight: 500;
 }
 
 .muted {
@@ -235,16 +259,32 @@
     margin-left: auto;
 }
 
-.planPrice {
-    font-size: 32px;
-    line-height: 1;
-    font-weight: 600;
+.valueText {
+    margin-top: 4px;
+    font-size: var(--tahoe-dashboard-control-font-size);
+    line-height: var(--tahoe-dashboard-control-line-height);
+    font-weight: 500;
     color: var(--tahoe-color-text-primary);
 }
 
 .planPriceMeta {
     font-size: 14px;
     color: var(--tahoe-color-text-secondary);
+}
+
+.priceBlock {
+    display: grid;
+    justify-items: end;
+    gap: 4px;
+    min-width: max-content;
+    text-align: right;
+}
+
+.priceValue {
+    font-size: var(--tahoe-dashboard-control-font-size);
+    line-height: var(--tahoe-dashboard-control-line-height);
+    font-weight: 400;
+    color: var(--tahoe-color-text-primary);
 }
 
 .list {
@@ -264,17 +304,30 @@
 }
 
 .tableCard {
-    padding: 20px;
-    overflow: auto;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .filterRow {
+    flex: 0 0 auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    margin-bottom: 16px;
+    padding: 20px;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--tahoe-color-border-subtle);
     flex-wrap: wrap;
+}
+
+.ledgerTableRegion {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: 0 20px;
 }
 
 .table {
@@ -299,6 +352,10 @@
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: rgba(255, 255, 255, 0.98);
 }
 
 .positive {
@@ -318,12 +375,29 @@
     color: var(--tahoe-color-text-tertiary);
 }
 
+.ledgerFooter {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--tahoe-color-border-subtle);
+    color: var(--tahoe-color-text-secondary);
+    font-size: 14px;
+}
+
+.ledgerPaginationControls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 @media (max-width: 1080px) {
     .metricRow,
     .summaryGrid,
     .planGrid,
-    .topupGrid,
-    .rulesGrid {
+    .topupGrid {
         grid-template-columns: 1fr 1fr;
     }
 }
@@ -332,8 +406,7 @@
     .metricRow,
     .summaryGrid,
     .planGrid,
-    .topupGrid,
-    .rulesGrid {
+    .topupGrid {
         grid-template-columns: 1fr;
     }
 
@@ -345,5 +418,20 @@
     .card,
     .tableCard {
         padding: 18px;
+    }
+
+    .tableCard {
+        padding: 0;
+    }
+
+    .cardHeader,
+    .ledgerFooter {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .priceBlock {
+        justify-items: start;
+        text-align: left;
     }
 }

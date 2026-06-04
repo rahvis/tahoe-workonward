@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button, Switch, TahoeSelect, TextField } from '@/components/ui/tahoe-ui';
 import {
     autocompleteAddress,
@@ -52,8 +52,8 @@ const tabs: Array<{ key: SettingsTab; label: string }> = [
     { key: 'workspace', label: 'Workspace' },
     { key: 'subscription', label: 'Subscription' },
     { key: 'payment', label: 'Payment' },
-    { key: 'outreach', label: 'Outreach Defaults' },
-    { key: 'compliance', label: 'Compliance & Data' },
+    { key: 'outreach', label: 'Outreach' },
+    { key: 'compliance', label: 'Compliance' },
     { key: 'referrals', label: 'Referrals' },
     { key: 'integrations', label: 'Integrations' },
     { key: 'notifications', label: 'Notifications' },
@@ -70,6 +70,74 @@ const timezones = [
     'Asia/Kolkata',
     'Asia/Singapore',
 ];
+
+const SETTINGS_TABLE_PAGE_SIZE = 20;
+
+function isSettingsTab(value: string | null): value is SettingsTab {
+    return tabs.some((tab) => tab.key === value);
+}
+
+function pagedRows<T>(items: T[], page: number) {
+    const pageState = pageStateForTotal(items.length, page);
+    const start = (pageState.safePage - 1) * SETTINGS_TABLE_PAGE_SIZE;
+    return {
+        rows: items.slice(start, start + SETTINGS_TABLE_PAGE_SIZE),
+        ...pageState,
+    };
+}
+
+function pageStateForTotal(totalItems: number, page: number) {
+    const totalPages = Math.max(1, Math.ceil(totalItems / SETTINGS_TABLE_PAGE_SIZE));
+    const safePage = Math.min(Math.max(page, 1), totalPages);
+    const start = (safePage - 1) * SETTINGS_TABLE_PAGE_SIZE;
+    return {
+        safePage,
+        totalPages,
+        firstRow: totalItems === 0 ? 0 : start + 1,
+        lastRow: Math.min(start + SETTINGS_TABLE_PAGE_SIZE, totalItems),
+    };
+}
+
+function TablePagination({
+    page,
+    totalItems,
+    itemLabel,
+    onPageChange,
+}: {
+    page: number;
+    totalItems: number;
+    itemLabel: string;
+    onPageChange: (page: number) => void;
+}) {
+    const pageState = pageStateForTotal(totalItems, page);
+
+    return (
+        <div className={styles.tableFooter}>
+            <span>
+                Rows {pageState.firstRow}-{pageState.lastRow} of {totalItems} {itemLabel}
+            </span>
+            <div className={styles.paginationControls}>
+                <button
+                    type="button"
+                    className={styles.paginationButton}
+                    disabled={pageState.safePage <= 1}
+                    onClick={() => onPageChange(pageState.safePage - 1)}
+                >
+                    Previous
+                </button>
+                <span className={styles.paginationMeta}>Page {pageState.safePage} of {pageState.totalPages}</span>
+                <button
+                    type="button"
+                    className={styles.paginationButton}
+                    disabled={pageState.safePage >= pageState.totalPages}
+                    onClick={() => onPageChange(pageState.safePage + 1)}
+                >
+                    Next
+                </button>
+            </div>
+        </div>
+    );
+}
 
 export function redirectToExternal(url: string) {
     if (process.env.NODE_ENV === 'test') return;
@@ -337,9 +405,13 @@ function SaveActions({
 
 function SettingsPageContent() {
     const router = useRouter();
+    const pathname = usePathname();
     const searchParams = useSearchParams();
-    const rawTab = searchParams.get('tab') as SettingsTab | null;
-    const activeTab = tabs.some((tab) => tab.key === rawTab) ? rawTab! : 'account';
+    const searchParamsString = searchParams.toString();
+    const rawTab = new URLSearchParams(searchParamsString).get('tab');
+    const activeTab = isSettingsTab(rawTab) ? rawTab : 'account';
+    const settingsRequestSequenceRef = useRef(0);
+    const billingRequestSequenceRef = useRef(0);
 
     const [settingsPayload, setSettingsPayload] = useState<SettingsPayload | null>(null);
     const [draft, setDraft] = useState<SettingsPayload | null>(null);
@@ -364,77 +436,102 @@ function SettingsPageContent() {
         notes: '',
         confirmation: '',
     });
+    const [invoicePage, setInvoicePage] = useState(1);
+    const [dataRequestsPage, setDataRequestsPage] = useState(1);
+    const [referralPage, setReferralPage] = useState(1);
+    const [securityPage, setSecurityPage] = useState(1);
 
     useEffect(() => {
         const controller = new AbortController();
+        const requestId = settingsRequestSequenceRef.current + 1;
+        settingsRequestSequenceRef.current = requestId;
         setLoading(true);
         setError(null);
         fetchSettings({ signal: controller.signal })
             .then((payload) => {
+                if (controller.signal.aborted || settingsRequestSequenceRef.current !== requestId) return;
                 setSettingsPayload(payload);
                 setDraft(payload);
             })
             .catch((err) => {
-                if (err instanceof DOMException && err.name === 'AbortError') return;
+                if (
+                    (err instanceof DOMException && err.name === 'AbortError')
+                    || controller.signal.aborted
+                    || settingsRequestSequenceRef.current !== requestId
+                ) return;
                 setError(err instanceof Error ? err.message : 'Unable to load settings.');
             })
             .finally(() => {
-                if (!controller.signal.aborted) setLoading(false);
+                if (!controller.signal.aborted && settingsRequestSequenceRef.current === requestId) setLoading(false);
             });
         return () => controller.abort();
     }, []);
 
     useEffect(() => {
-        if (!['account', 'subscription', 'payment'].includes(activeTab)) return;
+        const params = new URLSearchParams(searchParamsString);
+        const tab = params.get('tab');
+        if (tab && !isSettingsTab(tab)) {
+            params.set('tab', 'account');
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+        }
+    }, [pathname, router, searchParamsString]);
+
+    useEffect(() => {
+        if (!['account', 'subscription', 'payment'].includes(activeTab)) {
+            setBillingLoading(false);
+            return;
+        }
         const controller = new AbortController();
+        const requestId = billingRequestSequenceRef.current + 1;
+        billingRequestSequenceRef.current = requestId;
         setBillingLoading(true);
         setBillingError(null);
         setPaymentError(null);
 
-        const billingLoads: Promise<unknown>[] = [
-            fetchBillingSummary(),
-        ];
-        if (activeTab === 'subscription') billingLoads.push(fetchBillingCatalog());
-        if (activeTab === 'payment') {
-            billingLoads.push(fetchPaymentSettings({ signal: controller.signal }));
-        }
+        const summaryLoad = fetchBillingSummary({ signal: controller.signal });
+        const catalogLoad = activeTab === 'subscription'
+            ? fetchBillingCatalog({ signal: controller.signal })
+            : Promise.resolve(null);
+        const paymentLoad = activeTab === 'payment'
+            ? fetchPaymentSettings({ signal: controller.signal })
+            : Promise.resolve(null);
 
-        Promise.allSettled(billingLoads)
+        Promise.allSettled([summaryLoad, catalogLoad, paymentLoad])
             .then((results) => {
-                if (controller.signal.aborted) return;
+                if (controller.signal.aborted || billingRequestSequenceRef.current !== requestId) return;
                 const [summaryResult, catalogResult, paymentResult] = results;
                 if (summaryResult.status === 'fulfilled') setBillingSummary(summaryResult.value as BillingSummary);
                 if (summaryResult.status === 'rejected' && activeTab !== 'account') {
                     setBillingError(summaryResult.reason instanceof Error ? summaryResult.reason.message : 'Unable to load billing summary.');
                 }
                 if (activeTab === 'subscription') {
-                    if (catalogResult?.status === 'fulfilled') setBillingCatalog(catalogResult.value as BillingCatalogResponse);
-                    if (catalogResult?.status === 'rejected') {
+                    if (catalogResult.status === 'fulfilled' && catalogResult.value) {
+                        setBillingCatalog(catalogResult.value as BillingCatalogResponse);
+                    }
+                    if (catalogResult.status === 'rejected') {
                         setBillingError(catalogResult.reason instanceof Error ? catalogResult.reason.message : 'Unable to load subscription catalog.');
                     }
                 }
                 if (activeTab === 'payment') {
-                    if (catalogResult?.status === 'fulfilled') setPaymentSettings(catalogResult.value as PaymentSettingsResponse);
-                    if (catalogResult?.status === 'rejected') {
-                        setPaymentError(catalogResult.reason instanceof Error ? catalogResult.reason.message : 'Unable to load payment settings.');
+                    if (paymentResult.status === 'fulfilled' && paymentResult.value) {
+                        setPaymentSettings(paymentResult.value as PaymentSettingsResponse);
                     }
-                    if (paymentResult?.status === 'fulfilled') setPaymentSettings(paymentResult.value as PaymentSettingsResponse);
-                    if (paymentResult?.status === 'rejected') {
+                    if (paymentResult.status === 'rejected') {
                         setPaymentError(paymentResult.reason instanceof Error ? paymentResult.reason.message : 'Unable to load payment settings.');
                     }
                 }
             })
             .finally(() => {
-                if (!controller.signal.aborted) setBillingLoading(false);
+                if (!controller.signal.aborted && billingRequestSequenceRef.current === requestId) setBillingLoading(false);
             });
 
         return () => controller.abort();
     }, [activeTab]);
 
     function switchTab(tab: SettingsTab) {
-        const params = new URLSearchParams(searchParams.toString());
+        const params = new URLSearchParams(searchParamsString);
         params.set('tab', tab);
-        router.replace(`/dashboard/settings?${params.toString()}`);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
 
     function markDirty(section: SettingsTab) {
@@ -507,6 +604,7 @@ function SettingsPageContent() {
             setReferralEmail('');
             setSettingsPayload((prev) => prev ? { ...prev, referral: response.referral } : prev);
             setDraft((prev) => prev ? { ...prev, referral: response.referral } : prev);
+            setReferralPage(1);
             setNotice(`Referral invite sent to ${response.invite.email_masked}.`);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to send referral invite.');
@@ -530,6 +628,7 @@ function SettingsPageContent() {
             setSettingsPayload((prev) => prev ? { ...prev, data_requests: [created, ...prev.data_requests] } : prev);
             setDraft((prev) => prev ? { ...prev, data_requests: [created, ...prev.data_requests] } : prev);
             setDataRequest({ request_type: 'workspace_export', subject_email: '', candidate_id: '', notes: '', confirmation: '' });
+            setDataRequestsPage(1);
             setNotice('Data request recorded for review.');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to create data request.');
@@ -561,6 +660,7 @@ function SettingsPageContent() {
                 setDraft((prev) => prev ? { ...prev, data_requests: [created, ...prev.data_requests] } : prev);
             }
             setAccountDeletion({ confirmation: '', reason: '' });
+            setDataRequestsPage(1);
             setNotice('Account deletion request recorded.');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to request account deletion.');
@@ -605,6 +705,8 @@ function SettingsPageContent() {
     }
 
     async function copyText(value: string) {
+        setError(null);
+        setNotice(null);
         try {
             await navigator.clipboard.writeText(value);
             setNotice('Copied.');
@@ -616,8 +718,9 @@ function SettingsPageContent() {
     if (loading) {
         return (
             <main className={styles.page}>
-                <p className={styles.eyebrow}>Settings</p>
-                <h1 className={styles.title}>Loading settings...</h1>
+                <div className={styles.contentRegion}>
+                    <div className={styles.empty}>Loading settings...</div>
+                </div>
             </main>
         );
     }
@@ -625,7 +728,9 @@ function SettingsPageContent() {
     if (!draft) {
         return (
             <main className={styles.page}>
-                <div className={styles.errorBanner}>{error || 'Settings unavailable.'}</div>
+                <div className={styles.contentRegion}>
+                    <div className={styles.errorBanner}>{error || 'Settings unavailable.'}</div>
+                </div>
             </main>
         );
     }
@@ -644,6 +749,11 @@ function SettingsPageContent() {
     );
     const accountDeletionStatus = account.account_deletion;
     const accountDeletionConfirmationText = account.account_deletion_confirmation_text || 'DELETE ACCOUNT';
+    const invoices = paymentSettings?.recent_invoices ?? [];
+    const invoiceRows = pagedRows(invoices, invoicePage);
+    const dataRequestRows = pagedRows(draft.data_requests, dataRequestsPage);
+    const referralRows = pagedRows(draft.referral.invites, referralPage);
+    const securityRows = pagedRows(draft.security.recent_sensitive_events, securityPage);
 
     return (
         <main className={styles.page}>
@@ -655,12 +765,17 @@ function SettingsPageContent() {
                 ))}
             </nav>
 
-            {notice ? <div className={styles.successBanner}>{notice}</div> : null}
-            {error ? <div className={styles.errorBanner}>{error}</div> : null}
-            {dirtySections.size > 0 ? <div className={styles.banner}>You have unsaved edits. Save the active tab before leaving this screen.</div> : null}
+            <div className={styles.contentRegion}>
+                {notice || error || dirtySections.size > 0 ? (
+                    <div className={styles.bannerStack}>
+                        {notice ? <div className={styles.successBanner}>{notice}</div> : null}
+                        {error ? <div className={styles.errorBanner}>{error}</div> : null}
+                        {dirtySections.size > 0 ? <div className={styles.banner}>You have unsaved edits. Save the active tab before leaving this screen.</div> : null}
+                    </div>
+                ) : null}
 
-            <div className={styles.layout}>
-                <section className={styles.sectionStack}>
+                <div className={styles.layout}>
+                    <section className={styles.sectionStack}>
                     {activeTab === 'account' ? (
                         <>
                             <div className={styles.card}>
@@ -817,10 +932,15 @@ function SettingsPageContent() {
                                 <div className={styles.planCards}>
                                     {(billingCatalog?.plans || []).map((plan) => (
                                         <div key={plan.key} className={styles.planCard}>
-                                            <div>
-                                                <span className={styles.eyebrow}>{plan.name}</span>
-                                                <div className={styles.planPrice}>{formatPlanPrice(plan.monthly_price_usd)}</div>
-                                                <p className={styles.muted}>or {formatPlanPrice(plan.yearly_price_usd)} / year</p>
+                                            <div className={styles.planTop}>
+                                                <div>
+                                                    <span className={styles.eyebrow}>{plan.name}</span>
+                                                    <p className={styles.muted}>{plan.monthly_credits.toLocaleString()} credits monthly</p>
+                                                </div>
+                                                <div className={styles.planPriceBlock}>
+                                                    <div className={styles.planPrice}>{formatPlanPrice(plan.monthly_price_usd)} / month</div>
+                                                    <p className={styles.muted}>{formatPlanPrice(plan.yearly_price_usd)} / year</p>
+                                                </div>
                                             </div>
                                             <ul className={styles.statusList}>
                                                 <li className={styles.statusItem}><span>Credits / month</span><strong>{plan.monthly_credits.toLocaleString()}</strong></li>
@@ -896,22 +1016,25 @@ function SettingsPageContent() {
                             </div>
                             <div className={styles.card}>
                                 <h2 className={styles.cardTitle}>Recent invoices</h2>
-                                {paymentSettings?.recent_invoices.length ? (
+                                {invoices.length ? (
                                     <div className={styles.tableShell}>
-                                        <table className={styles.table}>
-                                            <thead><tr><th>Invoice</th><th>Status</th><th>Amount paid</th><th>Date</th><th>Link</th></tr></thead>
-                                            <tbody>
-                                                {paymentSettings.recent_invoices.map((invoice) => (
-                                                    <tr key={invoice.id}>
-                                                        <td>{invoice.number || invoice.id}</td>
-                                                        <td><span className={statusClass(invoice.status || '')}>{invoice.status || 'unknown'}</span></td>
-                                                        <td>{formatMoneyCents(invoice.amount_paid, invoice.currency)}</td>
-                                                        <td>{formatDate(invoice.created_at)}</td>
-                                                        <td>{invoice.hosted_invoice_url ? <a href={invoice.hosted_invoice_url} target="_blank" rel="noreferrer">Open</a> : '—'}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                        <div className={styles.tableScroll}>
+                                            <table className={styles.table}>
+                                                <thead><tr><th>Invoice</th><th>Status</th><th>Amount paid</th><th>Date</th><th>Link</th></tr></thead>
+                                                <tbody>
+                                                    {invoiceRows.rows.map((invoice) => (
+                                                        <tr key={invoice.id}>
+                                                            <td>{invoice.number || invoice.id}</td>
+                                                            <td><span className={statusClass(invoice.status || '')}>{invoice.status || 'unknown'}</span></td>
+                                                            <td>{formatMoneyCents(invoice.amount_paid, invoice.currency)}</td>
+                                                            <td>{formatDate(invoice.created_at)}</td>
+                                                            <td>{invoice.hosted_invoice_url ? <a href={invoice.hosted_invoice_url} target="_blank" rel="noreferrer">Open</a> : '-'}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <TablePagination page={invoicePage} totalItems={invoices.length} itemLabel="invoices" onPageChange={setInvoicePage} />
                                     </div>
                                 ) : <div className={styles.empty}>No Stripe invoices are available yet.</div>}
                             </div>
@@ -1008,19 +1131,22 @@ function SettingsPageContent() {
                                 <h2 className={styles.cardTitle}>Recent data requests</h2>
                                 {draft.data_requests.length === 0 ? <div className={styles.empty}>No data requests yet.</div> : (
                                     <div className={styles.tableShell}>
-                                        <table className={styles.table}>
-                                            <thead><tr><th>Type</th><th>Status</th><th>Subject</th><th>Created</th></tr></thead>
-                                            <tbody>
-                                                {draft.data_requests.map((item) => (
-                                                    <tr key={item.id}>
-                                                        <td>{requestLabel(item.request_type)}</td>
-                                                        <td><span className={statusClass(item.status)}>{item.status}</span></td>
-                                                        <td>{item.subject_email_masked || item.candidate_id || 'Workspace'}</td>
-                                                        <td>{formatDate(item.created_at)}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                        <div className={styles.tableScroll}>
+                                            <table className={styles.table}>
+                                                <thead><tr><th>Type</th><th>Status</th><th>Subject</th><th>Created</th></tr></thead>
+                                                <tbody>
+                                                    {dataRequestRows.rows.map((item) => (
+                                                        <tr key={item.id}>
+                                                            <td>{requestLabel(item.request_type)}</td>
+                                                            <td><span className={statusClass(item.status)}>{item.status}</span></td>
+                                                            <td>{item.subject_email_masked || item.candidate_id || 'Workspace'}</td>
+                                                            <td>{formatDate(item.created_at)}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <TablePagination page={dataRequestsPage} totalItems={draft.data_requests.length} itemLabel="requests" onPageChange={setDataRequestsPage} />
                                     </div>
                                 )}
                             </div>
@@ -1054,20 +1180,23 @@ function SettingsPageContent() {
                             <h3 className={styles.cardTitle} style={{ marginTop: 28 }}>Referral activity</h3>
                             {draft.referral.invites.length === 0 ? <div className={styles.empty}>No referral invites yet.</div> : (
                                 <div className={styles.tableShell}>
-                                    <table className={styles.table}>
-                                        <thead><tr><th>Email</th><th>Status</th><th>Sent</th><th>Converted</th><th>Reward</th></tr></thead>
-                                        <tbody>
-                                            {draft.referral.invites.map((item) => (
-                                                <tr key={item.id}>
-                                                    <td>{item.email_masked}</td>
-                                                    <td><span className={statusClass(item.status)}>{item.status.replaceAll('_', ' ')}</span></td>
-                                                    <td>{formatDate(item.sent_at)}</td>
-                                                    <td>{formatDate(item.converted_at)}</td>
-                                                    <td>{formatDate(item.reward_issued_at)}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                    <div className={styles.tableScroll}>
+                                        <table className={styles.table}>
+                                            <thead><tr><th>Email</th><th>Status</th><th>Sent</th><th>Converted</th><th>Reward</th></tr></thead>
+                                            <tbody>
+                                                {referralRows.rows.map((item) => (
+                                                    <tr key={item.id}>
+                                                        <td>{item.email_masked}</td>
+                                                        <td><span className={statusClass(item.status)}>{item.status.replaceAll('_', ' ')}</span></td>
+                                                        <td>{formatDate(item.sent_at)}</td>
+                                                        <td>{formatDate(item.converted_at)}</td>
+                                                        <td>{formatDate(item.reward_issued_at)}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <TablePagination page={referralPage} totalItems={draft.referral.invites.length} itemLabel="invites" onPageChange={setReferralPage} />
                                 </div>
                             )}
                         </div>
@@ -1131,23 +1260,27 @@ function SettingsPageContent() {
                             <h3 className={styles.cardTitle} style={{ marginTop: 28 }}>Recent sensitive changes</h3>
                             {draft.security.recent_sensitive_events.length === 0 ? <div className={styles.empty}>No sensitive settings changes yet.</div> : (
                                 <div className={styles.tableShell}>
-                                    <table className={styles.table}>
-                                        <thead><tr><th>Event</th><th>Target</th><th>Time</th></tr></thead>
-                                        <tbody>
-                                            {draft.security.recent_sensitive_events.map((event) => (
-                                                <tr key={event.id}>
-                                                    <td>{event.event_type}</td>
-                                                    <td>{event.target}</td>
-                                                    <td>{formatDate(event.created_at)}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                    <div className={styles.tableScroll}>
+                                        <table className={styles.table}>
+                                            <thead><tr><th>Event</th><th>Target</th><th>Time</th></tr></thead>
+                                            <tbody>
+                                                {securityRows.rows.map((event) => (
+                                                    <tr key={event.id}>
+                                                        <td>{event.event_type}</td>
+                                                        <td>{event.target}</td>
+                                                        <td>{formatDate(event.created_at)}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <TablePagination page={securityPage} totalItems={draft.security.recent_sensitive_events.length} itemLabel="events" onPageChange={setSecurityPage} />
                                 </div>
                             )}
                         </div>
                     ) : null}
-                </section>
+                    </section>
+                </div>
             </div>
         </main>
     );
@@ -1157,8 +1290,9 @@ export default function SettingsPage() {
     return (
         <Suspense fallback={
             <main className={styles.page}>
-                <p className={styles.eyebrow}>Settings</p>
-                <h1 className={styles.title}>Loading settings...</h1>
+                <div className={styles.contentRegion}>
+                    <div className={styles.empty}>Loading settings...</div>
+                </div>
             </main>
         }>
             <SettingsPageContent />

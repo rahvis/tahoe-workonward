@@ -1116,12 +1116,12 @@ export async function fetchCreditBalance() {
     return apiRequest<CreditBalanceResponse>('/credits/balance');
 }
 
-export async function fetchBillingCatalog() {
-    return apiRequest<BillingCatalogResponse>('/billing/catalog');
+export async function fetchBillingCatalog(options?: { signal?: AbortSignal }) {
+    return apiRequest<BillingCatalogResponse>('/billing/catalog', options);
 }
 
-export async function fetchBillingSummary() {
-    return apiRequest<BillingSummary>('/billing/summary');
+export async function fetchBillingSummary(options?: { signal?: AbortSignal }) {
+    return apiRequest<BillingSummary>('/billing/summary', options);
 }
 
 export async function fetchBillingLedger(kinds?: string[]) {

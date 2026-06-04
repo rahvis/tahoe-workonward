@@ -17,6 +17,8 @@ const RANGE_OPTIONS: Array<{ key: AnalyticsRangeKey; label: string }> = [
     { key: '365d', label: '1Y' },
 ];
 
+export const ANALYTICS_TABLE_PAGE_SIZE = 20;
+
 export function formatDayLabel(value: string) {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '—';
@@ -77,7 +79,14 @@ export function AnalyticsTabs<T extends string>({
 }
 
 export function RollupFreshness({ data }: { data: AnalyticsRollupMetadata }) {
-    const last = data.last_rollup_at ? new Date(data.last_rollup_at).toLocaleString() : 'not available';
+    const last = data.last_rollup_at
+        ? new Date(data.last_rollup_at).toLocaleString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+        })
+        : 'not available';
     const lag = data.rollup_lag_seconds == null ? null : Math.round(data.rollup_lag_seconds / 60);
     const label = data.rollup_status === 'fresh'
         ? 'Fresh'
@@ -92,8 +101,56 @@ export function RollupFreshness({ data }: { data: AnalyticsRollupMetadata }) {
     return (
         <div className={`${styles.freshnessNote} ${statusClass}`}>
             <span>{label}</span>
-            <span>Last rollup {last}</span>
+            <span>{last}</span>
             {lag == null ? null : <span>{lag}m lag</span>}
+        </div>
+    );
+}
+
+export function PaginationFooter({
+    page,
+    pageSize = ANALYTICS_TABLE_PAGE_SIZE,
+    totalItems,
+    label = 'rows',
+    onPageChange,
+}: {
+    page: number;
+    pageSize?: number;
+    totalItems: number;
+    label?: string;
+    onPageChange: (page: number) => void;
+}) {
+    const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+    const safePage = Math.min(Math.max(1, page), totalPages);
+    const start = totalItems === 0 ? 0 : (safePage - 1) * pageSize + 1;
+    const end = Math.min(totalItems, safePage * pageSize);
+
+    return (
+        <div className={styles.tableFooter}>
+            <span>
+                {totalItems === 0
+                    ? `0 ${label}`
+                    : `Rows ${start}-${end} of ${totalItems} ${label}`}
+            </span>
+            <div className={styles.paginationControls}>
+                <button
+                    type="button"
+                    className={styles.paginationButton}
+                    disabled={safePage <= 1}
+                    onClick={() => onPageChange(safePage - 1)}
+                >
+                    Previous
+                </button>
+                <span className={styles.paginationMeta}>{safePage} / {totalPages}</span>
+                <button
+                    type="button"
+                    className={styles.paginationButton}
+                    disabled={safePage >= totalPages}
+                    onClick={() => onPageChange(safePage + 1)}
+                >
+                    Next
+                </button>
+            </div>
         </div>
     );
 }
@@ -297,7 +354,7 @@ export function FunnelChart({ stages }: { stages: AnalyticsFunnelStage[] }) {
                 <div key={stage.key} className={styles.funnelStage}>
                     <div
                         className={`${styles.funnelBar} ${index % 2 === 1 ? styles.funnelBarAlt : ''}`}
-                        style={{ height: `${Math.max(48, (stage.count / max) * 240)}px` }}
+                        style={{ height: `${Math.max(36, (stage.count / max) * 160)}px` }}
                     />
                     <div className={styles.funnelLabel}>{stage.label}</div>
                     <div className={styles.funnelMeta}>{stage.count.toLocaleString()}</div>

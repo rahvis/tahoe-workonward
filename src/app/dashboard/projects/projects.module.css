@@ -81,6 +81,12 @@
     min-width: 220px;
 }
 
+.directoryCreateButton {
+    min-width: 132px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+
 .directoryMetaBar {
     flex: 0 0 auto;
     display: flex;

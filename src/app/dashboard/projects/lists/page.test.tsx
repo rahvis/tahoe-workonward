@@ -77,6 +77,7 @@ test('renders lists as a full-width compact table with row actions', async () =>
     expect(screen.getByPlaceholderText('Search lists or projects...').closest('label')).toHaveClass('tui-textfield--size-3');
     expect(screen.getByRole('columnheader', { name: 'List' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Candidates' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Actions' })).toBeInTheDocument();
     expect(screen.getAllByText('Quantum Computing').length).toBeGreaterThan(0);
     expect(screen.getAllByText('20').length).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: 'Contact engineers' })).toHaveAttribute('href', '/dashboard/projects/lists/list-1');
@@ -114,7 +115,7 @@ test('clears create project selection when project_id is absent', async () => {
     render(<ListsDirectoryPage />);
     await screen.findAllByText('Contact engineers');
 
-    await user.click(screen.getByRole('button', { name: '+ List' }));
+    await user.click(screen.getByRole('button', { name: 'Create List' }));
 
     expect(screen.getByLabelText('Project')).toHaveValue('');
 });
@@ -142,7 +143,7 @@ test('clears create-list modal errors between sessions', async () => {
     render(<ListsDirectoryPage />);
     await screen.findAllByText('Contact engineers');
 
-    await user.click(screen.getByRole('button', { name: '+ List' }));
+    await user.click(screen.getByRole('button', { name: 'Create List' }));
     await user.type(screen.getByLabelText('List name'), 'Outbound list');
     await user.click(screen.getByRole('button', { name: 'Create list' }));
 
@@ -153,7 +154,7 @@ test('clears create-list modal errors between sessions', async () => {
         expect(screen.queryByText('Create list failed')).not.toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('button', { name: '+ List' }));
+    await user.click(screen.getByRole('button', { name: 'Create List' }));
 
     expect(screen.queryByText('Create list failed')).not.toBeInTheDocument();
 });

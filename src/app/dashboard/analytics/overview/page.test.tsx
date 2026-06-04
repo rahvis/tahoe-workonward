@@ -120,7 +120,9 @@ test('defaults to 7D and does not load forecasts until the forecasts tab opens',
     render(<AnalyticsOverviewPage />);
 
     expect(await screen.findByText('Credits spent')).toBeInTheDocument();
-    expect(screen.getByText(/Last rollup/i)).toBeInTheDocument();
+    expect(screen.getByText('Fresh')).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Credits' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Health' })).not.toBeInTheDocument();
     expect(mockedFetchAnalyticsPredictions).not.toHaveBeenCalled();
 
     await waitFor(() => {
@@ -164,4 +166,58 @@ test('keeps cached data visible while revalidating the same range', async () => 
 
     await user.click(screen.getByRole('button', { name: '30D' }));
     await waitFor(() => expect(navigationMocks.replace).toHaveBeenCalled());
+});
+
+test('normalizes removed overview tabs back to summary', async () => {
+    navigationMocks.searchParams = new URLSearchParams('range=30d&tab=credits');
+
+    render(<AnalyticsOverviewPage />);
+
+    expect(await screen.findByText('Credits spent')).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Credits' })).not.toBeInTheDocument();
+    await waitFor(() => {
+        expect(navigationMocks.replace).toHaveBeenCalledWith(
+            '/dashboard/analytics/overview?range=30d&tab=summary',
+            { scroll: false },
+        );
+    });
+});
+
+test('does not show stale forecasts after changing range', async () => {
+    const user = userEvent.setup();
+    let resolveNextForecast: ((value: AnalyticsPredictionsResponse) => void) | undefined;
+    mockedFetchAnalyticsPredictions
+        .mockResolvedValueOnce(predictionsResponse())
+        .mockReturnValueOnce(new Promise((resolve) => {
+            resolveNextForecast = resolve;
+        }));
+
+    render(<AnalyticsOverviewPage />);
+
+    await screen.findByText('Credits spent');
+    await user.click(screen.getByRole('tab', { name: 'Forecasts' }));
+
+    expect(await screen.findByText('15.4 days')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '30D' }));
+
+    expect(await screen.findByRole('heading', { name: 'Loading forecasts' })).toBeInTheDocument();
+    expect(screen.queryByText('15.4 days')).not.toBeInTheDocument();
+
+    resolveNextForecast?.(predictionsResponse({
+        range: '30d',
+        predictions: [
+            {
+                key: 'credit_runway_days',
+                label: 'Credit runway',
+                display_value: '30 days',
+                value: 30,
+                insufficient_data: false,
+                method_label: 'Trailing credit-burn estimate',
+                explanation: 'Uses recent credit consumption to estimate how long current credits will last.',
+            },
+        ],
+    }));
+
+    expect(await screen.findByText('30 days')).toBeInTheDocument();
 });

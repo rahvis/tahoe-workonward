@@ -44,6 +44,7 @@ test('renders projects as a full-width compact table with row actions', async ()
     expect(screen.getByPlaceholderText('Search projects...').closest('label')).toHaveClass('tui-textfield--size-3');
     expect(screen.getByRole('columnheader', { name: 'Project' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Lists' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Actions' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Quantum Computing' })).toHaveAttribute('href', '/dashboard/projects/project-1');
     expect(screen.getByRole('link', { name: 'Open' })).toHaveAttribute('href', '/dashboard/projects/project-1');
     expect(screen.getByRole('link', { name: 'Lists' })).toHaveAttribute('href', '/dashboard/projects/lists?project_id=project-1');
@@ -51,7 +52,7 @@ test('renders projects as a full-width compact table with row actions', async ()
     expect(screen.getByRole('button', { name: 'Archive' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Project details')).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: '+ Project' }));
+    await user.click(screen.getByRole('button', { name: 'Create Project' }));
 
     const createInput = screen.getByPlaceholderText('Series-B Backend Engineers');
     expect(createInput.closest('label')).toHaveClass('tui-textfield--size-3');
@@ -82,7 +83,7 @@ test('keeps a created project when optional first-list creation fails', async ()
     render(<ProjectsPage />);
     await screen.findAllByText('Quantum Computing');
 
-    await user.click(screen.getByRole('button', { name: '+ Project' }));
+    await user.click(screen.getByRole('button', { name: 'Create Project' }));
     await user.type(screen.getByLabelText('Project name'), 'New Project');
     await user.type(screen.getByLabelText('First list'), 'Outreach Round 1');
     await user.click(screen.getByRole('button', { name: 'Create project' }));

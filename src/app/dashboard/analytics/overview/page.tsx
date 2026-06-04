@@ -18,17 +18,14 @@ import {
     RangeTabs,
     RollupFreshness,
     Sparkline,
-    StackedSpendChart,
 } from '../_components/charts';
 
-type OverviewTab = 'summary' | 'credits' | 'workflow' | 'forecasts' | 'health';
+type OverviewTab = 'summary' | 'workflow' | 'forecasts';
 
 const overviewTabs: Array<{ key: OverviewTab; label: string }> = [
     { key: 'summary', label: 'Summary' },
-    { key: 'credits', label: 'Credits' },
     { key: 'workflow', label: 'Workflow' },
     { key: 'forecasts', label: 'Forecasts' },
-    { key: 'health', label: 'Health' },
 ];
 
 const rangeOptions: AnalyticsRangeKey[] = ['7d', '30d', '90d', '365d'];
@@ -44,7 +41,9 @@ function isOverviewTab(value: string | null): value is OverviewTab {
 function OverviewContent() {
     const pathname = usePathname();
     const router = useRouter();
+    const replace = router.replace;
     const searchParams = useSearchParams();
+    const searchParamsString = searchParams.toString();
     const initialRange = searchParams.get('range');
     const initialTab = searchParams.get('tab');
     const [range, setRange] = useState<AnalyticsRangeKey>(isRange(initialRange) ? initialRange : '7d');
@@ -60,21 +59,31 @@ function OverviewContent() {
     const predictionSequence = useRef(0);
 
     useEffect(() => {
-        const nextRange = searchParams.get('range');
-        const nextTab = searchParams.get('tab');
-        setRange(isRange(nextRange) ? nextRange : '7d');
-        setTab(isOverviewTab(nextTab) ? nextTab : 'summary');
-    }, [searchParams]);
+        const currentParams = new URLSearchParams(searchParamsString);
+        const nextRange = currentParams.get('range');
+        const nextTab = currentParams.get('tab');
+        const normalizedRange = isRange(nextRange) ? nextRange : '7d';
+        const normalizedTab = isOverviewTab(nextTab) ? nextTab : 'summary';
+        setRange(normalizedRange);
+        setTab(normalizedTab);
+
+        if ((nextRange && !isRange(nextRange)) || (nextTab && !isOverviewTab(nextTab))) {
+            const params = new URLSearchParams(searchParamsString);
+            params.set('range', normalizedRange);
+            params.set('tab', normalizedTab);
+            replace(`${pathname}?${params.toString()}`, { scroll: false });
+        }
+    }, [pathname, replace, searchParamsString]);
 
     function updateUrl(next: { range?: AnalyticsRangeKey; tab?: OverviewTab }) {
         const nextRange = next.range ?? range;
         const nextTab = next.tab ?? tab;
         setRange(nextRange);
         setTab(nextTab);
-        const params = new URLSearchParams(searchParams.toString());
+        const params = new URLSearchParams(searchParamsString);
         params.set('range', nextRange);
         params.set('tab', nextTab);
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+        replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
 
     useEffect(() => {
@@ -121,6 +130,7 @@ function OverviewContent() {
             setPredictions(cached);
             setPredictionLoading(false);
         } else {
+            setPredictions(null);
             setPredictionLoading(true);
         }
         setPredictionError(null);
@@ -169,25 +179,6 @@ function OverviewContent() {
         );
     }
 
-    function renderCredits(current: AnalyticsOverviewResponse) {
-        return (
-            <div className={styles.sectionStack}>
-                <div className={styles.heroCard}>
-                    <div className={styles.metricStrip}>
-                        <div className={styles.metricPanel}><div className={styles.metricLabel}>Available</div><div className={styles.metricValue}>{current.credit_snapshot.available.toLocaleString()}</div><div className={styles.metricMeta}>Spendable now</div></div>
-                        <div className={styles.metricPanel}><div className={styles.metricLabel}>Reserved</div><div className={styles.metricValue}>{current.credit_snapshot.reserved.toLocaleString()}</div><div className={styles.metricMeta}>In-flight work</div></div>
-                        <div className={styles.metricPanel}><div className={styles.metricLabel}>Included</div><div className={styles.metricValue}>{current.credit_snapshot.monthly_included.toLocaleString()}</div><div className={styles.metricMeta}>Monthly allocation</div></div>
-                        <div className={styles.metricPanel}><div className={styles.metricLabel}>Runway</div><div className={styles.metricValue}>{current.credit_snapshot.credit_runway_days == null ? '—' : `${current.credit_snapshot.credit_runway_days.toFixed(1)}d`}</div><div className={styles.metricMeta}>Recent pace</div></div>
-                    </div>
-                </div>
-                <div className={styles.card}>
-                    <h2 className={styles.cardTitle}>Credit spend</h2>
-                    <StackedSpendChart points={current.credit_spend_trend} />
-                </div>
-            </div>
-        );
-    }
-
     function renderWorkflow(current: AnalyticsOverviewResponse) {
         return (
             <div className={styles.gridTwo}>
@@ -204,12 +195,13 @@ function OverviewContent() {
     }
 
     function renderForecasts() {
-        if (predictionError && !predictions) return <div className={styles.emptyState}><h2>Forecasts unavailable</h2><p>{predictionError}</p></div>;
-        if (predictionLoading && !predictions) return <div className={styles.emptyState}><h2>Loading forecasts</h2><p>Preparing Tahoe-only estimates.</p></div>;
-        if (!predictions) return null;
+        const currentPredictions = predictions?.range === range ? predictions : null;
+        if (predictionError && !currentPredictions) return <div className={styles.emptyState}><h2>Forecasts unavailable</h2><p>{predictionError}</p></div>;
+        if ((predictionLoading && !currentPredictions) || (predictions && predictions.range !== range)) return <div className={styles.emptyState}><h2>Loading forecasts</h2><p>Preparing Tahoe-only estimates.</p></div>;
+        if (!currentPredictions) return null;
         return (
             <div className={styles.predictionGrid}>
-                {predictions.predictions.map((prediction) => (
+                {currentPredictions.predictions.map((prediction) => (
                     <div key={prediction.key} className={styles.predictionCard}>
                         <div className={styles.metricLabel}>{prediction.label}</div>
                         <div className={styles.predictionValue}>{prediction.display_value}</div>
@@ -217,24 +209,6 @@ function OverviewContent() {
                         <div className={styles.finePrint}>{prediction.explanation}</div>
                     </div>
                 ))}
-            </div>
-        );
-    }
-
-    function renderHealth(current: AnalyticsOverviewResponse) {
-        return (
-            <div className={styles.sectionStack}>
-                <RollupFreshness data={current} />
-                {current.rollup_message ? <div className={styles.noticeBanner}>{current.rollup_message}</div> : null}
-                <div className={styles.signalGrid}>
-                    {current.release_signals.map((signal) => (
-                        <div key={signal.key} className={`${styles.signalCard} ${signal.status === 'healthy' ? styles.signalHealthy : signal.status === 'warning' ? styles.signalWarning : styles.signalCritical}`}>
-                            <div className={styles.metricLabel}>{signal.label}</div>
-                            <div className={styles.metricValue}>{signal.value}</div>
-                            <div className={styles.metricMeta}>{signal.detail ?? 'No detail'}</div>
-                        </div>
-                    ))}
-                </div>
             </div>
         );
     }
@@ -249,21 +223,22 @@ function OverviewContent() {
             </div>
             <AnalyticsTabs tabs={overviewTabs} value={tab} onChange={(nextTab) => updateUrl({ tab: nextTab })} label="Overview sections" />
 
-            {error && !overview ? (
-                <div className={styles.emptyState}><h2>Analytics unavailable</h2><p>{error}</p></div>
-            ) : loading || !overview ? (
-                <div className={styles.emptyState}><h2>Loading overview</h2><p>Reading analytics rollups.</p></div>
-            ) : (
-                <>
-                    {error ? <div className={styles.noticeBanner}>{error}</div> : null}
-                    {tab !== 'health' ? <RollupFreshness data={overview} /> : null}
-                    {tab === 'summary' ? renderSummary(overview) : null}
-                    {tab === 'credits' ? renderCredits(overview) : null}
-                    {tab === 'workflow' ? renderWorkflow(overview) : null}
-                    {tab === 'forecasts' ? renderForecasts() : null}
-                    {tab === 'health' ? renderHealth(overview) : null}
-                </>
-            )}
+            <div className={styles.contentRegion}>
+                {error && !overview ? (
+                    <div className={styles.emptyState}><h2>Analytics unavailable</h2><p>{error}</p></div>
+                ) : loading || !overview ? (
+                    <div className={styles.emptyState}><h2>Loading overview</h2><p>Reading analytics rollups.</p></div>
+                ) : (
+                    <>
+                        {error ? <div className={styles.noticeBanner}>{error}</div> : null}
+                        <RollupFreshness data={overview} />
+                        {overview.rollup_message ? <div className={styles.noticeBanner}>{overview.rollup_message}</div> : null}
+                        {tab === 'summary' ? renderSummary(overview) : null}
+                        {tab === 'workflow' ? renderWorkflow(overview) : null}
+                        {tab === 'forecasts' ? renderForecasts() : null}
+                    </>
+                )}
+            </div>
         </section>
     );
 }

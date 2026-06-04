@@ -234,8 +234,8 @@ function ListsDirectoryPageInner() {
                         <option value="name_asc">Name A-Z</option>
                         <option value="candidate_count_desc">Most candidates</option>
                     </TahoeSelect>
-                    <Button size="3" type="button" onClick={openCreateListModal}>
-                        + List
+                    <Button size="3" type="button" className={styles.directoryCreateButton} onClick={openCreateListModal}>
+                        Create List
                     </Button>
                 </div>
             </header>
@@ -256,7 +256,7 @@ function ListsDirectoryPageInner() {
                                     <th>Project</th>
                                     <th>Candidates</th>
                                     <th>Updated</th>
-                                    <th>Next</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>

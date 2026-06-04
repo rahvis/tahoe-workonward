@@ -9,7 +9,15 @@ import {
     type AnalyticsSpendResponse,
 } from '@/lib/organization';
 import { readAnalyticsCache, writeAnalyticsCache } from '../_components/analytics-cache';
-import { AnalyticsTabs, BarList, RangeTabs, RollupFreshness, StackedSpendChart } from '../_components/charts';
+import {
+    ANALYTICS_TABLE_PAGE_SIZE,
+    AnalyticsTabs,
+    BarList,
+    PaginationFooter,
+    RangeTabs,
+    RollupFreshness,
+    StackedSpendChart,
+} from '../_components/charts';
 
 type SpendTab = 'summary' | 'categories' | 'attribution' | 'events';
 
@@ -32,7 +40,9 @@ function isSpendTab(value: string | null): value is SpendTab {
 function SpendContent() {
     const pathname = usePathname();
     const router = useRouter();
+    const replace = router.replace;
     const searchParams = useSearchParams();
+    const searchParamsString = searchParams.toString();
     const initialRange = searchParams.get('range');
     const initialTab = searchParams.get('tab');
     const [range, setRange] = useState<AnalyticsRangeKey>(isRange(initialRange) ? initialRange : '7d');
@@ -41,24 +51,35 @@ function SpendContent() {
     const [loading, setLoading] = useState(true);
     const [revalidating, setRevalidating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [eventsPage, setEventsPage] = useState(1);
     const requestSequence = useRef(0);
 
     useEffect(() => {
-        const nextRange = searchParams.get('range');
-        const nextTab = searchParams.get('tab');
-        setRange(isRange(nextRange) ? nextRange : '7d');
-        setTab(isSpendTab(nextTab) ? nextTab : 'summary');
-    }, [searchParams]);
+        const currentParams = new URLSearchParams(searchParamsString);
+        const nextRange = currentParams.get('range');
+        const nextTab = currentParams.get('tab');
+        const normalizedRange = isRange(nextRange) ? nextRange : '7d';
+        const normalizedTab = isSpendTab(nextTab) ? nextTab : 'summary';
+        setRange(normalizedRange);
+        setTab(normalizedTab);
+
+        if ((nextRange && !isRange(nextRange)) || (nextTab && !isSpendTab(nextTab))) {
+            const params = new URLSearchParams(searchParamsString);
+            params.set('range', normalizedRange);
+            params.set('tab', normalizedTab);
+            replace(`${pathname}?${params.toString()}`, { scroll: false });
+        }
+    }, [pathname, replace, searchParamsString]);
 
     function updateUrl(next: { range?: AnalyticsRangeKey; tab?: SpendTab }) {
         const nextRange = next.range ?? range;
         const nextTab = next.tab ?? tab;
         setRange(nextRange);
         setTab(nextTab);
-        const params = new URLSearchParams(searchParams.toString());
+        const params = new URLSearchParams(searchParamsString);
         params.set('range', nextRange);
         params.set('tab', nextTab);
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+        replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
 
     useEffect(() => {
@@ -94,6 +115,22 @@ function SpendContent() {
         void load();
         return () => controller.abort();
     }, [range]);
+
+    const eventRows = data?.high_cost_events ?? [];
+    const eventTotalPages = Math.max(1, Math.ceil(eventRows.length / ANALYTICS_TABLE_PAGE_SIZE));
+    const safeEventsPage = Math.min(eventsPage, eventTotalPages);
+    const visibleEventRows = eventRows.slice(
+        (safeEventsPage - 1) * ANALYTICS_TABLE_PAGE_SIZE,
+        safeEventsPage * ANALYTICS_TABLE_PAGE_SIZE,
+    );
+
+    useEffect(() => {
+        setEventsPage(1);
+    }, [range]);
+
+    useEffect(() => {
+        setEventsPage((currentPage) => Math.min(currentPage, eventTotalPages));
+    }, [eventTotalPages]);
 
     function renderSummary(current: AnalyticsSpendResponse) {
         return (
@@ -174,25 +211,33 @@ function SpendContent() {
     function renderEvents(current: AnalyticsSpendResponse) {
         return (
             <div className={styles.tableCard}>
-                <table className={styles.table}>
-                    <thead>
-                        <tr><th>Event</th><th>Credits</th><th>Project</th><th>Campaign</th><th>Time</th></tr>
-                    </thead>
-                    <tbody>
-                        {current.high_cost_events.map((event) => (
-                            <tr key={event.idempotency_key}>
-                                <td>{event.label}<span className={styles.subtext}>{event.kind}</span></td>
-                                <td>{event.credits.toLocaleString()}</td>
-                                <td>{event.project_name ?? '—'}</td>
-                                <td>{event.campaign_name ?? '—'}</td>
-                                <td>{event.created_at ? new Date(event.created_at).toLocaleString() : '—'}</td>
-                            </tr>
-                        ))}
-                        {current.high_cost_events.length === 0 ? (
-                            <tr><td colSpan={5} className={styles.finePrint}>High-cost events appear after credit-consuming activity starts.</td></tr>
-                        ) : null}
-                    </tbody>
-                </table>
+                <div className={styles.tableScroll}>
+                    <table className={styles.table}>
+                        <thead>
+                            <tr><th>Event</th><th>Credits</th><th>Project</th><th>Campaign</th><th>Time</th></tr>
+                        </thead>
+                        <tbody>
+                            {visibleEventRows.map((event) => (
+                                <tr key={event.idempotency_key}>
+                                    <td>{event.label}<span className={styles.subtext}>{event.kind}</span></td>
+                                    <td>{event.credits.toLocaleString()}</td>
+                                    <td>{event.project_name ?? '—'}</td>
+                                    <td>{event.campaign_name ?? '—'}</td>
+                                    <td>{event.created_at ? new Date(event.created_at).toLocaleString() : '—'}</td>
+                                </tr>
+                            ))}
+                            {current.high_cost_events.length === 0 ? (
+                                <tr><td colSpan={5} className={styles.finePrint}>High-cost events appear after credit-consuming activity starts.</td></tr>
+                            ) : null}
+                        </tbody>
+                    </table>
+                </div>
+                <PaginationFooter
+                    page={safeEventsPage}
+                    totalItems={current.high_cost_events.length}
+                    label="events"
+                    onPageChange={setEventsPage}
+                />
             </div>
         );
     }
@@ -207,20 +252,22 @@ function SpendContent() {
             </div>
             <AnalyticsTabs tabs={spendTabs} value={tab} onChange={(nextTab) => updateUrl({ tab: nextTab })} label="Spend sections" />
 
-            {error && !data ? (
-                <div className={styles.emptyState}><h2>Spend analytics unavailable</h2><p>{error}</p></div>
-            ) : loading || !data ? (
-                <div className={styles.emptyState}><h2>Loading spend</h2><p>Reading credit rollups.</p></div>
-            ) : (
-                <>
-                    {error ? <div className={styles.noticeBanner}>{error}</div> : null}
-                    <RollupFreshness data={data} />
-                    {tab === 'summary' ? renderSummary(data) : null}
-                    {tab === 'categories' ? renderCategories(data) : null}
-                    {tab === 'attribution' ? renderAttribution(data) : null}
-                    {tab === 'events' ? renderEvents(data) : null}
-                </>
-            )}
+            <div className={styles.contentRegion}>
+                {error && !data ? (
+                    <div className={styles.emptyState}><h2>Spend analytics unavailable</h2><p>{error}</p></div>
+                ) : loading || !data ? (
+                    <div className={styles.emptyState}><h2>Loading spend</h2><p>Reading credit rollups.</p></div>
+                ) : (
+                    <>
+                        {error ? <div className={styles.noticeBanner}>{error}</div> : null}
+                        <RollupFreshness data={data} />
+                        {tab === 'summary' ? renderSummary(data) : null}
+                        {tab === 'categories' ? renderCategories(data) : null}
+                        {tab === 'attribution' ? renderAttribution(data) : null}
+                        {tab === 'events' ? renderEvents(data) : null}
+                    </>
+                )}
+            </div>
         </section>
     );
 }
