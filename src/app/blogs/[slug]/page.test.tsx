@@ -26,7 +26,16 @@ describe('BlogPostPage', () => {
         expect(screen.getAllByRole('link', { name: /^blog$/i }).some((link) => link.getAttribute('href') === '/blogs')).toBe(true);
         expect(screen.getByRole('link', { name: /back to blog/i })).toHaveAttribute('href', '/blogs');
         expect(screen.getAllByText(/workflow/i).length).toBeGreaterThan(0);
-        expect(screen.getByRole('heading', { name: /the handoff is the workflow/i })).toBeInTheDocument();
+        expect(screen.getByRole('img', { name: /the search-to-outreach gap/i })).toBeInTheDocument();
+        expect(screen.getByText(/sources: shrm 2026 talent trends; icims\/aptitude 2026/i)).toBeInTheDocument();
+        expect(screen.getByText(/ai recruiting software is now part of the daily talent conversation/i)).toBeInTheDocument();
+        expect(screen.getByText(/ai should elevate the recruiter, not replace them/i)).toBeInTheDocument();
+        expect(screen.queryByRole('heading', { name: /search should be ready to move/i })).not.toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /sources/i })).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /shrm 2026 talent trends/i })).toHaveAttribute(
+            'href',
+            expect.stringContaining('shrm.org'),
+        );
         expect(screen.getByRole('heading', { name: /latest from tahoe/i })).toBeInTheDocument();
         expect(screen.getByText(/made for recruiters who would rather hire than negotiate contracts/i)).toBeInTheDocument();
     });
@@ -37,7 +46,8 @@ describe('BlogPostPage', () => {
         await expect(
             generateMetadata({ params: Promise.resolve({ slug: 'from-search-to-outreach' }) }),
         ).resolves.toMatchObject({
-            title: expect.stringContaining('From search to outreach'),
+            title: 'AI recruiting workflow: search to outreach',
+            keywords: expect.arrayContaining(['AI recruiting workflow', 'AI sourcing software']),
         });
     });
 

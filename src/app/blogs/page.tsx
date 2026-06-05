@@ -5,8 +5,27 @@ import { blogPosts } from '@/lib/blog-posts';
 import styles from './blogs.module.css';
 
 export const metadata: Metadata = {
-    title: 'Tahoe Blog',
-    description: 'Recruiting workflow notes from Tahoe.',
+    title: 'AI Recruiting Blog',
+    description: 'Research-backed Tahoe articles on AI sourcing, candidate lists, enrichment, outreach, mailbox health, and recruiting analytics.',
+    keywords: [
+        'AI recruiting blog',
+        'AI sourcing software',
+        'candidate sourcing',
+        'contact enrichment',
+        'recruiting outreach',
+        'talent intelligence',
+        'recruiting analytics',
+    ],
+    alternates: {
+        canonical: '/blogs',
+    },
+    openGraph: {
+        title: 'AI Recruiting Blog | Tahoe AI',
+        description: 'Research-backed articles on AI sourcing, outreach, enrichment, and recruiting operations.',
+        url: '/blogs',
+        siteName: 'Tahoe AI',
+        type: 'website',
+    },
 };
 
 const POSTS_PER_PAGE = 9;
