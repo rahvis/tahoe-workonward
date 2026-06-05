@@ -341,6 +341,525 @@
     line-height: 1.35;
 }
 
+.workspacePage {
+    height: calc(100vh - 70px);
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    font-family: var(--tahoe-font-body);
+    color: var(--tahoe-color-text-primary);
+}
+
+.workspacePage,
+.workspacePage * {
+    box-sizing: border-box;
+}
+
+.workspaceToolbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--tahoe-color-border-subtle);
+    background: #ffffff;
+}
+
+.toolbarControls,
+.toolbarActions,
+.tableFilters,
+.inlineActions,
+.paginationControls,
+.confirmActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.toolbarControls {
+    flex: 1 1 auto;
+}
+
+.toolbarActions {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+}
+
+.toolbarInput,
+.toolbarSelect {
+    min-height: var(--tahoe-dashboard-control-height);
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: var(--tahoe-radius-lg);
+    background: #ffffff;
+    color: var(--tahoe-color-text-primary);
+    font-family: var(--tahoe-font-body);
+    font-size: var(--tahoe-dashboard-control-font-size);
+    line-height: var(--tahoe-dashboard-control-line-height);
+}
+
+.toolbarInput {
+    flex: 0 1 340px;
+    min-width: 220px;
+    padding: 0 14px;
+}
+
+.toolbarSelect {
+    flex: 0 0 190px;
+    padding: 0 12px;
+}
+
+.campaignTitleBlock {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.compactEyebrow {
+    color: var(--tahoe-color-text-tertiary);
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.compactTitle {
+    overflow: hidden;
+    color: var(--tahoe-color-text-primary);
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 22px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.compactSubtext {
+    overflow: hidden;
+    color: var(--tahoe-color-text-secondary);
+    font-size: 12px;
+    line-height: 16px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tableShell {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 8px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.tableSummary,
+.tableFilters {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--tahoe-color-border-subtle);
+    color: var(--tahoe-color-text-secondary);
+    font-size: 13px;
+    line-height: 18px;
+}
+
+.tableSummary {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.tableFilters {
+    justify-content: flex-start;
+}
+
+.tableScroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+}
+
+.workspaceTable {
+    min-width: 1040px;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.workspaceTable thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #ffffff;
+}
+
+.workspaceTable th,
+.workspaceTable td {
+    padding: 9px 12px;
+    vertical-align: middle;
+}
+
+.workspaceTable tbody tr:hover {
+    background: rgba(255, 104, 44, 0.05);
+}
+
+.clickableRow {
+    cursor: pointer;
+}
+
+.tableMessage {
+    display: table-cell;
+    padding: 24px;
+    color: var(--tahoe-color-text-secondary);
+    font-size: 14px;
+    text-align: center;
+}
+
+.tableShell > .tableMessage {
+    display: grid;
+    place-items: center;
+    gap: 8px;
+    flex: 1 1 auto;
+}
+
+.tableAction,
+.textAction {
+    color: var(--tahoe-color-text-primary);
+    font: inherit;
+    font-size: 13px;
+    text-decoration: none;
+}
+
+.tableAction {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 0 13px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 999px;
+    background: #ffffff;
+}
+
+.tableAction:hover,
+.textAction:hover {
+    color: var(--tahoe-color-accent);
+}
+
+.textAction {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.tableFooter {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    padding: 8px 14px;
+    border-top: 1px solid var(--tahoe-color-border-subtle);
+    color: var(--tahoe-color-text-secondary);
+    font-size: 13px;
+}
+
+.paginationButton {
+    min-height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 999px;
+    background: #ffffff;
+    color: var(--tahoe-color-text-primary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.paginationButton:disabled {
+    color: var(--tahoe-color-text-tertiary);
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.metricStrip {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    overflow: hidden;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.metricCell {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+    padding: 10px 12px;
+    border-right: 1px solid var(--tahoe-color-border-subtle);
+}
+
+.metricCell:last-child {
+    border-right: 0;
+}
+
+.metricCell span {
+    color: var(--tahoe-color-text-tertiary);
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.metricCell strong {
+    color: var(--tahoe-color-text-primary);
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 22px;
+}
+
+.workspaceTabs {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 20px;
+    border-bottom: 1px solid var(--tahoe-color-border-subtle);
+    background: #ffffff;
+}
+
+.workspaceTab,
+.workspaceTabActive {
+    appearance: none;
+    min-height: 32px;
+    padding: 6px 13px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--tahoe-color-text-secondary);
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.workspaceTabActive {
+    background: rgba(255, 104, 44, 0.12);
+    color: var(--tahoe-color-text-primary);
+}
+
+.deliveryGrid {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+    gap: 12px;
+}
+
+.issuePanel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    padding: 14px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.issuePanel h2 {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.issueRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--tahoe-color-border-subtle);
+    font-size: 13px;
+}
+
+.issueRow span,
+.issueNote {
+    color: var(--tahoe-color-text-secondary);
+}
+
+.issueRow strong {
+    font-weight: 500;
+}
+
+.issueNote {
+    margin-top: auto;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.drawerBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.recipientDrawer {
+    position: fixed;
+    top: 70px;
+    right: 0;
+    bottom: 0;
+    z-index: 41;
+    width: min(380px, 92vw);
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--tahoe-color-border-subtle);
+    background: #ffffff;
+    box-shadow: -18px 0 42px rgba(15, 23, 42, 0.10);
+}
+
+.drawerHeader {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px;
+    border-bottom: 1px solid var(--tahoe-color-border-subtle);
+}
+
+.drawerHeader h2 {
+    margin: 2px 0 0;
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 24px;
+}
+
+.drawerContent {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    padding: 16px;
+}
+
+.drawerField {
+    display: grid;
+    gap: 3px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--tahoe-color-border-subtle);
+}
+
+.drawerField span {
+    color: var(--tahoe-color-text-tertiary);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.drawerField strong {
+    color: var(--tahoe-color-text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.drawerActions {
+    flex: 0 0 auto;
+    display: grid;
+    gap: 8px;
+    padding: 16px;
+    border-top: 1px solid var(--tahoe-color-border-subtle);
+}
+
+.primaryAction,
+.secondaryAction,
+.dangerAction {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.primaryAction {
+    border: 1px solid #1f1f1f;
+    background: #1f1f1f;
+    color: #ffffff;
+}
+
+.secondaryAction {
+    border: 1px solid var(--tahoe-color-border-subtle);
+    background: #ffffff;
+    color: var(--tahoe-color-text-primary);
+}
+
+.dangerAction {
+    border: 1px solid rgba(180, 35, 24, 0.25);
+    background: rgba(180, 35, 24, 0.08);
+    color: var(--tahoe-color-danger);
+}
+
+.secondaryAction:disabled,
+.dangerAction:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.modalBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.confirmDialog {
+    width: min(420px, 100%);
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.confirmDialog h2,
+.confirmDialog p {
+    margin: 0;
+}
+
+.confirmDialog h2 {
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.confirmDialog p {
+    color: var(--tahoe-color-text-secondary);
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.confirmActions {
+    justify-content: flex-end;
+}
+
 @media (max-width: 768px) {
     .header {
         flex-direction: column;
@@ -354,5 +873,44 @@
     .stepFooter {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .workspacePage {
+        height: calc(100vh - 64px);
+    }
+
+    .workspaceToolbar,
+    .tableFooter,
+    .tableFilters {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .toolbarControls,
+    .toolbarActions,
+    .inlineActions,
+    .paginationControls {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .toolbarInput,
+    .toolbarSelect {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    .metricStrip,
+    .deliveryGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .metricCell {
+        border-right: 0;
+        border-bottom: 1px solid var(--tahoe-color-border-subtle);
+    }
+
+    .metricCell:last-child {
+        border-bottom: 0;
     }
 }

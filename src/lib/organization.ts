@@ -967,8 +967,8 @@ export async function deleteMailbox(mailboxId: string) {
     return apiRequest<MailboxDeleteResponse>(`/mailboxes/${mailboxId}`, { method: 'DELETE' });
 }
 
-export async function fetchCampaigns() {
-    return apiRequest<CampaignSummary[]>('/campaigns');
+export async function fetchCampaigns(options: { signal?: AbortSignal } = {}) {
+    return apiRequest<CampaignSummary[]>('/campaigns', options);
 }
 
 export async function createCampaign(payload: {

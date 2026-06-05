@@ -57,7 +57,6 @@ const sectionConfig = {
         icon: <EnvelopeClosedIcon width="18" height="18" />,
         subnav: [
             { href: '/dashboard/mailboxes', label: 'Connected Mailboxes' },
-            { href: '/dashboard/mailboxes/send-health', label: 'Send Health' },
         ],
     },
     billing: {

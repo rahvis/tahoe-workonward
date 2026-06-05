@@ -92,7 +92,7 @@ test('dashboard nav includes the mailboxes section', async () => {
     expect(mailboxesButton).toBeInTheDocument();
     await user.click(mailboxesButton);
     expect(await screen.findByRole('link', { name: /connected mailboxes/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /send health/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /send health/i })).not.toBeInTheDocument();
 });
 
 test('dashboard search nav hides saved searches', async () => {
