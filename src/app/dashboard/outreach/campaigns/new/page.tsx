@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Button, TextField, TahoeSelect } from '@/components/ui/tahoe-ui';
+import { Button, TahoeSelect, TextField } from '@/components/ui/tahoe-ui';
 import {
     composeCampaignMessage,
     createCampaign,
@@ -17,6 +17,7 @@ import {
     fetchProjects,
     fetchSettings,
     launchCampaign,
+    type CampaignSchedule,
     type ListCandidateRow,
     type ListSummary,
     type MailboxSummary,
@@ -37,18 +38,24 @@ const BUILDER_STEPS: Array<{ key: BuilderStep; label: string }> = [
     { key: 'review', label: 'Review' },
 ];
 
+const WEEKDAYS = [
+    { value: 1, label: 'M' },
+    { value: 2, label: 'T' },
+    { value: 3, label: 'W' },
+    { value: 4, label: 'T' },
+    { value: 5, label: 'F' },
+    { value: 6, label: 'S' },
+    { value: 7, label: 'S' },
+];
+
 const DEFAULT_STEP: BuilderStep = 'audience';
 
-const SIGNATURE_FIELDS: Array<{
-    key: keyof OutreachSignature;
-    label: string;
-    required: boolean;
-}> = [
-    { key: 'sender_name', label: 'Sender name', required: true },
-    { key: 'sender_email', label: 'Sender email', required: true },
+const SIGNATURE_FIELDS: Array<{ key: keyof OutreachSignature; label: string; required: boolean }> = [
+    { key: 'sender_name', label: 'Name', required: true },
+    { key: 'sender_email', label: 'Email', required: true },
     { key: 'sender_phone', label: 'Phone', required: true },
-    { key: 'sender_address', label: 'Physical address', required: true },
-    { key: 'sender_website', label: 'Website URL (optional)', required: false },
+    { key: 'sender_address', label: 'Address', required: true },
+    { key: 'sender_website', label: 'Website', required: false },
 ];
 
 function isBuilderStep(value: string | null): value is BuilderStep {
@@ -70,7 +77,55 @@ function defaultStep(): OutreachStep {
         body_text: 'Hi {{first_name}},\n\nI came across your background at {{company_name}} and thought it could be relevant to a role I am working on.\n\nWould you be open to a brief conversation this week?',
         body_html: null,
         delay_days: 0,
+        mailbox_id: null,
+        send_after_local: '09:00',
+        daily_cap: null,
     };
+}
+
+function defaultSchedule(): CampaignSchedule {
+    return {
+        timezone: 'America/Los_Angeles',
+        launch_mode: 'now',
+        start_at: null,
+        weekdays: [1, 2, 3, 4, 5],
+        window_start_local: '09:00',
+        window_end_local: '17:00',
+        daily_campaign_cap: 100,
+        min_spacing_minutes: 3,
+        max_spacing_minutes: 7,
+    };
+}
+
+function formatDate(value?: string | null) {
+    if (!value) return 'Recent';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Recent';
+    return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
+}
+
+function scheduleLabel(step: OutreachStep, index: number) {
+    if (index === 0 || step.delay_days <= 0) return `Immediate at ${step.send_after_local || 'window start'}`;
+    return `+${step.delay_days} business day${step.delay_days === 1 ? '' : 's'} at ${step.send_after_local || 'window start'}`;
+}
+
+function localStartAt(schedule: CampaignSchedule) {
+    if (schedule.launch_mode !== 'scheduled' || !schedule.start_at) return '';
+    const date = new Date(schedule.start_at);
+    if (Number.isNaN(date.getTime())) return '';
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return localDate.toISOString().slice(0, 16);
+}
+
+function fromLocalStartAt(value: string) {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function positiveNumber(value: unknown, fallback: number) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function NewCampaignContent() {
@@ -89,6 +144,13 @@ function NewCampaignContent() {
     const [mailboxId, setMailboxId] = useState('');
     const [roleContext, setRoleContext] = useState('');
     const [steps, setSteps] = useState<OutreachStep[]>([defaultStep()]);
+    const [selectedStepIndex, setSelectedStepIndex] = useState(0);
+    const [schedule, setSchedule] = useState<CampaignSchedule>(defaultSchedule);
+    const [scheduleNumberInputs, setScheduleNumberInputs] = useState({
+        daily_campaign_cap: '100',
+        min_spacing_minutes: '3',
+        max_spacing_minutes: '7',
+    });
     const [signature, setSignature] = useState<OutreachSignature>({
         sender_name: '',
         sender_email: '',
@@ -97,15 +159,20 @@ function NewCampaignContent() {
         sender_website: '',
     });
     const [listSearchInput, setListSearchInput] = useState('');
+    const [projectFilter, setProjectFilter] = useState('');
     const [selectedProjectId, setSelectedProjectId] = useState('');
     const [newProjectName, setNewProjectName] = useState('');
     const [newListName, setNewListName] = useState('');
+    const [createListOpen, setCreateListOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [listsLoading, setListsLoading] = useState(false);
     const [audienceLoading, setAudienceLoading] = useState(Boolean(initialListId));
     const [creatingList, setCreatingList] = useState(false);
     const [generating, setGenerating] = useState(false);
     const [launching, setLaunching] = useState(false);
+    const [launchSuccessId, setLaunchSuccessId] = useState('');
+    const [aiVariables, setAiVariables] = useState<string[]>([]);
+    const [aiNotes, setAiNotes] = useState<string[]>([]);
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
     const [availableCredits, setAvailableCredits] = useState<number | null>(null);
@@ -114,15 +181,17 @@ function NewCampaignContent() {
     const audienceRequestRef = useRef(0);
     const listCacheRef = useRef(new Map<string, { list: ListSummary; candidates: ListCandidateRow[] }>());
     const signatureTouchedRef = useRef(false);
+    const launchTimerRef = useRef<number | null>(null);
+
+    useEffect(() => () => {
+        if (launchTimerRef.current != null) window.clearTimeout(launchTimerRef.current);
+    }, []);
 
     function replaceBuilderUrl(nextStep: BuilderStep, nextListId: string) {
         const params = new URLSearchParams(searchParams.toString());
         params.set('step', nextStep);
-        if (nextListId) {
-            params.set('list_id', nextListId);
-        } else {
-            params.delete('list_id');
-        }
+        if (nextListId) params.set('list_id', nextListId);
+        else params.delete('list_id');
         const suffix = params.toString();
         router.replace(`${pathname}${suffix ? `?${suffix}` : ''}`, { scroll: false });
     }
@@ -174,15 +243,17 @@ function NewCampaignContent() {
                 setAvailableCredits(billing.available_credits);
                 setLowCreditState(billing.low_credit_state);
                 const firstHealthy = mailboxItems.find((mailbox) => mailbox.status === 'healthy');
-                if (firstHealthy) {
-                    setMailboxId((current) => current || firstHealthy.id);
-                }
+                if (firstHealthy) setMailboxId((current) => current || firstHealthy.id);
+                setSchedule((current) => ({
+                    ...current,
+                    timezone: settingsPayload.outreach_defaults.send_window_timezone || firstHealthy?.send_window.timezone || current.timezone,
+                    window_start_local: settingsPayload.outreach_defaults.send_window_start || firstHealthy?.send_window.start_local || current.window_start_local,
+                    window_end_local: settingsPayload.outreach_defaults.send_window_end || firstHealthy?.send_window.end_local || current.window_end_local,
+                    daily_campaign_cap: firstHealthy?.daily_cap || current.daily_campaign_cap,
+                }));
                 if (!signatureTouchedRef.current) {
                     const defaultSignature = settingsPayload.outreach_defaults.signature;
-                    const accountName = [settingsPayload.account.first_name, settingsPayload.account.last_name]
-                        .filter(Boolean)
-                        .join(' ')
-                        .trim();
+                    const accountName = [settingsPayload.account.first_name, settingsPayload.account.last_name].filter(Boolean).join(' ').trim();
                     setSignature((current) => ({
                         sender_name: current.sender_name || defaultSignature?.sender_name || accountName,
                         sender_email: current.sender_email || defaultSignature?.sender_email || firstHealthy?.email || settingsPayload.account.email,
@@ -235,14 +306,12 @@ function NewCampaignContent() {
             setAudienceLoading(false);
             return;
         }
-
         const cached = listCacheRef.current.get(selectedListId);
         if (cached) {
             applySelectedList(cached.list, cached.candidates);
             setAudienceLoading(false);
             return;
         }
-
         let cancelled = false;
         async function loadAudience() {
             setAudienceLoading(true);
@@ -273,28 +342,49 @@ function NewCampaignContent() {
     const eligibleCount = useMemo(() => candidates.filter((candidate) => firstEmail(candidate)).length, [candidates]);
     const suppressedCount = Math.max(0, candidates.length - eligibleCount);
     const estimatedCreditCost = eligibleCount * steps.length;
-    const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? null;
+    const selectedMailbox = mailboxes.find((mailbox) => mailbox.id === mailboxId) ?? null;
     const activeIndex = BUILDER_STEPS.findIndex((step) => step.key === activeStep);
     const activeLabel = BUILDER_STEPS[activeIndex]?.label || 'Audience';
+    const selectedStep = steps[Math.min(selectedStepIndex, steps.length - 1)] || steps[0];
+    const filteredLists = useMemo(() => {
+        const needle = listSearchInput.trim().toLowerCase();
+        return lists.filter((item) => {
+            if (projectFilter && item.project_id !== projectFilter) return false;
+            if (!needle) return true;
+            return `${item.name} ${item.project_name || ''}`.toLowerCase().includes(needle);
+        });
+    }, [lists, projectFilter, listSearchInput]);
     const launchBlockedReason = useMemo<string | null>(() => {
         if (!selectedListId) return 'Pick a list to send from.';
         if (!mailboxId) return 'Connect a healthy mailbox in Schedule.';
         if (eligibleCount === 0) return 'No candidates in this list have an email yet.';
         if (availableCredits != null && estimatedCreditCost > availableCredits) return 'Available credits are lower than the estimated send cost.';
-        if (steps.some((step) => !step.subject.trim() || !step.body_text.trim())) {
-            return 'Every email step needs a subject and body.';
+        if (steps.some((step) => !step.subject.trim() || !step.body_text.trim())) return 'Every email step needs a subject and body.';
+        if (steps.some((step) => step.delay_days < 0 || (step.daily_cap != null && step.daily_cap < 1))) return 'Fix invalid step delay or cap values.';
+        if (schedule.daily_campaign_cap < 1 || schedule.min_spacing_minutes < 1 || schedule.max_spacing_minutes < schedule.min_spacing_minutes) {
+            return 'Fix schedule caps and spacing before launch.';
         }
-        if (
-            !signature.sender_name.trim() ||
-            !signature.sender_email.trim() ||
-            !signature.sender_phone.trim() ||
-            !signature.sender_address.trim()
-        ) {
-            return 'Fill the required signature fields (name, email, phone, physical address).';
+        if (schedule.window_end_local <= schedule.window_start_local) return 'Send window end must be after the start time.';
+        if (!signature.sender_name.trim() || !signature.sender_email.trim() || !signature.sender_phone.trim() || !signature.sender_address.trim()) {
+            return 'Fill the required signature fields.';
         }
         return null;
-    }, [selectedListId, mailboxId, eligibleCount, estimatedCreditCost, availableCredits, steps, signature]);
+    }, [selectedListId, mailboxId, eligibleCount, estimatedCreditCost, availableCredits, steps, schedule, signature]);
     const launchReady = launchBlockedReason === null;
+
+    function updateSchedule(patch: Partial<CampaignSchedule>) {
+        setSchedule((current) => ({ ...current, ...patch }));
+    }
+
+    function updateScheduleNumber(key: 'daily_campaign_cap' | 'min_spacing_minutes' | 'max_spacing_minutes', value: string) {
+        setScheduleNumberInputs((current) => ({ ...current, [key]: value }));
+        const parsed = Number(value);
+        updateSchedule({ [key]: Number.isFinite(parsed) ? parsed : 0 });
+    }
+
+    function updateStep(index: number, patch: Partial<OutreachStep>) {
+        setSteps((current) => current.map((step, stepIndex) => (stepIndex === index ? { ...step, ...patch } : step)));
+    }
 
     async function handleCreateAudienceList() {
         if (!newListName.trim()) {
@@ -311,14 +401,13 @@ function NewCampaignContent() {
                 projectId = createdProject.id;
                 setSelectedProjectId(projectId);
             }
-            if (!projectId) {
-                throw new Error('Choose an existing project or enter a new project name.');
-            }
+            if (!projectId) throw new Error('Choose an existing project or enter a new project name.');
             const createdList = await createList(projectId, { name: newListName.trim() });
             setLists((current) => [createdList, ...current.filter((item) => item.id !== createdList.id)]);
             setNewListName('');
             setNewProjectName('');
-            setNotice('New list created. Add candidates from Search or Projects before launching this campaign.');
+            setCreateListOpen(false);
+            setNotice('List created. Add candidates from Search before launching.');
             selectList(createdList.id);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to create audience list.');
@@ -351,10 +440,22 @@ function NewCampaignContent() {
                     body_text: response.body_text,
                     body_html: response.body_html,
                     delay_days: 0,
+                    mailbox_id: null,
+                    send_after_local: schedule.window_start_local,
+                    daily_cap: null,
                 },
-                ...response.followups,
+                ...response.followups.map((step, index) => ({
+                    ...step,
+                    step_order: index + 2,
+                    mailbox_id: step.mailbox_id ?? null,
+                    send_after_local: step.send_after_local || schedule.window_start_local,
+                    daily_cap: step.daily_cap ?? null,
+                })),
             ]);
-            setNotice('AI draft inserted. Tahoe will append the required signature and unsubscribe footer when sending.');
+            setSelectedStepIndex(0);
+            setAiVariables(response.variables_used);
+            setAiNotes(response.compliance_notes);
+            setNotice('');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to generate outreach.');
         } finally {
@@ -362,23 +463,29 @@ function NewCampaignContent() {
         }
     }
 
-    function updateStep(index: number, patch: Partial<OutreachStep>) {
-        setSteps((current) => current.map((step, stepIndex) => (
-            stepIndex === index ? { ...step, ...patch } : step
-        )));
+    function addFollowup() {
+        setSteps((current) => {
+            const next = [
+                ...current,
+                {
+                    step_order: current.length + 1,
+                    subject: 'Following up, {{first_name}}',
+                    body_text: 'Hi {{first_name}},\n\nWanted to follow up on my previous note. Would it be worth a quick conversation?',
+                    body_html: null,
+                    delay_days: 3,
+                    mailbox_id: null,
+                    send_after_local: schedule.window_start_local,
+                    daily_cap: null,
+                },
+            ];
+            setSelectedStepIndex(next.length - 1);
+            return next;
+        });
     }
 
-    function addFollowup() {
-        setSteps((current) => [
-            ...current,
-            {
-                step_order: current.length + 1,
-                subject: 'Following up, {{first_name}}',
-                body_text: 'Hi {{first_name}},\n\nWanted to follow up on my previous note. Would it be worth a quick conversation?',
-                body_html: null,
-                delay_days: 3,
-            },
-        ]);
+    function removeStep(index: number) {
+        setSteps((current) => current.filter((_, stepIndex) => stepIndex !== index).map((step, stepIndex) => ({ ...step, step_order: stepIndex + 1 })));
+        setSelectedStepIndex((current) => Math.max(0, Math.min(current, steps.length - 2)));
     }
 
     function updateSignatureField(key: keyof OutreachSignature, value: string) {
@@ -399,11 +506,15 @@ function NewCampaignContent() {
                 list_id: selectedListId,
                 mailbox_id: mailboxId,
                 steps,
+                schedule,
                 signature,
             });
             const key = `${campaign.id}-${Date.now()}`;
             await launchCampaign(campaign.id, key);
-            router.push(`/dashboard/outreach/campaigns/${campaign.id}`);
+            setLaunchSuccessId(campaign.id);
+            launchTimerRef.current = window.setTimeout(() => {
+                router.push(`/dashboard/outreach/campaigns/${campaign.id}`);
+            }, 1100);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to launch campaign.');
         } finally {
@@ -418,204 +529,217 @@ function NewCampaignContent() {
 
     function renderAudiencePanel() {
         return (
-            <section className={styles.card} role="tabpanel" aria-label="Audience">
-                <div className={styles.cardHeader}>
-                    <div>
-                        <h2 className={styles.sectionTitle}>Audience</h2>
-                        <p className={styles.muted}>Choose a saved list, or create a new list shell and add candidates before launch.</p>
-                    </div>
-                    {audienceLoading ? <span className={styles.statusPill}>Loading list…</span> : null}
-                </div>
-                <div className={styles.fieldGrid}>
-                    <label className={styles.fieldGroup}>
-                        <span className={styles.fieldLabel}>Campaign name</span>
-                        <TextField.Root
-                            size="3"
-                            value={name}
-                            onChange={(event) => {
-                                setNameTouched(true);
-                                setName(event.target.value);
-                            }}
-                        />
+            <section className={styles.builderPanel} role="tabpanel" aria-label="Audience">
+                <div className={styles.builderToolbar}>
+                    <label className={styles.compactField}>
+                        <span>Campaign</span>
+                        <TextField.Root size="3" value={name} onChange={(event) => {
+                            setNameTouched(true);
+                            setName(event.target.value);
+                        }} />
                     </label>
-                    <label className={styles.fieldGroup}>
-                        <span className={styles.fieldLabel}>Search lists</span>
-                        <TextField.Root
-                            size="3"
-                            value={listSearchInput}
-                            placeholder="Search saved candidate lists"
-                            onChange={(event) => setListSearchInput(event.target.value)}
-                        />
+                    <label className={styles.compactField}>
+                        <span>Search</span>
+                        <TextField.Root size="3" value={listSearchInput} placeholder="Search lists..." onChange={(event) => setListSearchInput(event.target.value)} />
                     </label>
-                    <label className={styles.fieldGroup}>
-                        <span className={styles.fieldLabel}>Audience list</span>
-                        <TahoeSelect
-                            size="3"
-                            value={selectedListId}
-                            onChange={(event) => selectList(event.target.value)}
-                            aria-label="Audience list"
-                        >
-                            <option value="">Select a saved list</option>
-                            {lists.map((item) => (
-                                <option key={item.id} value={item.id}>
-                                    {item.name} · {item.candidate_count} candidate{item.candidate_count === 1 ? '' : 's'}{item.project_name ? ` · ${item.project_name}` : ''}
-                                </option>
-                            ))}
+                    <label className={styles.compactField}>
+                        <span>Project</span>
+                        <TahoeSelect size="3" value={projectFilter} onChange={(event) => setProjectFilter(event.target.value)}>
+                            <option value="">All projects</option>
+                            {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
                         </TahoeSelect>
-                        {listsLoading ? <span className={styles.muted}>Refreshing lists…</span> : null}
                     </label>
-                    <div className={styles.fieldGroup}>
-                        <span className={styles.fieldLabel}>Selected list</span>
-                        <div className={styles.pills}>
-                            <span className={styles.pill}>{list?.name || 'No list selected'}</span>
-                            <span className={styles.pill}>{candidates.length} candidates</span>
-                            <span className={styles.pill}>{eligibleCount} eligible</span>
-                            <span className={styles.pill}>{suppressedCount} suppressed</span>
-                        </div>
+                    <Button size="3" onClick={() => setCreateListOpen((current) => !current)}>Create list</Button>
+                </div>
+                {createListOpen ? (
+                    <div className={styles.builderInlinePanel}>
+                        <label className={styles.compactField}>
+                            <span>Project</span>
+                            <TahoeSelect size="3" value={selectedProjectId} onChange={(event) => {
+                                setSelectedProjectId(event.target.value);
+                                if (event.target.value) setNewProjectName('');
+                            }}>
+                                <option value="">Choose a project</option>
+                                {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+                            </TahoeSelect>
+                        </label>
+                        <label className={styles.compactField}>
+                            <span>New project</span>
+                            <TextField.Root size="3" value={newProjectName} placeholder="Series-B backend" onChange={(event) => {
+                                setNewProjectName(event.target.value);
+                                if (event.target.value.trim()) setSelectedProjectId('');
+                            }} />
+                        </label>
+                        <label className={styles.compactField}>
+                            <span>List name</span>
+                            <TextField.Root size="3" value={newListName} placeholder="Outreach Round 1" onChange={(event) => setNewListName(event.target.value)} />
+                        </label>
+                        <Button size="3" variant="soft" onClick={() => void handleCreateAudienceList()} disabled={creatingList || !newListName.trim()}>
+                            {creatingList ? 'Creating...' : 'Create and use'}
+                        </Button>
+                    </div>
+                ) : null}
+                <div className={styles.builderTableShell}>
+                    <div className={styles.tableScroll}>
+                        <table className={`${styles.table} ${styles.compactTable}`}>
+                            <thead>
+                                <tr>
+                                    <th>List</th>
+                                    <th>Project</th>
+                                    <th>Candidates</th>
+                                    <th>Eligible</th>
+                                    <th>Updated</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredLists.map((item) => {
+                                    const selected = item.id === selectedListId;
+                                    const rowEligible = selected ? eligibleCount : null;
+                                    const rowSuppressed = selected ? suppressedCount : null;
+                                    return (
+                                        <tr key={item.id} className={selected ? styles.selectedTableRow : styles.clickableRow} onClick={() => selectList(item.id)}>
+                                            <td>
+                                                <button type="button" className={styles.tableNameButton} onClick={() => selectList(item.id)}>
+                                                    {selected ? '● ' : '○ '}{item.name}
+                                                </button>
+                                                {selected && rowSuppressed ? <div className={styles.rowSubtext}>{rowSuppressed} suppressed</div> : null}
+                                            </td>
+                                            <td>{item.project_name || 'No project'}</td>
+                                            <td>{item.candidate_count}</td>
+                                            <td>{rowEligible == null ? '--' : rowEligible}</td>
+                                            <td>{formatDate(item.updated_at || item.created_at)}</td>
+                                            <td><span className={item.candidate_count > 0 ? styles.statusPill : styles.pill}>{item.candidate_count > 0 ? 'Ready' : 'Empty'}</span></td>
+                                        </tr>
+                                    );
+                                })}
+                                {filteredLists.length === 0 ? (
+                                    <tr><td colSpan={6} className={styles.tableMessage}>{listsLoading ? 'Loading lists...' : 'No lists found.'}</td></tr>
+                                ) : null}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className={styles.tableFooter}>
+                        <span>{filteredLists.length} lists</span>
+                        <span>{list ? `Selected: ${list.name} · ${eligibleCount} eligible · ${suppressedCount} suppressed` : 'Select a list to continue'}</span>
                     </div>
                 </div>
                 {selectedListId && !audienceLoading && candidates.length === 0 ? (
-                    <div className={styles.emptyState}>
-                        <h3>This list is empty</h3>
-                        <p>Add candidates from Search or open the list in Projects before generating or launching outreach.</p>
-                        <div className={styles.actions}>
-                            <Link className="tahoe-button" href="/dashboard/search/new">Find candidates</Link>
-                            <Link className="tahoe-button-secondary" href={list ? `/dashboard/projects/lists/${list.id}` : '/dashboard/projects/lists'}>Open list</Link>
-                        </div>
+                    <div className={styles.builderNotice}>
+                        <strong>This list is empty.</strong>
+                        <span>Add candidates from Search before launching.</span>
+                        <Link href="/dashboard/search/new">Find candidates</Link>
                     </div>
                 ) : null}
-                <div className={styles.inlineCard}>
-                    <h3 className={styles.sectionTitle}>Create a new list</h3>
-                    <p className={styles.muted}>New lists are reusable project assets. Add candidates from Search after creating the list.</p>
-                    <div className={styles.fieldGrid}>
-                        <label className={styles.fieldGroup}>
-                            <span className={styles.fieldLabel}>Project for new list</span>
-                            <TahoeSelect
-                                size="3"
-                                value={selectedProjectId}
-                                onChange={(event) => {
-                                    setSelectedProjectId(event.target.value);
-                                    if (event.target.value) setNewProjectName('');
-                                }}
-                            >
-                                <option value="">Choose a project</option>
-                                {projects.map((project) => (
-                                    <option key={project.id} value={project.id}>{project.name}</option>
-                                ))}
-                            </TahoeSelect>
-                            {selectedProject ? <span className={styles.muted}>{selectedProject.list_count} list{selectedProject.list_count === 1 ? '' : 's'} in this project</span> : null}
-                        </label>
-                        <label className={styles.fieldGroup}>
-                            <span className={styles.fieldLabel}>Or create project</span>
-                            <TextField.Root
-                                size="3"
-                                value={newProjectName}
-                                placeholder="Series-B backend search"
-                                onChange={(event) => {
-                                    setNewProjectName(event.target.value);
-                                    if (event.target.value.trim()) setSelectedProjectId('');
-                                }}
-                            />
-                        </label>
-                        <label className={styles.fieldGroup}>
-                            <span className={styles.fieldLabel}>New list name</span>
-                            <TextField.Root
-                                size="3"
-                                value={newListName}
-                                placeholder="Backend engineers for launch"
-                                onChange={(event) => setNewListName(event.target.value)}
-                            />
-                        </label>
-                    </div>
-                    <div className={styles.actions}>
-                        <Button size="3" variant="soft" onClick={() => void handleCreateAudienceList()} disabled={creatingList || !newListName.trim()}>
-                            {creatingList ? 'Creating…' : 'Create and use list'}
-                        </Button>
-                    </div>
-                </div>
             </section>
         );
     }
 
     function renderAiPanel() {
         return (
-            <section className={styles.card} role="tabpanel" aria-label="AI Message">
-                <h2 className={styles.sectionTitle}>AI Message</h2>
-                <label className={styles.fieldGroup}>
-                    <span className={styles.fieldLabel}>Role and personalization context</span>
-                    <textarea
-                        className={styles.textarea}
-                        value={roleContext}
-                        onChange={(event) => setRoleContext(event.target.value)}
-                        placeholder="Example: Senior product designers for a marketplace team. Mention their current company and keep it direct."
-                        aria-label="Role and personalization context"
-                    />
-                </label>
-                <div className={styles.actions}>
-                    <Button size="3" variant="soft" onClick={() => void handleGenerate()} disabled={generating || !selectedListId || eligibleCount === 0}>
-                        {generating ? 'Generating…' : 'Generate with AI'}
-                    </Button>
-                    <span className={styles.muted}>Variables are supported; Tahoe owns the legal footer.</span>
+            <section className={styles.builderPanel} role="tabpanel" aria-label="AI Message">
+                <div className={styles.aiGrid}>
+                    <div className={styles.aiPromptPanel}>
+                        <label className={styles.compactField}>
+                            <span>Context</span>
+                            <textarea
+                                className={styles.builderTextarea}
+                                value={roleContext}
+                                onChange={(event) => setRoleContext(event.target.value)}
+                                placeholder="Senior backend engineers in SF with Go experience. Keep it direct and mention current company."
+                                aria-label="Role and personalization context"
+                            />
+                        </label>
+                        <div className={styles.inlineActions}>
+                            <Button size="3" onClick={() => void handleGenerate()} disabled={generating || !selectedListId || eligibleCount === 0}>
+                                {generating ? 'Generating...' : 'Generate with AI'}
+                            </Button>
+                            <Button size="3" variant="soft" onClick={() => switchStep('sequence')} disabled={!steps.length}>Edit in Sequence</Button>
+                        </div>
+                    </div>
+                    <div className={styles.previewPanel}>
+                        <div className={styles.builderPanelHeader}>
+                            <h2>Preview</h2>
+                            <span>{steps.length} email{steps.length === 1 ? '' : 's'}</span>
+                        </div>
+                        <div className={styles.previewBlock}>
+                            <span className={styles.fieldLabel}>Subject</span>
+                            <strong>{steps[0]?.subject || 'Generate or write a subject'}</strong>
+                            <p>{steps[0]?.body_text || 'Generated copy will appear here.'}</p>
+                        </div>
+                        {steps.slice(1).map((step) => (
+                            <div key={step.step_order} className={styles.previewBlock}>
+                                <span className={styles.fieldLabel}>Follow-up {step.step_order - 1}</span>
+                                <strong>{step.subject}</strong>
+                                <p>{step.body_text}</p>
+                            </div>
+                        ))}
+                        <div className={styles.pills}>
+                            {aiVariables.length ? aiVariables.map((variable) => <span key={variable} className={styles.pill}>{variable}</span>) : <span className={styles.pill}>Variables supported</span>}
+                            {aiNotes.slice(0, 2).map((note) => <span key={note} className={styles.pill}>{note}</span>)}
+                        </div>
+                    </div>
                 </div>
             </section>
         );
     }
 
     function renderSequencePanel() {
+        const activeStepItem = selectedStep || steps[0];
         return (
-            <section className={styles.card} role="tabpanel" aria-label="Sequence">
-                <h2 className={styles.sectionTitle}>Sequence</h2>
-                <div className={styles.grid}>
-                    {steps.map((step, index) => (
-                        <div key={step.step_order} className={styles.inlineCard}>
-                            <div className={styles.header}>
-                                <h3 className={styles.sectionTitle}>Email step {index + 1}</h3>
-                                {index > 0 ? (
-                                    <Button size="3" variant="ghost" onClick={() => setSteps((current) => current.filter((_, stepIndex) => stepIndex !== index).map((item, stepIndex) => ({ ...item, step_order: stepIndex + 1 })))}>
-                                        Remove
-                                    </Button>
-                                ) : null}
-                            </div>
-                            <div className={styles.fieldGrid}>
-                                <label className={styles.fieldGroup}>
-                                    <span className={styles.fieldLabel}>Subject</span>
-                                    <TextField.Root size="3" value={step.subject} onChange={(event) => updateStep(index, { subject: event.target.value })} />
-                                </label>
-                                <label className={styles.fieldGroup}>
-                                    <span className={styles.fieldLabel}>Delay days</span>
-                                    <TextField.Root size="3" type="number" min="0" value={String(step.delay_days)} onChange={(event) => updateStep(index, { delay_days: Number(event.target.value) })} />
-                                </label>
-                            </div>
+            <section className={styles.builderPanel} role="tabpanel" aria-label="Sequence">
+                <div className={styles.sequenceGrid}>
+                    <aside className={styles.stepRail}>
+                        {steps.map((step, index) => (
+                            <button
+                                key={step.step_order}
+                                type="button"
+                                className={index === selectedStepIndex ? styles.stepRailItemActive : styles.stepRailItem}
+                                onClick={() => setSelectedStepIndex(index)}
+                            >
+                                <span>Email {index + 1}</span>
+                                <small>{scheduleLabel(step, index)}</small>
+                            </button>
+                        ))}
+                        <Button size="3" variant="soft" onClick={addFollowup}>Add follow-up</Button>
+                    </aside>
+                    <div className={styles.stepEditor}>
+                        <div className={styles.builderPanelHeader}>
+                            <h2>Email {selectedStepIndex + 1}</h2>
+                            {selectedStepIndex > 0 ? <Button size="3" variant="ghost" onClick={() => removeStep(selectedStepIndex)}>Remove</Button> : null}
+                        </div>
+                        <div className={styles.fieldGrid}>
                             <label className={styles.fieldGroup}>
-                                <span className={styles.fieldLabel}>Body</span>
-                                <textarea className={styles.textarea} value={step.body_text} onChange={(event) => updateStep(index, { body_text: event.target.value })} />
+                                <span className={styles.fieldLabel}>Subject</span>
+                                <TextField.Root size="3" value={activeStepItem.subject} onChange={(event) => updateStep(selectedStepIndex, { subject: event.target.value })} />
+                            </label>
+                            <label className={styles.fieldGroup}>
+                                <span className={styles.fieldLabel}>Delay days</span>
+                                <TextField.Root size="3" type="number" min="0" max="60" value={String(activeStepItem.delay_days)} onChange={(event) => updateStep(selectedStepIndex, { delay_days: Math.max(0, Number(event.target.value) || 0) })} />
+                            </label>
+                            <label className={styles.fieldGroup}>
+                                <span className={styles.fieldLabel}>Send after</span>
+                                <TextField.Root size="3" type="time" value={activeStepItem.send_after_local || schedule.window_start_local} onChange={(event) => updateStep(selectedStepIndex, { send_after_local: event.target.value })} />
                             </label>
                         </div>
-                    ))}
+                        <label className={styles.fieldGroup}>
+                            <span className={styles.fieldLabel}>Body</span>
+                            <textarea className={styles.builderTextareaLarge} value={activeStepItem.body_text} onChange={(event) => updateStep(selectedStepIndex, { body_text: event.target.value })} />
+                        </label>
+                    </div>
                 </div>
-                <Button size="3" variant="soft" onClick={addFollowup}>Add follow-up</Button>
             </section>
         );
     }
 
     function renderSignaturePanel() {
         return (
-            <section className={styles.card} role="tabpanel" aria-label="Signature">
-                <h2 className={styles.sectionTitle}>Signature</h2>
-                <p className={styles.muted}>Required for compliance: sender identity, phone, and physical postal address. Settings defaults are copied here, but edits are campaign-only.</p>
+            <section className={styles.builderPanel} role="tabpanel" aria-label="Signature">
                 <div className={styles.fieldGrid}>
                     {SIGNATURE_FIELDS.map(({ key, label, required }) => (
                         <label key={key} className={styles.fieldGroup}>
-                            <span className={styles.fieldLabel}>
-                                {label}
-                                {required ? <span className={styles.requiredMarker} aria-hidden="true"> *</span> : null}
-                            </span>
-                            <TextField.Root
-                                size="3"
-                                value={String(signature[key] || '')}
-                                onChange={(event) => updateSignatureField(key, event.target.value)}
-                                aria-required={required || undefined}
-                            />
+                            <span className={styles.fieldLabel}>{label}{required ? <span className={styles.requiredMarker}> *</span> : null}</span>
+                            <TextField.Root size="3" value={String(signature[key] || '')} onChange={(event) => updateSignatureField(key, event.target.value)} aria-required={required || undefined} />
                         </label>
                     ))}
                 </div>
@@ -625,51 +749,137 @@ function NewCampaignContent() {
 
     function renderSchedulePanel() {
         return (
-            <section className={styles.card} role="tabpanel" aria-label="Schedule">
-                <h2 className={styles.sectionTitle}>Schedule</h2>
-                <label className={styles.fieldGroup}>
-                    <span className={styles.fieldLabel}>Sending mailbox</span>
-                    <TahoeSelect size="3" value={mailboxId} onChange={(event) => setMailboxId(event.target.value)}>
-                        <option value="">Select a healthy mailbox</option>
-                        {mailboxes.map((mailbox) => (
-                            <option key={mailbox.id} value={mailbox.id} disabled={mailbox.status !== 'healthy'}>
-                                {mailbox.email} · {mailbox.status} · {mailbox.sent_today}/{mailbox.daily_cap} today
-                            </option>
-                        ))}
-                    </TahoeSelect>
-                </label>
-                <p className={styles.muted}>Tahoe sends one email at a time per mailbox, respects mailbox windows and caps, and paces sends with a 3-7 minute jitter by default.</p>
+            <section className={styles.builderPanel} role="tabpanel" aria-label="Schedule">
+                <div className={styles.scheduleGrid}>
+                    <label className={styles.compactField}>
+                        <span>Default mailbox</span>
+                        <TahoeSelect size="3" value={mailboxId} onChange={(event) => setMailboxId(event.target.value)}>
+                            <option value="">Select healthy mailbox</option>
+                            {mailboxes.map((mailbox) => (
+                                <option key={mailbox.id} value={mailbox.id} disabled={mailbox.status !== 'healthy'}>
+                                    {mailbox.email} · {mailbox.status} · {mailbox.sent_today}/{mailbox.daily_cap}
+                                </option>
+                            ))}
+                        </TahoeSelect>
+                    </label>
+                    <label className={styles.compactField}>
+                        <span>Launch</span>
+                        <TahoeSelect size="3" value={schedule.launch_mode} onChange={(event) => updateSchedule({ launch_mode: event.target.value as CampaignSchedule['launch_mode'] })}>
+                            <option value="now">Now</option>
+                            <option value="scheduled">Schedule later</option>
+                        </TahoeSelect>
+                    </label>
+                    <label className={styles.compactField}>
+                        <span>Start time</span>
+                        <TextField.Root size="3" type="datetime-local" value={localStartAt(schedule)} disabled={schedule.launch_mode === 'now'} onChange={(event) => updateSchedule({ start_at: fromLocalStartAt(event.target.value) })} />
+                    </label>
+                    <label className={styles.compactField}>
+                        <span>Timezone</span>
+                        <TextField.Root size="3" value={schedule.timezone} onChange={(event) => updateSchedule({ timezone: event.target.value })} />
+                    </label>
+                    <label className={styles.compactField}>
+                        <span>Window start</span>
+                        <TextField.Root size="3" type="time" value={schedule.window_start_local} onChange={(event) => updateSchedule({ window_start_local: event.target.value })} />
+                    </label>
+                    <label className={styles.compactField}>
+                        <span>Window end</span>
+                        <TextField.Root size="3" type="time" value={schedule.window_end_local} onChange={(event) => updateSchedule({ window_end_local: event.target.value })} />
+                    </label>
+                    <label className={styles.compactField}>
+                        <span>Daily cap</span>
+                        <TextField.Root size="3" type="number" min="1" value={scheduleNumberInputs.daily_campaign_cap} onChange={(event) => updateScheduleNumber('daily_campaign_cap', event.target.value)} />
+                    </label>
+                    <label className={styles.compactField}>
+                        <span>Spacing min</span>
+                        <TextField.Root size="3" type="number" min="1" value={scheduleNumberInputs.min_spacing_minutes} onChange={(event) => updateScheduleNumber('min_spacing_minutes', event.target.value)} />
+                    </label>
+                    <label className={styles.compactField}>
+                        <span>Spacing max</span>
+                        <TextField.Root size="3" type="number" min="1" value={scheduleNumberInputs.max_spacing_minutes} onChange={(event) => updateScheduleNumber('max_spacing_minutes', event.target.value)} />
+                    </label>
+                </div>
+                <div className={styles.weekdayRow} aria-label="Send days">
+                    {WEEKDAYS.map((day) => {
+                        const active = schedule.weekdays.includes(day.value);
+                        return (
+                            <button
+                                key={day.value}
+                                type="button"
+                                className={active ? styles.weekdayActive : styles.weekday}
+                                onClick={() => {
+                                    const next = active
+                                        ? schedule.weekdays.filter((value) => value !== day.value)
+                                        : [...schedule.weekdays, day.value].sort();
+                                    updateSchedule({ weekdays: next.length ? next : [day.value] });
+                                }}
+                            >
+                                {day.label}
+                            </button>
+                        );
+                    })}
+                </div>
+                <div className={styles.builderTableShell}>
+                    <div className={styles.tableScroll}>
+                        <table className={`${styles.table} ${styles.compactTable}`}>
+                            <thead>
+                                <tr>
+                                    <th>Step</th>
+                                    <th>Mailbox</th>
+                                    <th>Delay</th>
+                                    <th>Send after</th>
+                                    <th>Cap</th>
+                                    <th>Preview</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {steps.map((step, index) => (
+                                    <tr key={step.step_order}>
+                                        <td>Email {index + 1}</td>
+                                        <td>
+                                            <TahoeSelect size="3" value={step.mailbox_id || ''} onChange={(event) => updateStep(index, { mailbox_id: event.target.value || null })}>
+                                                <option value="">Default</option>
+                                                {mailboxes.map((mailbox) => <option key={mailbox.id} value={mailbox.id}>{mailbox.email}</option>)}
+                                            </TahoeSelect>
+                                        </td>
+                                        <td><TextField.Root size="3" type="number" min="0" max="60" value={String(step.delay_days)} onChange={(event) => updateStep(index, { delay_days: Math.max(0, Number(event.target.value) || 0) })} /></td>
+                                        <td><TextField.Root size="3" type="time" value={step.send_after_local || schedule.window_start_local} onChange={(event) => updateStep(index, { send_after_local: event.target.value })} /></td>
+                                        <td><TextField.Root size="3" type="number" min="1" placeholder="Default" value={step.daily_cap == null ? '' : String(step.daily_cap)} onChange={(event) => updateStep(index, { daily_cap: event.target.value ? positiveNumber(event.target.value, 1) : null })} /></td>
+                                        <td>{scheduleLabel(step, index)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className={styles.tableFooter}>
+                        <span>{selectedMailbox ? selectedMailbox.email : 'No mailbox selected'}</span>
+                        <span>{schedule.weekdays.length} send day{schedule.weekdays.length === 1 ? '' : 's'} · {schedule.window_start_local}-{schedule.window_end_local} · max {schedule.daily_campaign_cap}/day</span>
+                    </div>
+                </div>
             </section>
         );
     }
 
     function renderReviewPanel() {
+        const checks = [
+            { label: 'Audience', value: list ? `${list.name} · ${eligibleCount} eligible` : 'No list selected', ok: Boolean(selectedListId && eligibleCount > 0) },
+            { label: 'Sequence', value: `${steps.length} email${steps.length === 1 ? '' : 's'}`, ok: steps.every((step) => step.subject.trim() && step.body_text.trim()) },
+            { label: 'Sender', value: selectedMailbox ? `${selectedMailbox.email} · ${selectedMailbox.status}` : 'No mailbox', ok: Boolean(mailboxId) },
+            { label: 'Schedule', value: `${schedule.window_start_local}-${schedule.window_end_local} · max ${schedule.daily_campaign_cap}/day`, ok: schedule.weekdays.length > 0 },
+            { label: 'Credits', value: `${estimatedCreditCost} held · ${availableCredits ?? '--'} available`, ok: availableCredits == null || estimatedCreditCost <= availableCredits },
+        ];
         return (
-            <section className={styles.card} role="tabpanel" aria-label="Review">
-                <h2 className={styles.sectionTitle}>Review</h2>
-                <div className={styles.pills}>
-                    <span className={styles.pill}>Send only</span>
-                    <span className={styles.pill}>Replies remain in Gmail</span>
-                    <span className={styles.pill}>Unsubscribe included</span>
-                    <span className={styles.pill}>One-click unsubscribe headers</span>
+            <section className={styles.builderPanel} role="tabpanel" aria-label="Review">
+                <div className={styles.reviewRows}>
+                    {checks.map((check) => (
+                        <div key={check.label} className={styles.reviewRow}>
+                            <span>{check.ok ? '✓' : '!'}</span>
+                            <strong>{check.label}</strong>
+                            <p>{check.value}</p>
+                        </div>
+                    ))}
                 </div>
-                <p className={styles.muted}>
-                    Launch creates Mongo-backed send tasks and returns immediately. Future sends stop for anyone marked replied, bounced, or unsubscribed.
-                </p>
-                <div className={styles.pills}>
-                    <span className={styles.pill}>Audience: {list?.name || 'No list selected'}</span>
-                    <span className={styles.pill}>Estimated emails: {eligibleCount * steps.length}</span>
-                    <span className={styles.pill}>Estimated credit cost: {estimatedCreditCost}</span>
-                    <span className={styles.pill}>Available credits: {availableCredits ?? '—'}</span>
-                </div>
-                {lowCreditState === 'low' || lowCreditState === 'critical' || lowCreditState === 'empty' ? (
-                    <p className={styles.muted}>
-                        Credit runway is getting tight. Tahoe holds the estimated send budget at launch and settles back down to actual sent emails when the campaign finishes or stops.
-                    </p>
-                ) : null}
-                {launchBlockedReason ? (
-                    <p className={styles.muted} role="status">{launchBlockedReason}</p>
-                ) : null}
+                {lowCreditState !== 'healthy' ? <div className={styles.builderNotice}>Credit runway is tight. Tahoe holds estimated send credits at launch and settles after completion or stop.</div> : null}
+                {launchBlockedReason ? <p className={styles.muted} role="status">{launchBlockedReason}</p> : null}
             </section>
         );
     }
@@ -684,58 +894,60 @@ function NewCampaignContent() {
     }
 
     return (
-        <section className={styles.page}>
-            <header className={styles.header}>
-                <div>
-                    <span className="tahoe-eyebrow">Guided campaign builder</span>
-                    <h1 className={styles.title}>Create outreach campaign</h1>
-                    <p className={styles.subtitle}>
-                        One clean builder for audience, AI draft, follow-ups, signature, schedule, and final compliance review.
-                    </p>
-                </div>
-            </header>
-
+        <section className={styles.builderWorkspace}>
+            <div className={styles.builderTopbar}>
+                <nav className={styles.builderTabs} aria-label="Campaign builder steps" role="tablist">
+                    {BUILDER_STEPS.map((step) => (
+                        <button
+                            key={step.key}
+                            type="button"
+                            role="tab"
+                            aria-selected={activeStep === step.key}
+                            className={activeStep === step.key ? styles.builderTabActive : styles.builderTab}
+                            onClick={() => switchStep(step.key)}
+                        >
+                            {step.label}
+                        </button>
+                    ))}
+                </nav>
+                <div className={styles.builderProgress}>{activeLabel} · Step {activeIndex + 1} of {BUILDER_STEPS.length}</div>
+            </div>
             {error ? <div className={`${styles.banner} ${styles.bannerError}`}>{error}</div> : null}
             {notice ? <div className={styles.banner}>{notice}</div> : null}
-
-            {loading ? (
-                <div className={styles.emptyState}>
-                    <span className="tahoe-spinner" />
-                    <p>Loading campaign builder…</p>
-                </div>
-            ) : null}
-
-            {!loading ? (
-                <>
-                    <nav className={styles.builderTabs} aria-label="Campaign builder steps" role="tablist">
-                        {BUILDER_STEPS.map((step) => (
-                            <button
-                                key={step.key}
-                                type="button"
-                                role="tab"
-                                aria-selected={activeStep === step.key}
-                                className={activeStep === step.key ? styles.builderTabActive : styles.builderTab}
-                                onClick={() => switchStep(step.key)}
-                            >
-                                {step.label}
-                            </button>
-                        ))}
-                    </nav>
-                    <div className={styles.builderCanvas}>
-                        {renderActivePanel()}
-                        <div className={styles.stepFooter}>
-                            <Button size="3" variant="soft" onClick={() => goRelative(-1)} disabled={activeIndex <= 0}>Back</Button>
-                            <span className={styles.muted}>{activeLabel} · Step {activeIndex + 1} of {BUILDER_STEPS.length}</span>
-                            {activeStep === 'review' ? (
-                                <Button size="3" onClick={() => void handleLaunch()} disabled={!launchReady || launching}>
-                                    {launching ? 'Launching…' : 'Launch campaign'}
-                                </Button>
-                            ) : (
-                                <Button size="3" onClick={() => goRelative(1)}>Next</Button>
-                            )}
-                        </div>
+            <div className={styles.builderContent}>
+                {loading ? (
+                    <div className={styles.emptyState}>
+                        <span className="tahoe-spinner" />
+                        <p>Loading campaign builder...</p>
                     </div>
-                </>
+                ) : renderActivePanel()}
+            </div>
+            <div className={styles.stepFooter}>
+                <Button size="3" variant="soft" onClick={() => goRelative(-1)} disabled={activeIndex <= 0}>Back</Button>
+                <span className={styles.muted}>{launchBlockedReason || `${eligibleCount} eligible · ${steps.length} email${steps.length === 1 ? '' : 's'}`}</span>
+                {activeStep === 'review' ? (
+                    <Button size="3" onClick={() => void handleLaunch()} disabled={!launchReady || launching}>
+                        {launching ? 'Launching...' : 'Launch campaign'}
+                    </Button>
+                ) : (
+                    <Button size="3" onClick={() => goRelative(1)}>Next</Button>
+                )}
+            </div>
+            {launchSuccessId ? (
+                <div className={styles.successOverlay} role="dialog" aria-modal="true" aria-label="Campaign launched">
+                    <div className={styles.confetti} aria-hidden="true">
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                    </div>
+                    <div className={styles.successModal}>
+                        <h2>Campaign launched</h2>
+                        <p>Send tasks are queued. Follow-ups will stop for replied, bounced, or unsubscribed recipients.</p>
+                        <Link className="tahoe-button" href={`/dashboard/outreach/campaigns/${launchSuccessId}`}>Open campaign</Link>
+                    </div>
+                </div>
             ) : null}
         </section>
     );
@@ -743,7 +955,7 @@ function NewCampaignContent() {
 
 export default function NewCampaignPage() {
     return (
-        <Suspense fallback={<section className={styles.page}><div className={styles.emptyState}>Loading campaign builder…</div></section>}>
+        <Suspense fallback={<section className={styles.builderWorkspace}><div className={styles.emptyState}>Loading campaign builder...</div></section>}>
             <NewCampaignContent />
         </Suspense>
     );

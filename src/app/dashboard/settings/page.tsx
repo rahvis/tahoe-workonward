@@ -824,11 +824,19 @@ function SettingsPageContent() {
                                         <span className={styles.mutedPill}>{accountDeletionStatus.request_id}</span>
                                     </div>
                                 ) : null}
-                                <div className={styles.formGrid} style={{ marginTop: 16 }}>
-                                    <TextInput label={`Type ${accountDeletionConfirmationText}`} value={accountDeletion.confirmation} onChange={(value) => setAccountDeletion((prev) => ({ ...prev, confirmation: value }))} />
-                                    <label className={styles.field}>
+                                <div className={styles.dangerFormGrid}>
+                                    <label className={styles.dangerField}>
+                                        <span className={styles.label}>{`Type ${accountDeletionConfirmationText}`}</span>
+                                        <TextField.Root
+                                            size="3"
+                                            value={accountDeletion.confirmation}
+                                            aria-label={`Type ${accountDeletionConfirmationText}`}
+                                            onChange={(event) => setAccountDeletion((prev) => ({ ...prev, confirmation: event.target.value }))}
+                                        />
+                                    </label>
+                                    <label className={styles.dangerField}>
                                         <span className={styles.label}>Reason or notes</span>
-                                        <textarea className={styles.textarea} value={accountDeletion.reason} onChange={(event) => setAccountDeletion((prev) => ({ ...prev, reason: event.target.value }))} />
+                                        <textarea className={styles.dangerTextarea} value={accountDeletion.reason} onChange={(event) => setAccountDeletion((prev) => ({ ...prev, reason: event.target.value }))} />
                                     </label>
                                 </div>
                                 <div className={styles.actions}>

@@ -70,6 +70,42 @@ test('renders funnel and timing tabs with compact rollup state', async () => {
     expect(screen.getByText('Stage 2')).toBeInTheDocument();
 });
 
+test('renders zero-data funnel bars as aligned placeholders', async () => {
+    mockedFetchAnalyticsFunnel.mockResolvedValueOnce(funnelResponse({
+        stages: [
+            {
+                key: 'search',
+                label: 'Search results surfaced',
+                count: 0,
+                conversion_from_previous: null,
+                avg_hours_from_previous: null,
+            },
+            {
+                key: 'saved',
+                label: 'Saved candidates',
+                count: 0,
+                conversion_from_previous: 0,
+                avg_hours_from_previous: null,
+            },
+            {
+                key: 'enriched',
+                label: 'Enriched candidates',
+                count: 0,
+                conversion_from_previous: 0,
+                avg_hours_from_previous: null,
+            },
+        ],
+    }));
+
+    render(<AnalyticsFunnelPage />);
+
+    expect(await screen.findByText('Conversion ladder')).toBeInTheDocument();
+    const bars = screen.getAllByTestId('funnel-stage-bar');
+    expect(bars).toHaveLength(3);
+    expect(new Set(bars.map((bar) => bar.style.height))).toEqual(new Set(['34px']));
+    expect(bars.every((bar) => bar.parentElement?.className.includes('funnelBarArea'))).toBe(true);
+});
+
 test('paginates funnel details at 20 rows', async () => {
     const user = userEvent.setup();
     navigationMocks.searchParams = new URLSearchParams('tab=details');

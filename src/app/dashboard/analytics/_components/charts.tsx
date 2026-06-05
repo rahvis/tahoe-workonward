@@ -356,27 +356,33 @@ export function FunnelChart({ stages }: { stages: AnalyticsFunnelStage[] }) {
     const max = Math.max(1, ...stages.map((stage) => stage.count));
     return (
         <div className={styles.funnelGrid}>
-            {stages.map((stage, index) => (
-                <div key={stage.key} className={styles.funnelStage}>
-                    <div
-                        className={`${styles.funnelBar} ${index % 2 === 1 ? styles.funnelBarAlt : ''}`}
-                        style={{ height: `${Math.max(36, (stage.count / max) * 160)}px` }}
-                    />
-                    <div className={styles.funnelLabel}>{stage.label}</div>
-                    <div className={styles.funnelMeta}>{stage.count.toLocaleString()}</div>
-                    <div className={styles.funnelMeta}>
-                        {stage.conversion_from_previous == null ? 'Start of funnel' : `${stage.conversion_from_previous.toFixed(1)}% from previous`}
-                    </div>
-                    {stage.conversion_from_previous == null ? null : (
-                        <div className={styles.funnelDrop}>
-                            {Math.max(0, 100 - stage.conversion_from_previous).toFixed(1)}% drop-off
+            {stages.map((stage) => {
+                const opacity = stage.count === 0 ? 0.48 : Math.min(0.76, 0.48 + (stage.count / max) * 0.28);
+                return (
+                    <div key={stage.key} className={styles.funnelStage}>
+                        <div className={styles.funnelBarArea}>
+                            <div
+                                data-testid="funnel-stage-bar"
+                                className={styles.funnelBar}
+                                style={{ height: '34px', opacity }}
+                            />
                         </div>
-                    )}
-                    <div className={styles.funnelMeta}>
-                        {stage.avg_hours_from_previous == null ? 'Time gap not available' : `${stage.avg_hours_from_previous.toFixed(1)}h average from previous stage`}
+                        <div className={styles.funnelLabel}>{stage.label}</div>
+                        <div className={styles.funnelMeta}>{stage.count.toLocaleString()}</div>
+                        <div className={styles.funnelMeta}>
+                            {stage.conversion_from_previous == null ? 'Start of funnel' : `${stage.conversion_from_previous.toFixed(1)}% from previous`}
+                        </div>
+                        {stage.conversion_from_previous == null ? null : (
+                            <div className={styles.funnelDrop}>
+                                {Math.max(0, 100 - stage.conversion_from_previous).toFixed(1)}% drop-off
+                            </div>
+                        )}
+                        <div className={styles.funnelMeta}>
+                            {stage.avg_hours_from_previous == null ? 'Time gap not available' : `${stage.avg_hours_from_previous.toFixed(1)}h average from previous stage`}
+                        </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
         </div>
     );
 }

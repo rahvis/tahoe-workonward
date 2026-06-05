@@ -401,6 +401,9 @@ test('account deletion danger zone creates request only after typed confirmation
     render(<SettingsPage />);
 
     await screen.findByText('Delete account request');
+    expect(screen.getByText('Type DELETE ACCOUNT').closest('label')?.className).toContain('dangerField');
+    expect(screen.getByLabelText('Reason or notes').className).toContain('dangerTextarea');
+
     const submitButton = screen.getByRole('button', { name: 'Request account deletion' });
     expect(submitButton).toBeDisabled();
 

@@ -11,6 +11,409 @@
     box-sizing: border-box;
 }
 
+.builderWorkspace {
+    height: calc(100vh - 70px);
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    font-family: var(--tahoe-font-body);
+    color: var(--tahoe-color-text-primary);
+}
+
+.builderWorkspace,
+.builderWorkspace * {
+    box-sizing: border-box;
+}
+
+.builderWorkspace :global(.tui-textfield),
+.builderWorkspace :global(.tui-button),
+.builderWorkspace :global(.tahoe-select) {
+    min-height: var(--tahoe-dashboard-control-height);
+    font-family: var(--tahoe-font-body);
+    font-size: var(--tahoe-dashboard-control-font-size);
+    line-height: var(--tahoe-dashboard-control-line-height);
+    border-radius: var(--tahoe-radius-lg);
+}
+
+.builderTopbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--tahoe-color-border-subtle);
+    background: #fff;
+}
+
+.builderProgress {
+    margin-left: auto;
+    color: var(--tahoe-color-text-secondary);
+    font-size: 13px;
+    line-height: 18px;
+    white-space: nowrap;
+}
+
+.builderContent {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0 20px;
+}
+
+.builderPanel {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+}
+
+.builderToolbar,
+.builderInlinePanel,
+.scheduleGrid {
+    flex: 0 0 auto;
+    display: grid;
+    gap: 10px;
+    align-items: end;
+}
+
+.builderToolbar {
+    grid-template-columns: minmax(220px, 1.1fr) minmax(220px, 1fr) minmax(200px, 0.8fr) auto;
+}
+
+.builderInlinePanel {
+    grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) minmax(220px, 1fr) auto;
+    padding: 10px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.compactField {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    color: var(--tahoe-color-text-primary);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.compactField :global(.tui-textfield),
+.compactField :global(.tahoe-select) {
+    width: 100%;
+}
+
+.builderTableShell {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.selectedTableRow {
+    cursor: pointer;
+    background: rgba(255, 104, 44, 0.08);
+}
+
+.tableNameButton {
+    appearance: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--tahoe-color-text-primary);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.builderNotice {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 104, 44, 0.16);
+    border-radius: 8px;
+    background: rgba(255, 104, 44, 0.08);
+    color: var(--tahoe-color-text-primary);
+    font-size: 13px;
+}
+
+.builderNotice a {
+    color: var(--tahoe-color-accent);
+    text-decoration: none;
+}
+
+.aiGrid,
+.sequenceGrid {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    gap: 12px;
+}
+
+.aiGrid {
+    grid-template-columns: minmax(320px, 0.8fr) minmax(360px, 1fr);
+}
+
+.aiPromptPanel,
+.previewPanel,
+.stepEditor {
+    min-height: 0;
+    overflow: auto;
+    padding: 12px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.builderTextarea,
+.builderTextareaLarge {
+    width: 100%;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--tahoe-color-text-primary);
+    font-family: var(--tahoe-font-body);
+    font-size: var(--tahoe-dashboard-control-font-size);
+    line-height: 1.45;
+    resize: vertical;
+}
+
+.builderTextarea {
+    min-height: 180px;
+}
+
+.builderTextareaLarge {
+    min-height: 260px;
+}
+
+.builderPanelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.builderPanelHeader h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.builderPanelHeader span {
+    color: var(--tahoe-color-text-secondary);
+    font-size: 13px;
+}
+
+.previewBlock {
+    display: grid;
+    gap: 6px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--tahoe-color-border-subtle);
+}
+
+.previewBlock p {
+    margin: 0;
+    color: var(--tahoe-color-text-secondary);
+    font-size: 14px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+}
+
+.sequenceGrid {
+    grid-template-columns: minmax(220px, 280px) minmax(420px, 1fr);
+}
+
+.stepRail {
+    min-height: 0;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.stepRailItem,
+.stepRailItemActive {
+    appearance: none;
+    display: grid;
+    gap: 3px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--tahoe-color-text-primary);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.stepRailItemActive {
+    border-color: rgba(255, 104, 44, 0.28);
+    background: rgba(255, 104, 44, 0.08);
+}
+
+.stepRailItem small,
+.stepRailItemActive small {
+    color: var(--tahoe-color-text-secondary);
+    font-size: 12px;
+}
+
+.scheduleGrid {
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+.weekdayRow {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.weekday,
+.weekdayActive {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--tahoe-color-text-secondary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.weekdayActive {
+    border-color: rgba(255, 104, 44, 0.28);
+    background: rgba(255, 104, 44, 0.12);
+    color: var(--tahoe-color-text-primary);
+}
+
+.reviewRows {
+    display: grid;
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.reviewRow {
+    display: grid;
+    grid-template-columns: 32px 180px 1fr;
+    gap: 12px;
+    align-items: center;
+    min-height: 48px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--tahoe-color-border-subtle);
+    font-size: 14px;
+}
+
+.reviewRow:last-child {
+    border-bottom: 0;
+}
+
+.reviewRow strong {
+    font-weight: 500;
+}
+
+.reviewRow p {
+    margin: 0;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.successOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(8px);
+}
+
+.successModal {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 12px;
+    width: min(420px, calc(100vw - 40px));
+    padding: 22px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: var(--tahoe-shadow-soft);
+    text-align: center;
+}
+
+.successModal h2,
+.successModal p {
+    margin: 0;
+}
+
+.successModal p {
+    color: var(--tahoe-color-text-secondary);
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.confetti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.confetti span {
+    position: absolute;
+    top: 20%;
+    left: calc(18% + var(--i, 0) * 14%);
+    width: 10px;
+    height: 18px;
+    border-radius: 3px;
+    background: var(--tahoe-color-accent);
+    animation: confettiFall 900ms ease-out forwards;
+}
+
+.confetti span:nth-child(1) { left: 22%; background: #ff682c; animation-delay: 0ms; }
+.confetti span:nth-child(2) { left: 35%; background: #1f8a70; animation-delay: 80ms; }
+.confetti span:nth-child(3) { left: 52%; background: #f5b942; animation-delay: 30ms; }
+.confetti span:nth-child(4) { left: 66%; background: #4b7bec; animation-delay: 100ms; }
+.confetti span:nth-child(5) { left: 78%; background: #ff682c; animation-delay: 50ms; }
+
+@keyframes confettiFall {
+    from {
+        opacity: 1;
+        transform: translateY(-80px) rotate(0deg);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(260px) rotate(260deg);
+    }
+}
+
+@media (max-width: 1100px) {
+    .builderToolbar,
+    .builderInlinePanel,
+    .scheduleGrid,
+    .aiGrid,
+    .sequenceGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .page :global(.tui-textfield),
 .page :global(.tui-button),
 .page :global(.tahoe-select) {

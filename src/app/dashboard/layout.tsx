@@ -39,25 +39,19 @@ const sectionConfig = {
         subnav: [
             { href: '/dashboard/projects', label: 'All Projects' },
             { href: '/dashboard/projects/lists', label: 'Lists' },
-            { href: '/dashboard/projects/archived', label: 'Archived' },
         ],
     },
     outreach: {
         label: 'Outreach',
         href: '/dashboard/outreach/campaigns',
         icon: <PaperPlaneIcon width="18" height="18" />,
-        subnav: [
-            { href: '/dashboard/outreach/campaigns', label: 'Campaigns' },
-            { href: '/dashboard/outreach/replies', label: 'Replies' },
-        ],
+        subnav: [],
     },
     mailboxes: {
         label: 'Mailboxes',
         href: '/dashboard/mailboxes',
         icon: <EnvelopeClosedIcon width="18" height="18" />,
-        subnav: [
-            { href: '/dashboard/mailboxes', label: 'Connected Mailboxes' },
-        ],
+        subnav: [],
     },
     billing: {
         label: 'Billing',

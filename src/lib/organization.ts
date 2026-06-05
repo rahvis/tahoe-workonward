@@ -806,6 +806,21 @@ export interface OutreachStep {
     body_text: string;
     body_html?: string | null;
     delay_days: number;
+    mailbox_id?: string | null;
+    send_after_local?: string | null;
+    daily_cap?: number | null;
+}
+
+export interface CampaignSchedule {
+    timezone: string;
+    launch_mode: 'now' | 'scheduled';
+    start_at?: string | null;
+    weekdays: number[];
+    window_start_local: string;
+    window_end_local: string;
+    daily_campaign_cap: number;
+    min_spacing_minutes: number;
+    max_spacing_minutes: number;
 }
 
 export interface CampaignSummary {
@@ -818,6 +833,7 @@ export interface CampaignSummary {
     mailbox_email?: string | null;
     status: 'draft' | 'launched' | 'paused' | 'stopped' | 'completed';
     steps: OutreachStep[];
+    schedule?: CampaignSchedule;
     signature?: OutreachSignature | null;
     audience_count: number;
     eligible_count: number;
@@ -976,6 +992,7 @@ export async function createCampaign(payload: {
     list_id: string;
     mailbox_id?: string | null;
     steps?: OutreachStep[];
+    schedule?: CampaignSchedule;
     signature?: OutreachSignature | null;
 }) {
     return apiRequest<CampaignSummary>('/campaigns', { method: 'POST', body: payload });

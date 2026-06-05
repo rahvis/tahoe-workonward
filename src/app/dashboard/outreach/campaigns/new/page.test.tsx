@@ -266,7 +266,7 @@ test('campaign builder renders settings-style tabs and loads a linked list audie
     expect(screen.getByRole('tab', { name: 'Audience' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tab', { name: 'AI Message' })).toBeInTheDocument();
     expect(screen.queryByLabelText(/campaign builder sections/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/1 eligible/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/1 eligible/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(/role and personalization context/i)).not.toBeInTheDocument();
 });
 
@@ -275,8 +275,8 @@ test('builder can select an existing list when no list id is provided', async ()
     const user = userEvent.setup();
     render(<NewCampaignPage />);
 
-    await screen.findByLabelText(/audience list/i);
-    await user.selectOptions(screen.getByLabelText(/audience list/i), 'list-2');
+    await screen.findByRole('button', { name: /product designers/i });
+    await user.click(screen.getByRole('button', { name: /product designers/i }));
 
     await waitFor(() => expect(mockedFetchListCandidates).toHaveBeenCalledWith('list-2', { limit: 100 }));
     expect((await screen.findAllByText(/product designers/i)).length).toBeGreaterThan(0);
@@ -301,10 +301,11 @@ test('inline list creation selects the new empty list and keeps launch blocked',
     const user = userEvent.setup();
     render(<NewCampaignPage />);
 
-    await screen.findByLabelText(/or create project/i);
-    await user.type(screen.getByLabelText(/or create project/i), 'New search');
-    await user.type(screen.getByLabelText(/new list name/i), 'New audience');
-    await user.click(screen.getByRole('button', { name: /create and use list/i }));
+    await screen.findByRole('button', { name: /create list/i });
+    await user.click(screen.getByRole('button', { name: /create list/i }));
+    await user.type(screen.getByLabelText(/new project/i), 'New search');
+    await user.type(screen.getByLabelText(/list name/i), 'New audience');
+    await user.click(screen.getByRole('button', { name: /create and use/i }));
 
     await waitFor(() => expect(mockedCreateProject).toHaveBeenCalledWith({ name: 'New search' }));
     expect(mockedCreateList).toHaveBeenCalledWith('project-2', { name: 'New audience' });
@@ -321,25 +322,33 @@ test('ai generate fills the first step and launch uses selected list plus campai
 
     await screen.findAllByText(/backend engineers/i);
     await user.click(screen.getByRole('tab', { name: 'AI Message' }));
-    await user.type(screen.getByPlaceholderText(/senior product designers/i), 'Backend role');
+    await user.type(screen.getByLabelText(/role and personalization context/i), 'Backend role');
     await user.click(screen.getByRole('button', { name: /generate with ai/i }));
 
     await waitFor(() => expect(mockedComposeCampaignMessage).toHaveBeenCalledWith(expect.objectContaining({ list_id: 'list-1' })));
+    expect(await screen.findByText(/saw your work/i)).toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: 'Sequence' }));
     expect(await screen.findByDisplayValue('Hi {{first_name}}')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /add follow-up/i }));
+    expect(screen.getByRole('button', { name: /email 2/i })).toBeInTheDocument();
 
     await user.click(screen.getByRole('tab', { name: 'Signature' }));
     const phoneInput = screen.getByLabelText(/phone/i);
     await user.clear(phoneInput);
     await user.type(phoneInput, '555-0100');
-    const addressInput = screen.getByLabelText(/physical address/i);
+    const addressInput = screen.getByLabelText(/address/i);
     await user.clear(addressInput);
     await user.type(addressInput, 'Campaign-only address');
 
     await user.click(screen.getByRole('tab', { name: 'Audience' }));
-    await user.selectOptions(screen.getByLabelText(/audience list/i), 'list-2');
+    await user.click(screen.getByRole('button', { name: /product designers/i }));
     await waitFor(() => expect(mockedFetchListCandidates).toHaveBeenCalledWith('list-2', { limit: 100 }));
+
+    await user.click(screen.getByRole('tab', { name: 'Schedule' }));
+    const dailyCapInput = screen.getByLabelText(/daily cap/i);
+    await user.clear(dailyCapInput);
+    await user.type(dailyCapInput, '80');
 
     await user.click(screen.getByRole('tab', { name: 'Review' }));
     await user.click(screen.getByRole('button', { name: /launch campaign/i }));
@@ -347,12 +356,20 @@ test('ai generate fills the first step and launch uses selected list plus campai
     await waitFor(() => {
         expect(mockedCreateCampaign).toHaveBeenCalledWith(expect.objectContaining({
             list_id: 'list-2',
+            schedule: expect.objectContaining({
+                daily_campaign_cap: 80,
+                window_start_local: '09:00',
+                window_end_local: '17:00',
+            }),
             signature: expect.objectContaining({
                 sender_phone: '555-0100',
                 sender_address: 'Campaign-only address',
             }),
         }));
         expect(mockedLaunchCampaign).toHaveBeenCalledWith('campaign-1', expect.any(String));
-        expect(pushMock).toHaveBeenCalledWith('/dashboard/outreach/campaigns/campaign-1');
+        expect(screen.getByRole('dialog', { name: /campaign launched/i })).toBeInTheDocument();
     });
-});
+    await waitFor(() => {
+        expect(pushMock).toHaveBeenCalledWith('/dashboard/outreach/campaigns/campaign-1');
+    }, { timeout: 1500 });
+}, 10000);

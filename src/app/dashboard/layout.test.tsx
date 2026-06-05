@@ -43,6 +43,12 @@ beforeEach(() => {
     });
 });
 
+function getLinkByHref(href: string) {
+    const link = screen.getAllByRole('link').find((candidate) => candidate.getAttribute('href') === href);
+    expect(link).toBeTruthy();
+    return link as HTMLAnchorElement;
+}
+
 test('logout clears auth state, disables Google auto select, and redirects to the landing page', async () => {
     const originalLocation = window.location;
     const hrefSetter = vi.fn();
@@ -80,18 +86,16 @@ test('logout clears auth state, disables Google auto select, and redirects to th
     }
 });
 
-test('dashboard nav includes the mailboxes section', async () => {
-    const user = userEvent.setup();
+test('dashboard nav links mailboxes directly without nested mailbox subnav', async () => {
     render(
         <DashboardLayout>
             <div>Dashboard Content</div>
         </DashboardLayout>,
     );
 
-    const mailboxesButton = await screen.findByRole('button', { name: /mailboxes/i });
-    expect(mailboxesButton).toBeInTheDocument();
-    await user.click(mailboxesButton);
-    expect(await screen.findByRole('link', { name: /connected mailboxes/i })).toBeInTheDocument();
+    await screen.findByText('Dashboard Content');
+    expect(getLinkByHref('/dashboard/mailboxes')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /connected mailboxes/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /send health/i })).not.toBeInTheDocument();
 });
 
@@ -107,7 +111,20 @@ test('dashboard search nav hides saved searches', async () => {
     expect(screen.queryByRole('link', { name: /saved searches/i })).not.toBeInTheDocument();
 });
 
-test('dashboard nav includes the outreach section', async () => {
+test('dashboard nav links outreach directly without campaigns or replies subnav', async () => {
+    render(
+        <DashboardLayout>
+            <div>Dashboard Content</div>
+        </DashboardLayout>,
+    );
+
+    await screen.findByText('Dashboard Content');
+    expect(getLinkByHref('/dashboard/outreach/campaigns')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^campaigns$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^replies$/i })).not.toBeInTheDocument();
+});
+
+test('dashboard nav keeps projects subnav limited to all projects and lists', async () => {
     const user = userEvent.setup();
     render(
         <DashboardLayout>
@@ -115,11 +132,12 @@ test('dashboard nav includes the outreach section', async () => {
         </DashboardLayout>,
     );
 
-    const outreachButton = await screen.findByRole('button', { name: /outreach/i });
-    expect(outreachButton).toBeInTheDocument();
-    await user.click(outreachButton);
-    expect(await screen.findByRole('link', { name: /campaigns/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /replies/i })).toBeInTheDocument();
+    const projectsButton = await screen.findByRole('button', { name: /projects/i });
+    await user.click(projectsButton);
+
+    expect(await screen.findByRole('link', { name: /all projects/i })).toHaveAttribute('href', '/dashboard/projects');
+    expect(screen.getByRole('link', { name: /^lists$/i })).toHaveAttribute('href', '/dashboard/projects/lists');
+    expect(screen.queryByRole('link', { name: /^archived$/i })).not.toBeInTheDocument();
 });
 
 test('dashboard nav keeps mailboxes below outreach with distinct icons', async () => {
@@ -129,12 +147,13 @@ test('dashboard nav keeps mailboxes below outreach with distinct icons', async (
         </DashboardLayout>,
     );
 
-    const outreachButton = await screen.findByRole('button', { name: /outreach/i });
-    const mailboxesButton = screen.getByRole('button', { name: /mailboxes/i });
-    const outreachIcon = outreachButton.querySelector('svg')?.innerHTML;
-    const mailboxesIcon = mailboxesButton.querySelector('svg')?.innerHTML;
+    await screen.findByText('Dashboard Content');
+    const outreachLink = getLinkByHref('/dashboard/outreach/campaigns');
+    const mailboxesLink = getLinkByHref('/dashboard/mailboxes');
+    const outreachIcon = outreachLink.querySelector('svg')?.innerHTML;
+    const mailboxesIcon = mailboxesLink.querySelector('svg')?.innerHTML;
 
-    expect(outreachButton.compareDocumentPosition(mailboxesButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(outreachLink.compareDocumentPosition(mailboxesLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(outreachIcon).toBeTruthy();
     expect(mailboxesIcon).toBeTruthy();
     expect(outreachIcon).not.toEqual(mailboxesIcon);
