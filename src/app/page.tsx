@@ -9,6 +9,8 @@ import CookieSettingsButton from '@/components/consent/CookieSettingsButton';
 import { trackLandingEvent } from '@/lib/public-analytics';
 import styles from './page.module.css';
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.com';
+
 const inter = Inter({
     subsets: ['latin'],
     variable: '--font-body',
@@ -109,6 +111,72 @@ const PRICE_COMPARE = [
     { name: 'SeekOut', price: 749, contract: 'Custom contract' },
     { name: 'hireEZ', price: 599, contract: 'Annual contract' },
 ];
+
+const homeJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+        {
+            '@type': 'Organization',
+            '@id': `${SITE_URL}/#organization`,
+            name: 'Tahoe AI',
+            alternateName: ['Tahoe', 'WorkOnward Tahoe'],
+            url: SITE_URL,
+            logo: `${SITE_URL}/logo/workonward_logo.svg`,
+            email: 'info@workonward.com',
+            address: {
+                '@type': 'PostalAddress',
+                streetAddress: '124 E 14th St',
+                addressLocality: 'New York',
+                addressRegion: 'NY',
+                postalCode: '10003',
+                addressCountry: 'US',
+            },
+            sameAs: [
+                'https://www.linkedin.com/company/workonward',
+                'https://www.facebook.com/workonward',
+                'https://x.com/workonward',
+                'https://www.instagram.com/workonward',
+                'https://www.youtube.com/@workonward',
+            ],
+        },
+        {
+            '@type': 'WebSite',
+            '@id': `${SITE_URL}/#website`,
+            name: 'Tahoe AI',
+            url: SITE_URL,
+            publisher: {
+                '@id': `${SITE_URL}/#organization`,
+            },
+        },
+        {
+            '@type': 'SoftwareApplication',
+            '@id': `${SITE_URL}/#software`,
+            name: 'Tahoe AI',
+            applicationCategory: 'BusinessApplication',
+            applicationSubCategory: 'AI recruiting software',
+            operatingSystem: 'Web',
+            url: SITE_URL,
+            description:
+                'AI recruiting software for plain-English candidate sourcing, candidate lists, contact enrichment, native outreach sequencing, mailbox controls, and recruiting analytics.',
+            publisher: {
+                '@id': `${SITE_URL}/#organization`,
+            },
+            offers: {
+                '@type': 'Offer',
+                price: '49',
+                priceCurrency: 'USD',
+                priceSpecification: {
+                    '@type': 'UnitPriceSpecification',
+                    price: '49',
+                    priceCurrency: 'USD',
+                    unitText: 'month',
+                },
+                availability: 'https://schema.org/InStock',
+                url: `${SITE_URL}/pricing`,
+            },
+        },
+    ],
+};
 
 function ArrowIcon() {
     return (
@@ -571,6 +639,10 @@ export default function LandingPage() {
 
     return (
         <main className={`${inter.variable} ${montserrat.variable} ${styles.page}`}>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd).replace(/</g, '\\u003c') }}
+            />
             <header className={styles.header}>
                 <div className={styles.container}>
                     <div className={styles.headerInner}>
@@ -590,10 +662,10 @@ export default function LandingPage() {
                         </Link>
 
                         <nav className={styles.desktopNav} aria-label="Primary">
-                            <a href="#product" onClick={() => trackSectionNav('product', 'header_desktop')}>Product</a>
-                            <a href="#screens" onClick={() => trackSectionNav('screens', 'header_desktop')}>Features</a>
-                            <a href="#pricing" onClick={() => trackSectionNav('pricing', 'header_desktop')}>Pricing</a>
-                            <a href="#customers" onClick={() => trackSectionNav('customers', 'header_desktop')}>Customers</a>
+                            <Link href="/product" onClick={() => trackSectionNav('product', 'header_desktop')}>Product</Link>
+                            <Link href="/features" onClick={() => trackSectionNav('features', 'header_desktop')}>Features</Link>
+                            <Link href="/pricing" onClick={() => trackSectionNav('pricing', 'header_desktop')}>Pricing</Link>
+                            <Link href="/customers" onClick={() => trackSectionNav('customers', 'header_desktop')}>Customers</Link>
                             <Link href="/blogs" onClick={() => trackBlogNav('header_desktop')}>Blog</Link>
                         </nav>
 
@@ -621,10 +693,10 @@ export default function LandingPage() {
 
                     {mobileNavOpen && (
                         <div className={styles.mobileNav} aria-label="Mobile navigation">
-                            <a href="#product" onClick={() => { trackSectionNav('product', 'header_mobile'); setMobileNavOpen(false); }}>Product</a>
-                            <a href="#screens" onClick={() => { trackSectionNav('screens', 'header_mobile'); setMobileNavOpen(false); }}>Features</a>
-                            <a href="#pricing" onClick={() => { trackSectionNav('pricing', 'header_mobile'); setMobileNavOpen(false); }}>Pricing</a>
-                            <a href="#customers" onClick={() => { trackSectionNav('customers', 'header_mobile'); setMobileNavOpen(false); }}>Customers</a>
+                            <Link href="/product" onClick={() => { trackSectionNav('product', 'header_mobile'); setMobileNavOpen(false); }}>Product</Link>
+                            <Link href="/features" onClick={() => { trackSectionNav('features', 'header_mobile'); setMobileNavOpen(false); }}>Features</Link>
+                            <Link href="/pricing" onClick={() => { trackSectionNav('pricing', 'header_mobile'); setMobileNavOpen(false); }}>Pricing</Link>
+                            <Link href="/customers" onClick={() => { trackSectionNav('customers', 'header_mobile'); setMobileNavOpen(false); }}>Customers</Link>
                             <Link href="/blogs" onClick={() => { trackBlogNav('header_mobile'); setMobileNavOpen(false); }}>Blog</Link>
                             <div className={styles.mobileAuthActions}>
                                 <Link href="/login" className={styles.textAction} onClick={() => trackAuthCta('sign_in', 'header_mobile')}>Sign in</Link>
@@ -954,15 +1026,15 @@ export default function LandingPage() {
 
                         <div>
                             <h3>Product</h3>
-                            <a href="#product" onClick={() => trackSectionNav('product', 'footer_column')}>Features</a>
-                            <a href="#pricing" onClick={() => trackSectionNav('pricing', 'footer_column')}>Pricing</a>
+                            <Link href="/features" onClick={() => trackSectionNav('features', 'footer_column')}>Features</Link>
+                            <Link href="/pricing" onClick={() => trackSectionNav('pricing', 'footer_column')}>Pricing</Link>
                         </div>
 
                         <div>
                             <h3>Company</h3>
                             <Link href="/blogs" onClick={() => trackBlogNav('footer_column')}>Blog</Link>
-                            <a href="#customers" onClick={() => trackSectionNav('customers', 'footer_column')}>Customers</a>
-                            <a href="#screens" onClick={() => trackSectionNav('screens', 'footer_column')}>Product vision</a>
+                            <Link href="/customers" onClick={() => trackSectionNav('customers', 'footer_column')}>Customers</Link>
+                            <Link href="/product" onClick={() => trackSectionNav('product', 'footer_column')}>Product vision</Link>
                             <a
                                 href="/partner"
                                 target="_blank"
@@ -999,8 +1071,8 @@ export default function LandingPage() {
                     <div className={styles.footerBottom}>
                         <span>© 2026 WorkOnward. Made for recruiters who would rather hire than negotiate contracts.</span>
                         <div className={styles.footerBottomLinks}>
-                            <a href="#product" onClick={() => trackSectionNav('product', 'footer_bottom')}>Product</a>
-                            <a href="#pricing" onClick={() => trackSectionNav('pricing', 'footer_bottom')}>Pricing</a>
+                            <Link href="/product" onClick={() => trackSectionNav('product', 'footer_bottom')}>Product</Link>
+                            <Link href="/pricing" onClick={() => trackSectionNav('pricing', 'footer_bottom')}>Pricing</Link>
                             <Link href="/blogs" onClick={() => trackBlogNav('footer_bottom')}>Blog</Link>
                             <Link href="/privacy">Privacy</Link>
                             <Link href="/cookie">Cookie</Link>

@@ -333,7 +333,9 @@
 }
 
 .heroTitle,
+.sectionHead h1,
 .sectionHead h2,
+.pricingCopy h1,
 .pricingCopy h2,
 .finalCtaCard h2 {
     margin: var(--space-8) 0 var(--space-8);
@@ -350,6 +352,7 @@
 }
 
 .heroTitle span,
+.pricingCopy h1 span,
 .pricingCopy h2 span {
     color: var(--color-accent);
 }
@@ -725,6 +728,7 @@
     margin-bottom: 60px;
 }
 
+.sectionHead h1,
 .sectionHead h2 {
     max-width: 14ch;
     font-size: 40px;
@@ -1245,6 +1249,7 @@
     align-items: start;
 }
 
+.pricingCopy h1,
 .pricingCopy h2,
 .finalCtaCard h2 {
     font-size: 40px;
@@ -1720,12 +1725,14 @@
         margin-bottom: 28px;
     }
 
+    .sectionHead h1,
     .sectionHead h2 {
         font-size: clamp(24px, 6.5vw, 30px);
         line-height: 1.15;
         max-width: none;
     }
 
+    .pricingCopy h1,
     .pricingCopy h2,
     .finalCtaCard h2 {
         font-size: clamp(24px, 6.5vw, 30px);

@@ -95,7 +95,7 @@ export default async function Image() {
             padding: '0 80px',
           }}
         >
-           <span style={{ color: '#ff682c', fontSize: '24px', fontWeight: 600 }}>tahoe.ai</span>
+           <span style={{ color: '#ff682c', fontSize: '24px', fontWeight: 600 }}>tahoe.workonward.com</span>
            <span style={{ color: '#52525b', fontSize: '24px' }}>Recruiter OS</span>
         </div>
       </div>

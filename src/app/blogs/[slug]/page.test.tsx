@@ -47,7 +47,7 @@ describe('BlogPostPage', () => {
             generateMetadata({ params: Promise.resolve({ slug: 'from-search-to-outreach' }) }),
         ).resolves.toMatchObject({
             title: 'AI recruiting workflow: search to outreach',
-            keywords: expect.arrayContaining(['AI recruiting workflow', 'AI sourcing software']),
+            description: expect.stringContaining('AI recruiting workflow'),
         });
     });
 

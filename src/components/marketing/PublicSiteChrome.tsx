@@ -64,10 +64,10 @@ export function PublicSiteHeader() {
                     </Link>
 
                     <nav className={styles.desktopNav} aria-label="Primary">
-                        <Link href="/#product" onClick={() => trackSectionNav('product', 'blog_header_desktop')}>Product</Link>
-                        <Link href="/#screens" onClick={() => trackSectionNav('screens', 'blog_header_desktop')}>Features</Link>
-                        <Link href="/#pricing" onClick={() => trackSectionNav('pricing', 'blog_header_desktop')}>Pricing</Link>
-                        <Link href="/#customers" onClick={() => trackSectionNav('customers', 'blog_header_desktop')}>Customers</Link>
+                        <Link href="/product" onClick={() => trackSectionNav('product', 'blog_header_desktop')}>Product</Link>
+                        <Link href="/features" onClick={() => trackSectionNav('features', 'blog_header_desktop')}>Features</Link>
+                        <Link href="/pricing" onClick={() => trackSectionNav('pricing', 'blog_header_desktop')}>Pricing</Link>
+                        <Link href="/customers" onClick={() => trackSectionNav('customers', 'blog_header_desktop')}>Customers</Link>
                         <Link href="/blogs" onClick={() => trackBlogNav('blog_header_desktop')}>Blog</Link>
                     </nav>
 
@@ -95,10 +95,10 @@ export function PublicSiteHeader() {
 
                 {mobileNavOpen && (
                     <div className={styles.mobileNav} aria-label="Mobile navigation">
-                        <Link href="/#product" onClick={() => { trackSectionNav('product', 'blog_header_mobile'); setMobileNavOpen(false); }}>Product</Link>
-                        <Link href="/#screens" onClick={() => { trackSectionNav('screens', 'blog_header_mobile'); setMobileNavOpen(false); }}>Features</Link>
-                        <Link href="/#pricing" onClick={() => { trackSectionNav('pricing', 'blog_header_mobile'); setMobileNavOpen(false); }}>Pricing</Link>
-                        <Link href="/#customers" onClick={() => { trackSectionNav('customers', 'blog_header_mobile'); setMobileNavOpen(false); }}>Customers</Link>
+                        <Link href="/product" onClick={() => { trackSectionNav('product', 'blog_header_mobile'); setMobileNavOpen(false); }}>Product</Link>
+                        <Link href="/features" onClick={() => { trackSectionNav('features', 'blog_header_mobile'); setMobileNavOpen(false); }}>Features</Link>
+                        <Link href="/pricing" onClick={() => { trackSectionNav('pricing', 'blog_header_mobile'); setMobileNavOpen(false); }}>Pricing</Link>
+                        <Link href="/customers" onClick={() => { trackSectionNav('customers', 'blog_header_mobile'); setMobileNavOpen(false); }}>Customers</Link>
                         <Link href="/blogs" onClick={() => { trackBlogNav('blog_header_mobile'); setMobileNavOpen(false); }}>Blog</Link>
                         <div className={styles.mobileAuthActions}>
                             <Link href="/login" className={styles.textAction} onClick={() => trackAuthCta('sign_in', 'blog_header_mobile')}>Sign in</Link>
@@ -126,15 +126,15 @@ export function PublicSiteFooter() {
 
                     <div>
                         <h3>Product</h3>
-                        <Link href="/#product" onClick={() => trackSectionNav('product', 'blog_footer_column')}>Features</Link>
-                        <Link href="/#pricing" onClick={() => trackSectionNav('pricing', 'blog_footer_column')}>Pricing</Link>
+                        <Link href="/features" onClick={() => trackSectionNav('features', 'blog_footer_column')}>Features</Link>
+                        <Link href="/pricing" onClick={() => trackSectionNav('pricing', 'blog_footer_column')}>Pricing</Link>
                     </div>
 
                     <div>
                         <h3>Company</h3>
                         <Link href="/blogs" onClick={() => trackBlogNav('blog_footer_column')}>Blog</Link>
-                        <Link href="/#customers" onClick={() => trackSectionNav('customers', 'blog_footer_column')}>Customers</Link>
-                        <Link href="/#screens" onClick={() => trackSectionNav('screens', 'blog_footer_column')}>Product vision</Link>
+                        <Link href="/customers" onClick={() => trackSectionNav('customers', 'blog_footer_column')}>Customers</Link>
+                        <Link href="/product" onClick={() => trackSectionNav('product', 'blog_footer_column')}>Product vision</Link>
                         <a
                             href="/partner"
                             target="_blank"
@@ -171,8 +171,8 @@ export function PublicSiteFooter() {
                 <div className={styles.footerBottom}>
                     <span>© 2026 WorkOnward. Made for recruiters who would rather hire than negotiate contracts.</span>
                     <div className={styles.footerBottomLinks}>
-                        <Link href="/#product" onClick={() => trackSectionNav('product', 'blog_footer_bottom')}>Product</Link>
-                        <Link href="/#pricing" onClick={() => trackSectionNav('pricing', 'blog_footer_bottom')}>Pricing</Link>
+                        <Link href="/product" onClick={() => trackSectionNav('product', 'blog_footer_bottom')}>Product</Link>
+                        <Link href="/pricing" onClick={() => trackSectionNav('pricing', 'blog_footer_bottom')}>Pricing</Link>
                         <Link href="/blogs" onClick={() => trackBlogNav('blog_footer_bottom')}>Blog</Link>
                         <Link href="/privacy">Privacy</Link>
                         <Link href="/cookie">Cookie</Link>

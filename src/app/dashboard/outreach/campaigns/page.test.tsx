@@ -18,7 +18,7 @@ function campaign(index: number, overrides: Partial<CampaignSummary> = {}): Camp
         list_id: 'list-1',
         list_name: 'Contact engineers',
         mailbox_id: 'mailbox-1',
-        mailbox_email: 'recruiting@tahoe.ai',
+        mailbox_email: 'recruiting@tahoe.workonward.com',
         status: 'launched',
         steps: [],
         audience_count: 20 + index,

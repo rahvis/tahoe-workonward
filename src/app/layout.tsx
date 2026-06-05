@@ -34,7 +34,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://tahoe.ai"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://tahoe.workonward.com"),
   applicationName: "Tahoe AI",
   title: {
     default: "Tahoe AI | AI Recruiting Search and Outreach",
@@ -42,16 +42,6 @@ export const metadata: Metadata = {
   },
   description:
     "Tahoe AI is recruiting software for plain-English candidate sourcing, contact enrichment, outreach sequencing, mailbox controls, and recruiting analytics.",
-  keywords: [
-    "AI recruiting software",
-    "AI sourcing software",
-    "candidate sourcing",
-    "talent intelligence platform",
-    "contact enrichment",
-    "recruiting outreach",
-    "recruiting analytics",
-    "recruitment CRM",
-  ],
   alternates: {
     canonical: "/",
   },

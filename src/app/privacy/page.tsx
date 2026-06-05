@@ -6,7 +6,7 @@ import styles from '../legal.module.css';
 const sections = [
     {
         title: '1. Scope and role',
-        body: 'This Privacy Policy explains how WorkOnward ("Tahoe," "we," "us," or "our") collects, uses, stores, discloses, and protects personal information when you use tahoe.ai, create an account, sign in with Google, connect a Gmail or Google Workspace mailbox, search for candidates, or otherwise interact with the Service. This Policy is written for U.S. business use and should be read together with the consent screens and in-product disclosures shown when you authorize Google access.',
+        body: 'This Privacy Policy explains how WorkOnward ("Tahoe," "we," "us," or "our") collects, uses, stores, discloses, and protects personal information when you use tahoe.workonward.com, create an account, sign in with Google, connect a Gmail or Google Workspace mailbox, search for candidates, or otherwise interact with the Service. This Policy is written for U.S. business use and should be read together with the consent screens and in-product disclosures shown when you authorize Google access.',
     },
     {
         title: '2. Information we collect',

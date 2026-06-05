@@ -5,7 +5,7 @@ import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/Publi
 import { blogPosts, getBlogPost, getRelatedBlogPosts, type BlogPost } from '@/lib/blog-posts';
 import styles from '../blogs.module.css';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.ai';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.com';
 
 type BlogPostPageProps = {
     params: Promise<{ slug: string }>;
@@ -209,7 +209,6 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     return {
         title: post.metaTitle,
         description: post.metaDescription,
-        keywords: post.keywords,
         alternates: {
             canonical: `/blogs/${post.slug}`,
         },

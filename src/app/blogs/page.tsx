@@ -4,18 +4,12 @@ import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/Publi
 import { blogPosts } from '@/lib/blog-posts';
 import styles from './blogs.module.css';
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.com';
+const BLOG_DESCRIPTION = 'Research-backed Tahoe articles on AI sourcing, candidate lists, enrichment, outreach, mailbox health, and recruiting analytics.';
+
 export const metadata: Metadata = {
     title: 'AI Recruiting Blog',
-    description: 'Research-backed Tahoe articles on AI sourcing, candidate lists, enrichment, outreach, mailbox health, and recruiting analytics.',
-    keywords: [
-        'AI recruiting blog',
-        'AI sourcing software',
-        'candidate sourcing',
-        'contact enrichment',
-        'recruiting outreach',
-        'talent intelligence',
-        'recruiting analytics',
-    ],
+    description: BLOG_DESCRIPTION,
     alternates: {
         canonical: '/blogs',
     },
@@ -27,6 +21,57 @@ export const metadata: Metadata = {
         type: 'website',
     },
 };
+
+function absoluteUrl(path: string) {
+    return new URL(path, SITE_URL).toString();
+}
+
+function buildBlogIndexJsonLd() {
+    return [
+        {
+            '@context': 'https://schema.org',
+            '@type': 'Blog',
+            name: 'Tahoe AI Blog',
+            description: BLOG_DESCRIPTION,
+            url: absoluteUrl('/blogs'),
+            publisher: {
+                '@type': 'Organization',
+                name: 'Tahoe AI',
+                url: absoluteUrl('/'),
+                logo: {
+                    '@type': 'ImageObject',
+                    url: absoluteUrl('/logo/workonward_logo.svg'),
+                },
+            },
+            blogPost: blogPosts.map((post) => ({
+                '@type': 'BlogPosting',
+                headline: post.title,
+                url: absoluteUrl(`/blogs/${post.slug}`),
+                datePublished: post.date,
+                dateModified: post.updated,
+                description: post.metaDescription,
+            })),
+        },
+        {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+                {
+                    '@type': 'ListItem',
+                    position: 1,
+                    name: 'Home',
+                    item: absoluteUrl('/'),
+                },
+                {
+                    '@type': 'ListItem',
+                    position: 2,
+                    name: 'Blog',
+                    item: absoluteUrl('/blogs'),
+                },
+            ],
+        },
+    ];
+}
 
 const POSTS_PER_PAGE = 9;
 
@@ -59,6 +104,10 @@ export default async function BlogsPage({ searchParams }: BlogsPageProps = {}) {
     return (
         <main className={styles.page}>
             <PublicSiteHeader />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBlogIndexJsonLd()).replace(/</g, '\\u003c') }}
+            />
 
             <section className={styles.hero}>
                 <div className={styles.container}>

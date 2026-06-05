@@ -6,7 +6,7 @@ import styles from '../legal.module.css';
 const sections = [
     {
         title: '1. Scope and summary',
-        body: 'This Cookie Policy explains how WorkOnward ("Tahoe," "we," "us," or "our") uses cookies and similar browser technologies on tahoe.ai and in the Tahoe product experience. Tahoe is a recruiter workflow platform, so our browser-storage profile is primarily operational rather than advertising-driven: we use browser-side technologies to keep users signed in, preserve recruiter workflow state, secure authentication, and support Google sign-in and related account actions. On Tahoe’s public pages, our consent manager stores public-page consent status in the `tahoe_cookie_consent` cookie and can optionally enable Google Analytics on the landing page if a user turns analytics on.',
+        body: 'This Cookie Policy explains how WorkOnward ("Tahoe," "we," "us," or "our") uses cookies and similar browser technologies on tahoe.workonward.com and in the Tahoe product experience. Tahoe is a recruiter workflow platform, so our browser-storage profile is primarily operational rather than advertising-driven: we use browser-side technologies to keep users signed in, preserve recruiter workflow state, secure authentication, and support Google sign-in and related account actions. On Tahoe’s public pages, our consent manager stores public-page consent status in the `tahoe_cookie_consent` cookie and can optionally enable Google Analytics on the landing page if a user turns analytics on.',
     },
     {
         title: '2. What counts as a cookie or similar technology',

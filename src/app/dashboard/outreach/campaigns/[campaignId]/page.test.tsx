@@ -66,7 +66,7 @@ function campaignDetail(overrides: Partial<CampaignDetail> = {}): CampaignDetail
         list_id: 'list-1',
         list_name: 'Contact engineers',
         mailbox_id: 'mailbox-1',
-        mailbox_email: 'recruiting@tahoe.ai',
+        mailbox_email: 'recruiting@tahoe.workonward.com',
         status: 'launched',
         steps: [
             {
@@ -234,7 +234,7 @@ test('shows steps and delivery checks in compact tabs', async () => {
 
     expect(screen.getByText('Status breakdown')).toBeInTheDocument();
     expect(screen.getByText('No-email suppressed')).toBeInTheDocument();
-    expect(screen.getByText('recruiting@tahoe.ai')).toBeInTheDocument();
+    expect(screen.getByText('recruiting@tahoe.workonward.com')).toBeInTheDocument();
 });
 
 test('uses confirmation before stopping a campaign', async () => {

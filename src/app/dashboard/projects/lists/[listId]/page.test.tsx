@@ -163,7 +163,7 @@ beforeEach(() => {
                 company_name: 'Tahoe',
                 source_preview_page: 1,
                 contact: {
-                    work_email: { value: 'jane@tahoe.ai', status: 'DELIVERABLE' },
+                    work_email: { value: 'jane@tahoe.workonward.com', status: 'DELIVERABLE' },
                     field_statuses: {
                         personal_email: { status: 'not_found' },
                     },
@@ -315,7 +315,7 @@ test('renders contact status and refreshes list data when the active run complet
         'Candidate|Current Title|Company Name|Phone|Work Email|Personal Email|Enrichment',
     );
     expect(await screen.findByText(/DONE/i)).toBeInTheDocument();
-    expect(await screen.findByText(/jane@tahoe.ai/i)).toBeInTheDocument();
+    expect(await screen.findByText(/jane@tahoe.workonward.com/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Enrichment pending/i)).toBeInTheDocument();
     expect(screen.getByText('N/A').className).toContain('contactUnavailable');
     expect(screen.getByPlaceholderText('Search this list').closest('label')).toHaveClass('tui-textfield--size-3');
@@ -382,7 +382,7 @@ test('inline contact edit autosaves on blur and updates the row', async () => {
         company_name: 'Tahoe',
         source_preview_page: 1,
         contact: {
-            work_email: { value: 'new@tahoe.ai', status: 'MANUAL', source: 'manual' },
+            work_email: { value: 'new@tahoe.workonward.com', status: 'MANUAL', source: 'manual' },
             field_statuses: {
                 work_email: { status: 'found' },
             },
@@ -395,20 +395,20 @@ test('inline contact edit autosaves on blur and updates the row', async () => {
 
     render(<ListDetailPage />);
 
-    await user.click(await screen.findByRole('button', { name: 'jane@tahoe.ai' }));
+    await user.click(await screen.findByRole('button', { name: 'jane@tahoe.workonward.com' }));
     const input = screen.getByRole('textbox', { name: /Edit work email/i });
     await user.clear(input);
-    await user.type(input, 'new@tahoe.ai');
+    await user.type(input, 'new@tahoe.workonward.com');
     await user.tab();
 
     await waitFor(() => {
         expect(mockedUpdateListCandidateContact).toHaveBeenCalledWith(
             'list-1',
             'candidate-1',
-            { work_email: 'new@tahoe.ai' },
+            { work_email: 'new@tahoe.workonward.com' },
         );
     });
-    expect(await screen.findByText('new@tahoe.ai')).toBeInTheDocument();
+    expect(await screen.findByText('new@tahoe.workonward.com')).toBeInTheDocument();
 });
 
 test('inline contact edit clears a value on enter and renders dash', async () => {
@@ -499,7 +499,7 @@ test('inline contact edit keeps draft during polling refresh and shows save erro
                 company_name: 'Tahoe',
                 source_preview_page: 1,
                 contact: {
-                    work_email: { value: 'jane@tahoe.ai', status: 'DELIVERABLE' },
+                    work_email: { value: 'jane@tahoe.workonward.com', status: 'DELIVERABLE' },
                 },
                 contact_field_states: {
                     work_email: { status: 'found' as const },
@@ -519,7 +519,7 @@ test('inline contact edit keeps draft during polling refresh and shows save erro
             {
                 ...initialPage.items[0],
                 contact: {
-                    work_email: { value: 'provider@tahoe.ai', status: 'DELIVERABLE' },
+                    work_email: { value: 'provider@tahoe.workonward.com', status: 'DELIVERABLE' },
                 },
             },
         ],
@@ -546,21 +546,21 @@ test('inline contact edit keeps draft during polling refresh and shows save erro
 
     render(<ListDetailPage />);
 
-    await user.click(await screen.findByRole('button', { name: 'jane@tahoe.ai' }));
+    await user.click(await screen.findByRole('button', { name: 'jane@tahoe.workonward.com' }));
     const input = screen.getByRole('textbox', { name: /Edit work email/i });
     await user.clear(input);
-    await user.type(input, 'draft@tahoe.ai');
+    await user.type(input, 'draft@tahoe.workonward.com');
     resolveBackgroundLoad?.(refreshedPage);
 
     await waitFor(() => {
         expect(mockedFetchListCandidates.mock.calls.length).toBeGreaterThanOrEqual(2);
     });
-    expect(screen.getByRole('textbox', { name: /Edit work email/i })).toHaveValue('draft@tahoe.ai');
+    expect(screen.getByRole('textbox', { name: /Edit work email/i })).toHaveValue('draft@tahoe.workonward.com');
 
     await user.tab();
 
     expect(await screen.findByText('Invalid work_email')).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /Edit work email/i })).toHaveValue('draft@tahoe.ai');
+    expect(screen.getByRole('textbox', { name: /Edit work email/i })).toHaveValue('draft@tahoe.workonward.com');
 });
 
 test('renders no-data-found separately from failed enrichment status', async () => {
