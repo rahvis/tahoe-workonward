@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import LandingPage from './page';
@@ -23,10 +23,23 @@ test('renders Tahoe landing content with auth CTAs pointing to dedicated routes'
     expect(
         screen.getAllByRole('link', { name: /start free trial/i }).every((link) => link.getAttribute('href') === '/signup'),
     ).toBe(true);
+    expect(
+        screen.getAllByRole('link', { name: /^blog$/i }).every((link) => link.getAttribute('href') === '/blogs'),
+    ).toBe(true);
     expect(screen.getByText(/continue with google or email\. no credit card\./i)).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /cookie settings/i }).length).toBeGreaterThan(0);
     expect(screen.queryByTestId('google-signin-button')).not.toBeInTheDocument();
     expect(screen.queryByTestId('google-signup-button')).not.toBeInTheDocument();
+});
+
+test('renders Blog in the mobile navigation', () => {
+    render(<LandingPage />);
+
+    fireEvent.click(screen.getByLabelText(/toggle navigation/i, { selector: 'button' }));
+
+    expect(
+        within(screen.getByLabelText(/mobile navigation/i)).getByRole('link', { name: /^blog$/i, hidden: true }),
+    ).toHaveAttribute('href', '/blogs');
 });
 
 test('switches between PRD-inspired mock screen tabs without rendering live auth widgets', async () => {

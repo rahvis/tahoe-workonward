@@ -479,6 +479,10 @@ export default function LandingPage() {
         trackLandingEvent('landing_auth_cta_click', { cta, placement });
     };
 
+    const trackBlogNav = (placement: string) => {
+        trackLandingEvent('landing_blog_nav_click', { placement });
+    };
+
     const trackSocialClick = (platform: string) => {
         trackLandingEvent('landing_social_click', { platform });
     };
@@ -590,6 +594,7 @@ export default function LandingPage() {
                             <a href="#screens" onClick={() => trackSectionNav('screens', 'header_desktop')}>Features</a>
                             <a href="#pricing" onClick={() => trackSectionNav('pricing', 'header_desktop')}>Pricing</a>
                             <a href="#customers" onClick={() => trackSectionNav('customers', 'header_desktop')}>Customers</a>
+                            <Link href="/blogs" onClick={() => trackBlogNav('header_desktop')}>Blog</Link>
                         </nav>
 
                         <div className={styles.headerActions}>
@@ -620,6 +625,7 @@ export default function LandingPage() {
                             <a href="#screens" onClick={() => { trackSectionNav('screens', 'header_mobile'); setMobileNavOpen(false); }}>Features</a>
                             <a href="#pricing" onClick={() => { trackSectionNav('pricing', 'header_mobile'); setMobileNavOpen(false); }}>Pricing</a>
                             <a href="#customers" onClick={() => { trackSectionNav('customers', 'header_mobile'); setMobileNavOpen(false); }}>Customers</a>
+                            <Link href="/blogs" onClick={() => { trackBlogNav('header_mobile'); setMobileNavOpen(false); }}>Blog</Link>
                             <div className={styles.mobileAuthActions}>
                                 <Link href="/login" className={styles.textAction} onClick={() => trackAuthCta('sign_in', 'header_mobile')}>Sign in</Link>
                                 <Link href="/signup" className={styles.secondaryAction} onClick={() => trackAuthCta('start_free_trial', 'header_mobile')}>Start free trial</Link>
@@ -954,6 +960,7 @@ export default function LandingPage() {
 
                         <div>
                             <h3>Company</h3>
+                            <Link href="/blogs" onClick={() => trackBlogNav('footer_column')}>Blog</Link>
                             <a href="#customers" onClick={() => trackSectionNav('customers', 'footer_column')}>Customers</a>
                             <a href="#screens" onClick={() => trackSectionNav('screens', 'footer_column')}>Product vision</a>
                             <a
@@ -994,6 +1001,7 @@ export default function LandingPage() {
                         <div className={styles.footerBottomLinks}>
                             <a href="#product" onClick={() => trackSectionNav('product', 'footer_bottom')}>Product</a>
                             <a href="#pricing" onClick={() => trackSectionNav('pricing', 'footer_bottom')}>Pricing</a>
+                            <Link href="/blogs" onClick={() => trackBlogNav('footer_bottom')}>Blog</Link>
                             <Link href="/privacy">Privacy</Link>
                             <Link href="/cookie">Cookie</Link>
                             <CookieSettingsButton className={styles.footerBottomButton}>Cookie settings</CookieSettingsButton>
