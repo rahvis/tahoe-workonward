@@ -9,10 +9,9 @@ vi.mock('next/navigation', () => ({
 describe('BlogSlugRedirectPage', () => {
     test('redirects singular blog post route to plural blogs route', async () => {
         await BlogSlugRedirectPage({
-            params: Promise.resolve({ slug: 'from-search-to-outreach' }),
+            params: Promise.resolve({ slug: 'big-tech-firing-and-hiring-2026' }),
         });
 
-        expect(redirect).toHaveBeenCalledWith('/blogs/from-search-to-outreach');
+        expect(redirect).toHaveBeenCalledWith('/blogs/big-tech-firing-and-hiring-2026');
     });
 });
-

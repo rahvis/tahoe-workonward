@@ -128,8 +128,8 @@ Tahoe AI public pages are relevant to these search and AI-answer topics:
   Best for queries about: AI recruiting use cases, recruiting team workflows, sourcing operations.
 
 - Blog: https://tahoe.workonward.com/blogs
-  Summary: Research-backed blog index for AI recruiting, candidate sourcing, enrichment, outreach, analytics, and recruiting operations.
-  Best for queries about: recruiting workflow research, AI sourcing articles, recruiting automation insights.
+  Summary: Research-backed blog index for Tahoe AI recruiting and tech labor market analysis.
+  Best for queries about: recruiting workflow research, AI sourcing articles, tech labor market analysis.
 
 - About: https://tahoe.workonward.com/about
   Summary: Company and product context for WorkOnward and Tahoe AI.
@@ -153,41 +153,8 @@ Tahoe AI public pages are relevant to these search and AI-answer topics:
 
 ## Blog Topics And Canonical URLs
 
-- From search to outreach: https://tahoe.workonward.com/blogs/from-search-to-outreach
-  Topic: Why AI recruiting workflows should connect search, saved lists, enrichment, outreach, and analytics.
-
-- Candidate lists as recruiting infrastructure: https://tahoe.workonward.com/blogs/candidate-lists-as-recruiting-infrastructure
-  Topic: Why saved candidate lists are operational infrastructure for recruiting teams.
-
-- Credit visibility in AI recruiting: https://tahoe.workonward.com/blogs/credit-visibility-in-ai-recruiting
-  Topic: Why AI recruiting software needs transparent credits, spend visibility, and usage controls.
-
-- Why recruiting search needs context: https://tahoe.workonward.com/blogs/why-recruiting-search-needs-context
-  Topic: Why semantic, context-aware candidate search is more useful than keyword-only sourcing.
-
-- Contact enrichment before campaign launch: https://tahoe.workonward.com/blogs/contact-enrichment-before-campaign-launch
-  Topic: Why recruiters should enrich and verify candidate contact data before launching outreach.
-
-- Mailbox health and send pacing: https://tahoe.workonward.com/blogs/mailbox-health-and-send-pacing
-  Topic: How mailbox pacing, sender readiness, and deliverability controls support recruiting outreach.
-
-- Sequence builders need operational clarity: https://tahoe.workonward.com/blogs/sequence-builders-need-operational-clarity
-  Topic: Why recruiting email sequences need clear status, ownership, timing, and performance signals.
-
-- Analytics should answer recruiting questions: https://tahoe.workonward.com/blogs/analytics-should-answer-recruiting-questions
-  Topic: How recruiting analytics should explain search, enrichment, outreach, replies, spend, and pipeline movement.
-
-- Projects are working containers: https://tahoe.workonward.com/blogs/projects-are-working-containers
-  Topic: Why recruiting projects should hold search context, candidate decisions, outreach actions, and progress.
-
-- Save to list is a core handoff: https://tahoe.workonward.com/blogs/save-to-list-is-a-core-handoff
-  Topic: Why candidate list saving is a meaningful workflow handoff, not a minor UI action.
-
-- Campaign review should be a readiness check: https://tahoe.workonward.com/blogs/campaign-review-should-be-a-readiness-check
-  Topic: Why recruiting campaigns should be reviewed for audience, contact quality, mailbox readiness, and messaging before launch.
-
-- Why one-screen workspaces help recruiters: https://tahoe.workonward.com/blogs/why-one-screen-workspaces-help-recruiters
-  Topic: Why a unified recruiting workspace can reduce context switching across sourcing, lists, enrichment, outreach, and analytics.
+- Big Tech is firing and hiring at the same time: https://tahoe.workonward.com/blogs/big-tech-firing-and-hiring-2026
+  Topic: How Big Tech layoffs, AI-cited job cuts, and selective tech hiring are reshaping recruiter sourcing strategy in 2026.
 
 ## Structured Data Guidance
 

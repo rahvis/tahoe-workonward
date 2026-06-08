@@ -12,48 +12,45 @@ vi.mock('next/navigation', () => ({
 describe('BlogPostPage', () => {
     test('renders a Tahoe blog article with metadata, sections, tags, and back link', async () => {
         const ui = await BlogPostPage({
-            params: Promise.resolve({ slug: 'from-search-to-outreach' }),
+            params: Promise.resolve({ slug: 'big-tech-firing-and-hiring-2026' }),
         });
 
         render(ui);
 
         expect(
             screen.getByRole('heading', {
-                name: /from search to outreach without losing recruiter context/i,
+                name: /big tech is firing and hiring at the same time/i,
             }),
         ).toBeInTheDocument();
         expect(screen.getByRole('navigation', { name: /primary/i })).toBeInTheDocument();
         expect(screen.getAllByRole('link', { name: /^blog$/i }).some((link) => link.getAttribute('href') === '/blogs')).toBe(true);
         expect(screen.getByRole('link', { name: /back to blog/i })).toHaveAttribute('href', '/blogs');
-        expect(screen.getAllByText(/workflow/i).length).toBeGreaterThan(0);
-        expect(screen.getByRole('img', { name: /the search-to-outreach gap/i })).toBeInTheDocument();
-        expect(screen.getByText(/sources: shrm 2026 talent trends; icims\/aptitude 2026/i)).toBeInTheDocument();
-        expect(screen.getByText(/ai recruiting software is now part of the daily talent conversation/i)).toBeInTheDocument();
-        expect(screen.getByText(/ai should elevate the recruiter, not replace them/i)).toBeInTheDocument();
-        expect(screen.queryByRole('heading', { name: /search should be ready to move/i })).not.toBeInTheDocument();
-        expect(screen.getByText(/by dheerendra panwar and holly oh diamond/i)).toBeInTheDocument();
-        expect(screen.getByRole('heading', { name: /authors/i })).toBeInTheDocument();
-        expect(screen.getByRole('heading', { name: /dheerendra panwar/i })).toBeInTheDocument();
-        expect(screen.getByText(/internet of things \(iot\) and machine learning \(ml\)/i)).toBeInTheDocument();
-        expect(screen.getByRole('heading', { name: /holly oh diamond/i })).toBeInTheDocument();
-        expect(screen.getByText(/founder and ceo of workonward/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/big tech/i).length).toBeGreaterThan(0);
+        expect(screen.getByRole('img', { name: /big tech cuts, hires, and reshuffles/i })).toBeInTheDocument();
+        expect(screen.getByText(/sources: challenger, gray & christmas may 2026; comptia 2026 tech workforce reports/i)).toBeInTheDocument();
+        expect(screen.getByText(/the big tech job market in 2026 is not one story/i)).toBeInTheDocument();
+        expect(screen.getByText(/the labor market is being reshaped by technology in real time/i)).toBeInTheDocument();
+        expect(screen.queryByText(/by dheerendra panwar and holly oh diamond/i)).not.toBeInTheDocument();
+        expect(screen.queryByRole('heading', { name: /authors/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('heading', { name: /dheerendra panwar/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('heading', { name: /holly oh diamond/i })).not.toBeInTheDocument();
         expect(screen.getByRole('heading', { name: /sources/i })).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: /shrm 2026 talent trends/i })).toHaveAttribute(
+        expect(screen.getByRole('link', { name: /may 2026 job cut announcement report/i })).toHaveAttribute(
             'href',
-            expect.stringContaining('shrm.org'),
+            expect.stringContaining('challengergray.com'),
         );
-        expect(screen.getByRole('heading', { name: /latest from tahoe/i })).toBeInTheDocument();
+        expect(screen.queryByRole('heading', { name: /latest from tahoe/i })).not.toBeInTheDocument();
         expect(screen.getByText(/made for recruiters who would rather hire than negotiate contracts/i)).toBeInTheDocument();
     });
 
     test('generates static params and metadata for blog posts', async () => {
-        expect(generateStaticParams()).toContainEqual({ slug: 'from-search-to-outreach' });
+        expect(generateStaticParams()).toEqual([{ slug: 'big-tech-firing-and-hiring-2026' }]);
 
         await expect(
-            generateMetadata({ params: Promise.resolve({ slug: 'from-search-to-outreach' }) }),
+            generateMetadata({ params: Promise.resolve({ slug: 'big-tech-firing-and-hiring-2026' }) }),
         ).resolves.toMatchObject({
-            title: 'AI recruiting workflow: search to outreach',
-            description: expect.stringContaining('AI recruiting workflow'),
+            title: 'Big Tech layoffs and hiring in 2026',
+            description: expect.stringContaining('Big Tech layoffs'),
         });
     });
 

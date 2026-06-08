@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
-import { blogAuthors, blogPosts, getBlogPost, getRelatedBlogPosts, type BlogPost } from '@/lib/blog-posts';
+import { blogPosts, getBlogPost, getRelatedBlogPosts, type BlogPost } from '@/lib/blog-posts';
 import styles from '../blogs.module.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.com';
@@ -39,19 +39,6 @@ function splitSvgText(text: string, maxLength = 48) {
     }
 
     return lines.slice(0, 3);
-}
-
-function formatAuthorNames() {
-    if (blogAuthors.length === 0) {
-        return 'Tahoe AI';
-    }
-
-    if (blogAuthors.length === 1) {
-        return blogAuthors[0].name;
-    }
-
-    const names = blogAuthors.map((author) => author.name);
-    return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
 function BlogInfographicFigure({ post }: { post: BlogPost }) {
@@ -161,11 +148,6 @@ function buildArticleJsonLd(post: BlogPost) {
             dateModified: post.updated,
             image: absoluteUrl('/opengraph-image'),
             mainEntityOfPage: url,
-            author: blogAuthors.map((author) => ({
-                '@type': 'Person',
-                name: author.name,
-                description: author.bio,
-            })),
             publisher: {
                 '@type': 'Organization',
                 name: 'Tahoe AI',
@@ -267,7 +249,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                         <div className={styles.articleMeta}>
                             <time dateTime={post.date}>{formatDate(post.date)}</time>
                             <span>{post.readingTime}</span>
-                            <span>By {formatAuthorNames()}</span>
                         </div>
                         <h1>{post.title}</h1>
                         <p className={styles.articleSummary}>{post.summary}</p>
@@ -311,31 +292,21 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                                     ))}
                                 </div>
                             </div>
-                            <div className={styles.asidePanel}>
-                                <h2>Latest from Tahoe</h2>
-                                <div className={styles.relatedList}>
-                                    {related.map((item) => (
-                                        <Link key={item.slug} href={`/blogs/${item.slug}`} className={`${styles.postLink} ${styles.relatedItem}`}>
-                                            <strong>{item.title}</strong>
-                                            <span>{item.readingTime}</span>
-                                        </Link>
-                                    ))}
+                            {related.length > 0 ? (
+                                <div className={styles.asidePanel}>
+                                    <h2>Latest from Tahoe</h2>
+                                    <div className={styles.relatedList}>
+                                        {related.map((item) => (
+                                            <Link key={item.slug} href={`/blogs/${item.slug}`} className={`${styles.postLink} ${styles.relatedItem}`}>
+                                                <strong>{item.title}</strong>
+                                                <span>{item.readingTime}</span>
+                                            </Link>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            ) : null}
                         </aside>
                     </div>
-
-                    <section className={styles.authorSection} aria-labelledby="article-authors">
-                        <h2 id="article-authors">Authors</h2>
-                        <div className={styles.authorGrid}>
-                            {blogAuthors.map((author) => (
-                                <section key={author.name} className={styles.authorCard}>
-                                    <h3>{author.name}</h3>
-                                    <p>{author.bio}</p>
-                                </section>
-                            ))}
-                        </div>
-                    </section>
                 </div>
             </article>
             <PublicSiteFooter />

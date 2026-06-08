@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import { blogPosts } from '@/lib/blog-posts';
 import BlogsPage from './page';
 
-test('renders the Tahoe blog index as a paginated 3 by 3 grid', async () => {
+test('renders the Tahoe blog index with only the active post', async () => {
     const ui = await BlogsPage({ searchParams: Promise.resolve({}) });
 
     render(ui);
@@ -14,9 +14,9 @@ test('renders the Tahoe blog index as a paginated 3 by 3 grid', async () => {
     expect(screen.getAllByRole('link', { name: /^blog$/i }).some((link) => link.getAttribute('href') === '/blogs')).toBe(true);
     expect(screen.getByText(/made for recruiters who would rather hire than negotiate contracts/i)).toBeInTheDocument();
 
-    expect(screen.getAllByRole('article')).toHaveLength(9);
+    expect(screen.getAllByRole('article')).toHaveLength(blogPosts.length);
 
-    blogPosts.slice(0, 9).forEach((post) => {
+    blogPosts.forEach((post) => {
         const heading = screen.getByRole('heading', { name: post.title });
         const card = heading.closest('article');
 
@@ -28,23 +28,21 @@ test('renders the Tahoe blog index as a paginated 3 by 3 grid', async () => {
         expect(screen.getByText(post.summary)).toBeInTheDocument();
     });
 
-    expect(screen.queryByRole('heading', { name: blogPosts[9].title })).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/blog pagination/i)).toHaveTextContent('Page 1 of 2');
-    expect(screen.getByRole('link', { name: /^next$/i })).toHaveAttribute('href', '/blogs?page=2');
+    expect(screen.getByLabelText(/blog pagination/i)).toHaveTextContent('Page 1 of 1');
+    expect(screen.queryByRole('link', { name: /^next$/i })).not.toBeInTheDocument();
 });
 
-test('renders page two of the Tahoe blog index', async () => {
+test('clamps out-of-range blog index pages to the single available page', async () => {
     const ui = await BlogsPage({ searchParams: Promise.resolve({ page: '2' }) });
 
     render(ui);
 
-    expect(screen.getAllByRole('article')).toHaveLength(blogPosts.length - 9);
+    expect(screen.getAllByRole('article')).toHaveLength(blogPosts.length);
 
-    blogPosts.slice(9).forEach((post) => {
+    blogPosts.forEach((post) => {
         expect(screen.getByRole('heading', { name: post.title })).toBeInTheDocument();
     });
 
-    expect(screen.queryByRole('heading', { name: blogPosts[0].title })).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/blog pagination/i)).toHaveTextContent('Page 2 of 2');
-    expect(screen.getByRole('link', { name: /^previous$/i })).toHaveAttribute('href', '/blogs');
+    expect(screen.getByLabelText(/blog pagination/i)).toHaveTextContent('Page 1 of 1');
+    expect(screen.queryByRole('link', { name: /^previous$/i })).not.toBeInTheDocument();
 });
