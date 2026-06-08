@@ -31,6 +31,12 @@ describe('BlogPostPage', () => {
         expect(screen.getByText(/ai recruiting software is now part of the daily talent conversation/i)).toBeInTheDocument();
         expect(screen.getByText(/ai should elevate the recruiter, not replace them/i)).toBeInTheDocument();
         expect(screen.queryByRole('heading', { name: /search should be ready to move/i })).not.toBeInTheDocument();
+        expect(screen.getByText(/by dheerendra panwar and holly oh diamond/i)).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /authors/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /dheerendra panwar/i })).toBeInTheDocument();
+        expect(screen.getByText(/internet of things \(iot\) and machine learning \(ml\)/i)).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /holly oh diamond/i })).toBeInTheDocument();
+        expect(screen.getByText(/founder and ceo of workonward/i)).toBeInTheDocument();
         expect(screen.getByRole('heading', { name: /sources/i })).toBeInTheDocument();
         expect(screen.getByRole('link', { name: /shrm 2026 talent trends/i })).toHaveAttribute(
             'href',

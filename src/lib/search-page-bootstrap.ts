@@ -1,6 +1,6 @@
 "use client";
 
-import type { SavedSearchRerunResponse } from "@/lib/api";
+import type { SavedSearchRerunResponse, SearchRequirementsSummary, SearchSourceType } from "@/lib/api";
 
 const SEARCH_PAGE_BOOTSTRAP_KEY = "tahoe_search_page_bootstrap_v1";
 const SEARCH_PAGE_BOOTSTRAP_MAX_AGE_MS = 5 * 60 * 1000;
@@ -13,6 +13,12 @@ export interface SearchPageBootstrapPayload {
     structuredFilters: Record<string, unknown>;
     parsedIntent: Record<string, unknown>;
     popupModel: Record<string, unknown> | null;
+    sourceType?: SearchSourceType | null;
+    jobDescription?: string | null;
+    roleTitle?: string | null;
+    projectId?: string | null;
+    requirementsSummary?: SearchRequirementsSummary | null;
+    reasoningSummary?: string | null;
     createdAtMs: number;
 }
 
@@ -28,6 +34,16 @@ function isBootstrapPayload(value: unknown): value is SearchPageBootstrapPayload
     if (!isRecord(value.structuredFilters)) return false;
     if (!isRecord(value.parsedIntent)) return false;
     if (!(value.popupModel === null || isRecord(value.popupModel))) return false;
+    if (value.sourceType !== undefined
+        && value.sourceType !== null
+        && value.sourceType !== "prompt"
+        && value.sourceType !== "job_description"
+        && value.sourceType !== "prompt_and_job_description") return false;
+    if (value.jobDescription !== undefined && value.jobDescription !== null && typeof value.jobDescription !== "string") return false;
+    if (value.roleTitle !== undefined && value.roleTitle !== null && typeof value.roleTitle !== "string") return false;
+    if (value.projectId !== undefined && value.projectId !== null && typeof value.projectId !== "string") return false;
+    if (value.requirementsSummary !== undefined && value.requirementsSummary !== null && !isRecord(value.requirementsSummary)) return false;
+    if (value.reasoningSummary !== undefined && value.reasoningSummary !== null && typeof value.reasoningSummary !== "string") return false;
     if (typeof value.createdAtMs !== "number") return false;
     return true;
 }
@@ -41,6 +57,12 @@ export function storeSearchPageBootstrap(response: SavedSearchRerunResponse): vo
         structuredFilters: response.structured_filters ?? {},
         parsedIntent: response.parsed_intent ?? {},
         popupModel: response.popup_model ?? null,
+        sourceType: response.source_type ?? "prompt",
+        jobDescription: response.job_description ?? "",
+        roleTitle: response.role_title ?? "",
+        projectId: response.project_id ?? "",
+        requirementsSummary: response.requirements_summary ?? null,
+        reasoningSummary: response.reasoning_summary ?? null,
         createdAtMs: Date.now(),
     };
     cachedBootstrap = payload;

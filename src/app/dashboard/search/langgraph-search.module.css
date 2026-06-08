@@ -41,6 +41,416 @@
     color: rgba(32, 32, 32, 0.34);
 }
 
+.sourceTabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 12px;
+    padding: 3px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 8px;
+    background: rgba(250, 248, 243, 0.72);
+}
+
+.sourceTab {
+    min-height: 30px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--tahoe-color-text-secondary);
+    font-family: var(--tahoe-font-body);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.sourceTab:disabled {
+    cursor: default;
+    opacity: 0.62;
+}
+
+.sourceTab:hover {
+    color: var(--tahoe-color-text-primary);
+    background: rgba(255, 255, 255, 0.78);
+}
+
+.sourceTabActive {
+    background: #202020;
+    color: #ffffff;
+}
+
+.sourceTabActive:hover {
+    background: #202020;
+    color: #ffffff;
+}
+
+.jdInputGrid {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.42fr) minmax(320px, 1fr);
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.inputLabel {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--tahoe-color-text-primary);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.jdTextareaLabel {
+    min-width: 0;
+}
+
+.jdTextarea {
+    width: 100%;
+    min-height: 96px;
+    resize: vertical;
+    padding: 10px 12px;
+    border: 1px solid rgba(32, 32, 32, 0.12);
+    border-radius: 8px;
+    background: #ffffff;
+    color: var(--tahoe-color-text-primary);
+    font-family: var(--tahoe-font-body);
+    font-size: var(--tahoe-dashboard-control-font-size);
+    line-height: 1.4;
+}
+
+.jdTextarea:disabled {
+    color: var(--tahoe-color-text-tertiary);
+    background: rgba(250, 248, 243, 0.72);
+}
+
+.intakeStrip {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 14px;
+    padding: 14px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.78);
+}
+
+.aiIntakeDrawer {
+    width: 360px;
+    flex: 0 0 360px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border-left: 1px solid var(--tahoe-color-border-subtle);
+    background: rgba(255, 255, 255, 0.94);
+    overflow-y: auto;
+}
+
+.intakeSurfaceHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.assistantTabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    padding: 3px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 8px;
+    background: rgba(250, 248, 243, 0.72);
+}
+
+.assistantTab {
+    min-width: 0;
+    min-height: 30px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--tahoe-color-text-secondary);
+    font-family: var(--tahoe-font-body);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.assistantTabActive {
+    background: #202020;
+    color: #ffffff;
+}
+
+.assistantTabPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+}
+
+.intakeLoadingState {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.intakePrimaryFooter {
+    position: sticky;
+    bottom: -16px;
+    z-index: 1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 10px;
+    padding-bottom: 2px;
+    background: rgba(255, 255, 255, 0.96);
+}
+
+.drawerCollapseButton {
+    align-self: flex-start;
+}
+
+.searchBriefSummary {
+    min-width: 0;
+}
+
+.searchBriefCollapsed {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.80);
+}
+
+.searchBriefCollapsedText {
+    flex: 1;
+    min-width: 0;
+}
+
+.searchBriefCollapsedText :global(.tui-text) {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.intakeHeader,
+.intakeActionRow,
+.intakeOptionRow,
+.intakeReasoningTabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.intakeHeader {
+    justify-content: space-between;
+}
+
+.intakeEyebrow {
+    display: block;
+    color: var(--tahoe-color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0;
+}
+
+.intakeTitle {
+    margin: 2px 0 0;
+    font-family: var(--tahoe-font-body);
+    font-size: 16px;
+    line-height: 1.25;
+}
+
+.intakeSummaryGrid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+.intakeSummaryGrid > div,
+.intakeQuestion,
+.intakeReasoning {
+    min-width: 0;
+}
+
+.intakeSummaryGrid :global(.tui-text),
+.intakeQuestion :global(.tui-text),
+.intakeReasoning :global(.tui-text) {
+    display: block;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+}
+
+.intakeQuestion {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 2px;
+}
+
+.reasoningPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.reasoningPanelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.reasoningSummaryText {
+    overflow-wrap: anywhere;
+    line-height: 1.4;
+}
+
+.reasoningItemList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.reasoningItem {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(32, 32, 32, 0.08);
+    color: var(--tahoe-color-text-secondary);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.reasoningItemHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.reasoningItem strong {
+    color: var(--tahoe-color-text-primary);
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.reasoningMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    color: var(--tahoe-color-text-tertiary);
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+.reasoningMeta span {
+    max-width: 100%;
+    padding: 3px 6px;
+    border-radius: 6px;
+    background: rgba(250, 248, 243, 0.92);
+    overflow-wrap: anywhere;
+}
+
+.aiSheetOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: rgba(17, 24, 39, 0.28);
+    backdrop-filter: blur(4px);
+}
+
+.aiIntakeSheet {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 71;
+    max-height: 72dvh;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 16px 16px;
+    border-top: 1px solid var(--tahoe-color-border-subtle);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 -16px 42px rgba(32, 32, 32, 0.14);
+    overflow-y: auto;
+}
+
+.aiSheetCloseRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 28px;
+}
+
+.intakeReasoning {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(32, 32, 32, 0.08);
+}
+
+.intakeReasoningTab {
+    min-height: 28px;
+    padding: 0 10px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 6px;
+    background: #ffffff;
+    color: var(--tahoe-color-text-secondary);
+    font-family: var(--tahoe-font-body);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.intakeReasoningTabActive {
+    background: rgba(255, 104, 44, 0.10);
+    color: var(--tahoe-color-text-primary);
+    border-color: rgba(255, 104, 44, 0.22);
+}
+
+.reasoningList {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding-left: 18px;
+    color: var(--tahoe-color-text-secondary);
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.reasoningList li {
+    padding-left: 2px;
+}
+
+.reasoningList strong {
+    color: var(--tahoe-color-text-primary);
+    margin-right: 6px;
+}
+
 .shellGrid {
     flex: 1;
     min-height: 0;
@@ -652,6 +1062,20 @@
 @media (max-width: 768px) {
     .page {
         height: calc(100vh - 100px);
+    }
+
+    .sourceTabs {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .sourceTab {
+        flex: 1 0 auto;
+    }
+
+    .jdInputGrid,
+    .intakeSummaryGrid {
+        grid-template-columns: 1fr;
     }
 
     .filtersDialogContent {

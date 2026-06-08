@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
-import { blogPosts } from '@/lib/blog-posts';
+import { blogAuthors, blogPosts } from '@/lib/blog-posts';
 import styles from './blogs.module.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.com';
@@ -50,6 +50,11 @@ function buildBlogIndexJsonLd() {
                 datePublished: post.date,
                 dateModified: post.updated,
                 description: post.metaDescription,
+                author: blogAuthors.map((author) => ({
+                    '@type': 'Person',
+                    name: author.name,
+                    description: author.bio,
+                })),
             })),
         },
         {

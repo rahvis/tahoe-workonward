@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
-import { apiRequest, getSearchSession } from "@/lib/api";
+import { answerSearchIntake, apiRequest, getSearchSession, startSearchIntake } from "@/lib/api";
 import LangGraphSearchPage from "./LangGraphSearchPage";
 
 const mockRouterPush = vi.fn();
@@ -10,18 +10,34 @@ let currentSearchParams = new URLSearchParams();
 let desktopViewport = true;
 
 vi.mock("@/lib/api", () => ({
+    answerSearchIntake: vi.fn(),
     apiRequest: vi.fn(),
     getSearchSession: vi.fn(),
+    startSearchIntake: vi.fn(),
 }));
 
 vi.mock("./CandidatePanel", () => ({
     __esModule: true,
+    MISSING_PREVIEW_EVIDENCE: "Not enough preview data for this criterion",
     default: (props: {
         preview: { id: number; full_name: string | null };
+        matchRationales?: Array<{ title: string; evidence: string; criterion: string }>;
         onSaveToList?: (id: number) => void;
     }) => (
         <aside aria-label="Candidate panel">
             <h2>{props.preview.full_name}</h2>
+            {props.matchRationales?.length ? (
+                <section>
+                    <h3>Why this matched</h3>
+                    {props.matchRationales.map((item) => (
+                        <article key={`${item.title}-${item.criterion}`}>
+                            <h4>{item.title}</h4>
+                            <p>{item.evidence}</p>
+                            <span>{item.criterion}</span>
+                        </article>
+                    ))}
+                </section>
+            ) : null}
             {props.onSaveToList ? (
                 <button type="button" onClick={() => props.onSaveToList?.(props.preview.id)}>
                     Save panel candidate
@@ -54,6 +70,8 @@ vi.mock("next/navigation", () => ({
 
 const mockedApiRequest = vi.mocked(apiRequest);
 const mockedGetSearchSession = vi.mocked(getSearchSession);
+const mockedStartSearchIntake = vi.mocked(startSearchIntake);
+const mockedAnswerSearchIntake = vi.mocked(answerSearchIntake);
 
 function setViewportMode(next: "desktop" | "mobile") {
     desktopViewport = next === "desktop";
@@ -262,6 +280,130 @@ const previewPageTwoResponse = {
     preview_cap: 100,
 };
 
+const intakePopupModelResponse = {
+    ...popupModelResponse,
+    job: {
+        ...popupModelResponse.job,
+        current_title_keywords: ["Senior Backend Engineer"],
+    },
+    keywords: {
+        ...popupModelResponse.keywords,
+        skills: ["Go"],
+    },
+};
+
+const intakeAnsweredPopupModelResponse = {
+    ...intakePopupModelResponse,
+    locations: {
+        countries: [],
+        states: ["California"],
+        cities: ["San Francisco", "San Jose", "Oakland"],
+    },
+};
+
+const intakeQuestion = {
+    id: "location_scope",
+    slot: "location",
+    question: "What geography should this search target?",
+    type: "single_choice" as const,
+    options: [
+        { label: "United States", value: { locations: { countries: ["United States"] } } },
+        { label: "Bay Area", value: { locations: { states: ["California"], cities: ["San Francisco", "San Jose", "Oakland"] } } },
+        { label: "No location filter", value: { locations: { countries: [], states: [], cities: [] } } },
+    ],
+    default_option_index: 0,
+    required_for_search: false,
+};
+
+const intakeStartResponse = {
+    search_session_id: "intake-session-1",
+    status: "needs_clarification" as const,
+    popup_model: intakePopupModelResponse,
+    parsed_intent: {},
+    requirements_summary: {
+        title: "Senior Backend Engineer",
+        must_have: ["Go", "distributed systems"],
+        nice_to_have: ["Kafka"],
+        location: [],
+        company_context: [],
+        experience: "senior level",
+        assumptions: [],
+    },
+    questions: [intakeQuestion],
+    missing_slots: ["location"],
+    confidence: "medium" as const,
+    readiness_score: 68,
+    reasoning_summary: "Tahoe mapped the JD to a senior backend search and needs geography before execution.",
+    reasoning_items: [
+        {
+            id: "reason_skill_go",
+            type: "filter_mapping" as const,
+            title: "Go is a hard skill",
+            plain_language_explanation: "The JD names Go as part of the backend services work.",
+            source: "job_description" as const,
+            source_excerpt_or_reference: "distributed services in Go",
+            affected_filter_path: "keywords.skills",
+            coresignal_fields: ["inferred_skills"],
+            confidence: "high" as const,
+            visible_to_recruiter: true,
+        },
+        {
+            id: "reason_remote_assumption",
+            type: "assumption" as const,
+            title: "Remote is not a hard location",
+            plain_language_explanation: "Remote language was kept as an assumption until the recruiter confirms geography.",
+            source: "deterministic_default" as const,
+            source_excerpt_or_reference: "remote ambiguity rule",
+            affected_filter_path: "locations",
+            coresignal_fields: ["location_country", "location_full"],
+            confidence: "medium" as const,
+            visible_to_recruiter: true,
+        },
+        {
+            id: "reason_collaboration_not_used",
+            type: "non_queryable_criterion" as const,
+            title: "Collaborative culture was not used",
+            plain_language_explanation: "Culture statements do not have a safe Coresignal filter.",
+            source: "schema_rule" as const,
+            source_excerpt_or_reference: "collaborative culture",
+            affected_filter_path: null,
+            coresignal_fields: [],
+            confidence: "high" as const,
+            visible_to_recruiter: true,
+        },
+    ],
+    assistant_messages: [],
+};
+
+const intakeAnswerResponse = {
+    ...intakeStartResponse,
+    status: "ready_for_review" as const,
+    popup_model: intakeAnsweredPopupModelResponse,
+    requirements_summary: {
+        ...intakeStartResponse.requirements_summary,
+        location: ["Bay Area"],
+    },
+    questions: [],
+    missing_slots: [],
+    confidence: "high" as const,
+    readiness_score: 84,
+    reasoning_summary: "The recruiter chose Bay Area, so Tahoe added California and Bay Area city filters.",
+    reasoning_items: [
+        {
+            id: "reason_answer_location_bay_area",
+            type: "answer_update" as const,
+            title: "Bay Area answer applied",
+            plain_language_explanation: "Tahoe converted the geography into editable California and Bay Area city filters.",
+            source: "recruiter_answer" as const,
+            source_excerpt_or_reference: "Bay Area",
+            affected_filter_path: "locations",
+            coresignal_fields: ["location_state", "location_full"],
+            confidence: "high" as const,
+            visible_to_recruiter: true,
+        },
+    ],
+};
+
 function setupApiMocks() {
     mockedApiRequest.mockImplementation(async (path, init) => {
         if (path === "/search/filter-metadata") {
@@ -313,6 +455,8 @@ function createDeferred<T>() {
 beforeEach(() => {
     mockedApiRequest.mockReset();
     mockedGetSearchSession.mockReset();
+    mockedStartSearchIntake.mockReset();
+    mockedAnswerSearchIntake.mockReset();
     mockRouterPush.mockReset();
     mockRouterReplace.mockReset();
     currentSearchParams = new URLSearchParams();
@@ -332,6 +476,8 @@ beforeEach(() => {
         })),
     });
     setupApiMocks();
+    mockedStartSearchIntake.mockResolvedValue(intakeStartResponse);
+    mockedAnswerSearchIntake.mockResolvedValue(intakeAnswerResponse);
 });
 
 test("desktop page keeps Filters visible and opens the Tahoe popup with backend-declared controls", async () => {
@@ -391,13 +537,282 @@ test("clicking Find candidates parses + runs in one shot and syncs session url",
     render(<LangGraphSearchPage />);
 
     await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "ml engineer");
-    await user.click(screen.getByRole("button", { name: "Find candidates" }));
+    await user.click(screen.getAllByRole("button", { name: "Find candidates" })[0]);
 
     // Auto-run: parse then execute fire back-to-back; results render directly.
     expect(await screen.findByText("Casey Cho")).toBeInTheDocument();
+    expect(mockedStartSearchIntake).not.toHaveBeenCalled();
     await waitFor(() => {
         expect(mockRouterReplace).toHaveBeenCalledWith("/dashboard/search/new?session=session-1");
     });
+});
+
+test("source tabs switch visible inputs without changing prompt mode behavior", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    expect(await screen.findByRole("tab", { name: "Prompt" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByLabelText("Search prompt")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Job description")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Job description" }));
+    expect(screen.getByRole("tab", { name: "Job description" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByLabelText("Role title")).toBeInTheDocument();
+    expect(screen.getByLabelText("Job description")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Search prompt")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Prompt + JD" }));
+    expect(screen.getByRole("tab", { name: "Prompt + JD" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByLabelText("Search prompt")).toBeInTheDocument();
+    expect(screen.getByLabelText("Job description")).toBeInTheDocument();
+});
+
+test("source mode changes clear generated intake and result state before a new run", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("tab", { name: "Job description" }));
+    await user.type(screen.getByLabelText("Job description"), "Senior Backend Engineer for Go services.");
+    await user.click(screen.getAllByRole("button", { name: "Generate search plan" })[0]);
+    await user.click(await screen.findByRole("button", { name: "Bay Area" }));
+    await user.click(screen.getAllByRole("button", { name: "Find candidates" })[0]);
+
+    expect(await screen.findByText("Casey Cho")).toBeInTheDocument();
+    expect(mockedApiRequest.mock.calls.filter(([path]) => path === "/search/parse")).toHaveLength(0);
+
+    await user.click(screen.getByRole("tab", { name: "Prompt" }));
+
+    expect(screen.queryByText("Casey Cho")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Search prompt")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Filters" })).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Search prompt"), "ml engineer");
+    await user.click(screen.getByRole("button", { name: "Find candidates" }));
+
+    await waitFor(() => {
+        expect(mockedApiRequest.mock.calls.filter(([path]) => path === "/search/parse")).toHaveLength(1);
+    });
+});
+
+test("JD bootstrap tolerates legacy empty requirements summary", async () => {
+    render(
+        <LangGraphSearchPage
+            bootstrap={{
+                mode: "langgraph",
+                searchSessionId: "saved-jd-session",
+                prompt: "",
+                structuredFilters: {},
+                parsedIntent: {},
+                popupModel: intakePopupModelResponse,
+                sourceType: "job_description",
+                jobDescription: "Senior Backend Engineer for Go services.",
+                roleTitle: "",
+                requirementsSummary: {} as never,
+                reasoningSummary: null,
+                createdAtMs: Date.now(),
+            }}
+        />,
+    );
+
+    const assistant = await screen.findByLabelText("AI Search Assistant");
+    expect(within(assistant).getByText("Must-have")).toBeInTheDocument();
+    expect(within(assistant).getAllByText("Not set").length).toBeGreaterThan(0);
+});
+
+test("JD mode disables Generate search plan until a JD exists", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("tab", { name: "Job description" }));
+    screen.getAllByRole("button", { name: "Generate search plan" }).forEach((button) => {
+        expect(button).toBeDisabled();
+    });
+
+    await user.type(screen.getByLabelText("Job description"), "We need a Senior Backend Engineer using Go.");
+    screen.getAllByRole("button", { name: "Generate search plan" }).forEach((button) => {
+        expect(button).toBeEnabled();
+    });
+});
+
+test("Generate search plan starts intake and does not execute search", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("tab", { name: "Job description" }));
+    await user.type(screen.getByLabelText("Role title"), "Senior Backend Engineer");
+    await user.type(screen.getByLabelText("Job description"), "We need a Senior Backend Engineer using Go and Kafka.");
+    await user.click(screen.getAllByRole("button", { name: "Generate search plan" })[0]);
+
+    expect(await screen.findByText("What geography should this search target?")).toBeInTheDocument();
+    expect(mockedStartSearchIntake).toHaveBeenCalledWith({
+        source_type: "job_description",
+        search_prompt: null,
+        job_description: "We need a Senior Backend Engineer using Go and Kafka.",
+        role_title: "Senior Backend Engineer",
+    });
+    expect(mockedApiRequest.mock.calls.some(([path]) => path === "/search/execute")).toBe(false);
+    await user.click(screen.getByRole("tab", { name: "Reasoning" }));
+    expect(screen.getByText(/Tahoe mapped the JD to a senior backend search/i)).toBeInTheDocument();
+    expect(screen.getByText("Go is a hard skill")).toBeInTheDocument();
+});
+
+test("answering an intake question updates filters and uses confirmed popup model for JD execute", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("tab", { name: "Job description" }));
+    await user.type(screen.getByLabelText("Job description"), "Senior Backend Engineer for Go services.");
+    await user.click(screen.getAllByRole("button", { name: "Generate search plan" })[0]);
+    await user.click(await screen.findByRole("button", { name: "Bay Area" }));
+
+    await waitFor(() => {
+        expect(mockedAnswerSearchIntake).toHaveBeenCalledWith("intake-session-1", {
+            question_id: "location_scope",
+            answer: intakeQuestion.options[1],
+        });
+    });
+    expect(await screen.findByText("Bay Area")).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Reasoning" }));
+    expect((await screen.findAllByText(/Bay Area city filters/i)).length).toBeGreaterThan(0);
+
+    await user.click(screen.getAllByRole("button", { name: "Find candidates" })[0]);
+
+    await waitFor(() => {
+        expect(mockedApiRequest).toHaveBeenCalledWith(
+            "/search/execute",
+            expect.objectContaining({ method: "POST" }),
+        );
+    });
+
+    const parseCalls = mockedApiRequest.mock.calls.filter(([path]) => path === "/search/parse");
+    expect(parseCalls).toHaveLength(0);
+
+    const executeCall = mockedApiRequest.mock.calls.find(([path]) => path === "/search/execute");
+    const payload = executeCall?.[1]?.body as { confirmed_intent: typeof intakeAnsweredPopupModelResponse };
+    expect(payload).toEqual(
+        expect.objectContaining({
+            search_session_id: "intake-session-1",
+            checkpoint_id: "intake-session-1",
+        }),
+    );
+    expect(payload.confirmed_intent.locations.states).toEqual(["California"]);
+    expect(payload.confirmed_intent.locations.cities).toEqual(["San Francisco", "San Jose", "Oakland"]);
+});
+
+test("assistant drawer renders questions and grouped reasoning tabs", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("tab", { name: "Job description" }));
+    await user.type(screen.getByLabelText("Job description"), "Senior Backend Engineer for Go services.");
+    await user.click(screen.getAllByRole("button", { name: "Generate search plan" })[0]);
+
+    const assistant = await screen.findByLabelText("AI Search Assistant");
+    expect(within(assistant).getByText("What geography should this search target?")).toBeInTheDocument();
+    expect(within(assistant).getByRole("tab", { name: "Questions" })).toHaveAttribute("aria-selected", "true");
+
+    await user.click(within(assistant).getByRole("tab", { name: "Reasoning" }));
+    expect(within(assistant).getByText("Why Tahoe chose this")).toBeInTheDocument();
+    expect(within(assistant).getByText("Go is a hard skill")).toBeInTheDocument();
+
+    await user.click(within(assistant).getByRole("button", { name: "Mapped filters" }));
+    expect(within(assistant).getByText("inferred_skills")).toBeInTheDocument();
+
+    await user.click(within(assistant).getByRole("button", { name: "Assumptions" }));
+    expect(within(assistant).getByText("Remote is not a hard location")).toBeInTheDocument();
+
+    await user.click(within(assistant).getByRole("button", { name: "Not used" }));
+    expect(within(assistant).getByText("Collaborative culture was not used")).toBeInTheDocument();
+});
+
+test("assistant drawer Use defaults applies the default question option", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("tab", { name: "Job description" }));
+    await user.type(screen.getByLabelText("Job description"), "Senior Backend Engineer for Go services.");
+    await user.click(screen.getAllByRole("button", { name: "Generate search plan" })[0]);
+
+    const assistant = await screen.findByLabelText("AI Search Assistant");
+    await user.click(within(assistant).getByRole("button", { name: "Use defaults" }));
+
+    await waitFor(() => {
+        expect(mockedAnswerSearchIntake).toHaveBeenCalledWith("intake-session-1", {
+            question_id: "location_scope",
+            answer: intakeQuestion.options[0],
+        });
+    });
+});
+
+test("assistant drawer Skip records a skipped question", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("tab", { name: "Job description" }));
+    await user.type(screen.getByLabelText("Job description"), "Senior Backend Engineer for Go services.");
+    await user.click(screen.getAllByRole("button", { name: "Generate search plan" })[0]);
+
+    const assistant = await screen.findByLabelText("AI Search Assistant");
+    await user.click(within(assistant).getByRole("button", { name: "Skip" }));
+
+    await waitFor(() => {
+        expect(mockedAnswerSearchIntake).toHaveBeenCalledWith("intake-session-1", {
+            question_id: "location_scope",
+            answer: { label: "Skip", skip: true },
+        });
+    });
+});
+
+test("assistant Open filters action opens the existing filter modal", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("tab", { name: "Job description" }));
+    await user.type(screen.getByLabelText("Job description"), "Senior Backend Engineer for Go services.");
+    await user.click(screen.getAllByRole("button", { name: "Generate search plan" })[0]);
+
+    const assistant = await screen.findByLabelText("AI Search Assistant");
+    await user.click(within(assistant).getByRole("button", { name: "Open filters" }));
+
+    expect(await screen.findByLabelText("Search filters")).toBeInTheDocument();
+});
+
+test("mobile JD mode opens the assistant as a bottom sheet", async () => {
+    setViewportMode("mobile");
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("tab", { name: "Job description" }));
+
+    expect(await screen.findByRole("dialog", { name: "AI Search Assistant" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Close AI assistant" })).toBeInTheDocument();
+});
+
+test("candidate panel replaces the assistant after JD results", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("tab", { name: "Job description" }));
+    await user.type(screen.getByLabelText("Job description"), "Senior Backend Engineer for Go services.");
+    await user.click(screen.getAllByRole("button", { name: "Generate search plan" })[0]);
+    await user.click(await screen.findByRole("button", { name: "Bay Area" }));
+    await user.click(screen.getAllByRole("button", { name: "Find candidates" })[0]);
+
+    expect(await screen.findByText("Casey Cho")).toBeInTheDocument();
+    expect(screen.queryByLabelText("AI Search Assistant")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open" })).toBeInTheDocument();
+
+    const candidateRow = screen.getByRole("checkbox", { name: "Select Casey Cho" }).closest("tr");
+    expect(candidateRow).not.toBeNull();
+    await user.click(candidateRow as HTMLTableRowElement);
+
+    expect(await screen.findByLabelText("Candidate panel")).toBeInTheDocument();
+    expect(screen.queryByLabelText("AI Search Assistant")).not.toBeInTheDocument();
+    expect(screen.getByText("Why this matched")).toBeInTheDocument();
+    expect(screen.getByText("Current title matched")).toBeInTheDocument();
+    expect(screen.getByText("Location matched")).toBeInTheDocument();
+    expect(screen.getAllByText("Not enough preview data for this criterion").length).toBeGreaterThan(0);
+    expect(mockedApiRequest.mock.calls.some(([path]) => String(path).toLowerCase().includes("collect"))).toBe(false);
 });
 
 test("candidate side panel can save the active result to a list", async () => {
@@ -552,6 +967,51 @@ test("hydrates a parse-only session into the review modal and clears the session
     await waitFor(() => {
         expect(mockRouterReplace).toHaveBeenCalledWith("/dashboard/search/new");
     });
+});
+
+test("hydrates an intake session with JD context and reasoning", async () => {
+    currentSearchParams = new URLSearchParams("session=resume-intake");
+    mockedGetSearchSession.mockResolvedValue({
+        session_id: "resume-intake",
+        workspace_id: "workspace-1",
+        owner_user_id: "user-1",
+        prompt: "focus infrastructure",
+        normalized_query_hash: null,
+        mode: "langgraph",
+        parsed_intent: {},
+        structured_filters: {},
+        popup_model: intakePopupModelResponse,
+        total_results: 0,
+        total_pages: 0,
+        preview_total_results: 0,
+        last_page_loaded: 0,
+        pages_loaded: {},
+        created_at: null,
+        last_accessed_at: null,
+        source_type: "job_description",
+        job_description: "Senior Backend Engineer JD",
+        role_title: "Senior Backend Engineer",
+        intake_status: "needs_clarification",
+        requirements_summary: intakeStartResponse.requirements_summary,
+        assistant_messages: [],
+        clarification_questions: [intakeQuestion],
+        answered_questions: {},
+        missing_slots: ["location"],
+        readiness_score: 68,
+        reasoning_summary: intakeStartResponse.reasoning_summary,
+        reasoning_items: intakeStartResponse.reasoning_items,
+        input_context_hash: "hash-intake",
+    });
+
+    render(<LangGraphSearchPage />);
+
+    expect(await screen.findByRole("tab", { name: "Job description" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByLabelText("Job description")).toHaveValue("Senior Backend Engineer JD");
+    expect(screen.getByLabelText("Role title")).toHaveValue("Senior Backend Engineer");
+    expect(screen.getByText("What geography should this search target?")).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("tab", { name: "Reasoning" }));
+    expect(screen.getByText(/Tahoe mapped the JD to a senior backend search/i)).toBeInTheDocument();
+    expect(await screen.findByLabelText("Search filters")).toBeInTheDocument();
 });
 
 test("hydrates a results session from the server without reopening the review modal", async () => {

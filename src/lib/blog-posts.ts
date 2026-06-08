@@ -52,6 +52,22 @@ export type BlogPost = {
     citations: BlogCitation[];
 };
 
+export type BlogAuthor = {
+    name: string;
+    bio: string;
+};
+
+export const blogAuthors: BlogAuthor[] = [
+    {
+        name: 'Dheerendra Panwar',
+        bio: 'Dheerendra (Dhee) Panwar is an accomplished professional in the realm of Internet of Things (IoT) and Machine Learning (ML), boasting a rich background of over a decade in the field. He completed his master\'s degree in embedded electrical and computer systems at San Francisco State University, thereby strengthening his proficiency in this domain. Over the course of his career, he has made substantial contributions to a diverse array of IoT projects, spanning industries such as manufacturing, smart cities, retail, and energy. Having gained experience in both corporate enterprises and entrepreneurial ventures, he possesses a comprehensive grasp of the complexities of IoT/edge technologies and their pragmatic implementations.',
+    },
+    {
+        name: 'Holly Oh Diamond',
+        bio: 'Holly Jooyoung Diamond arrived in New York in 2009 with $400 and a resolve to build something that mattered. During the pandemic, she launched Mr. Mista Oh, a family-owned Korean restaurant in Manhattan to support her family. That firsthand struggle running a small business during crisis directly inspired her to build better software tools for hourly workers. Today she is the founder and CEO of WorkOnward (Techstars DC 23), a map-based hiring platform designed to make finding local hourly work easier for job seekers and small business owners. She serves as a Board Member of the New York State Restaurant Association, advises Documented, and leads DHD Consulting, a global recruiting firm with 5,000+ placements for clients including Samsung and CJ Corporation.',
+    },
+];
+
 const sources = {
     shrm2026: {
         label: 'SHRM 2026 Talent Trends',

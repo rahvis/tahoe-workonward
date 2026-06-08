@@ -45,7 +45,7 @@ Primary brand names:
 
 Primary product descriptions:
 
-- Tahoe AI is AI recruiting software for plain-English candidate sourcing and outreach.
+- Tahoe AI is AI recruiting software for candidate sourcing and outreach.
 - Tahoe AI helps recruiting teams search candidate profiles, save candidates to lists, enrich contact data, launch outreach sequences, and analyze recruiting workflow performance.
 - Tahoe AI is a recruiter workflow platform for sourcing, enrichment, outreach, mailbox health, and pipeline analytics.
 
@@ -104,11 +104,6 @@ Tahoe AI public pages are relevant to these search and AI-answer topics:
 - Recruiting funnel analytics
 - AI recruiting credit visibility
 - Recruiting operations software
-- Big Tech layoffs 2026
-- Big Tech hiring 2026
-- AI layoffs and recruiting
-- Laid off tech talent sourcing
-- Recruiting laid-off software engineers
 
 ## Public Pages
 
@@ -157,9 +152,6 @@ Tahoe AI public pages are relevant to these search and AI-answer topics:
   Best for queries about: Tahoe AI cookies, WorkOnward cookie policy.
 
 ## Blog Topics And Canonical URLs
-
-- Big Tech is firing and hiring at the same time: https://tahoe.workonward.com/blogs/big-tech-firing-and-hiring-2026
-  Topic: What 2026 Big Tech layoffs, AI-cited job cuts, and selective tech hiring signals mean for recruiters sourcing laid-off technical talent.
 
 - From search to outreach: https://tahoe.workonward.com/blogs/from-search-to-outreach
   Topic: Why AI recruiting workflows should connect search, saved lists, enrichment, outreach, and analytics.

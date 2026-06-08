@@ -33,10 +33,18 @@ export interface PreviewData {
     score: number | null;
 }
 
+export interface CandidateMatchRationale {
+    title: string;
+    evidence: string;
+    criterion: string;
+    confidence?: "high" | "medium" | "low";
+}
+
 interface CandidatePanelProps {
     preview: PreviewData;
     onClose: () => void;
     onSaveToList?: (id: number) => void;
+    matchRationales?: CandidateMatchRationale[];
 }
 
 // ---------------------------------------------------------------------------
@@ -60,7 +68,14 @@ function levelColor(level: string | null): "gold" | "blue" | "violet" | "green" 
 // Component
 // ---------------------------------------------------------------------------
 
-export default function CandidatePanel({ preview, onClose, onSaveToList }: CandidatePanelProps) {
+export const MISSING_PREVIEW_EVIDENCE = "Not enough preview data for this criterion";
+
+export default function CandidatePanel({
+    preview,
+    onClose,
+    onSaveToList,
+    matchRationales = [],
+}: CandidatePanelProps) {
     return (
         <aside className={styles.candidatePanel} role="complementary" aria-label="Candidate details">
             <div className={styles.panelHeader}>
@@ -150,6 +165,31 @@ export default function CandidatePanel({ preview, onClose, onSaveToList }: Candi
                 <section className={styles.panelSection}>
                     <div className={styles.panelLabel}>Location</div>
                     <div className={styles.panelSecondaryText}>{preview.location_full ?? preview.location_country}</div>
+                </section>
+            )}
+
+            {matchRationales.length > 0 && (
+                <section className={styles.panelSection}>
+                    <div className={styles.panelLabel}>Why this matched</div>
+                    <div className={styles.matchRationaleList}>
+                        {matchRationales.map((item, index) => {
+                            const missingEvidence = item.evidence === MISSING_PREVIEW_EVIDENCE;
+                            return (
+                                <div key={`${item.title}-${item.criterion}-${index}`} className={styles.matchRationaleItem}>
+                                    <div className={styles.matchRationaleHeader}>
+                                        <span className={styles.matchRationaleTitle}>{item.title}</span>
+                                        {item.confidence ? (
+                                            <span className={styles.matchConfidence}>{item.confidence}</span>
+                                        ) : null}
+                                    </div>
+                                    <div className={missingEvidence ? styles.matchMissingEvidence : styles.matchEvidence}>
+                                        {item.evidence}
+                                    </div>
+                                    <div className={styles.matchCriterion}>{item.criterion}</div>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </section>
             )}
 

@@ -378,6 +378,44 @@
     font-size: 12px;
 }
 
+.authorSection {
+    margin-top: 52px;
+    padding-top: 34px;
+    border-top: 1px solid var(--blog-border);
+}
+
+.authorSection h2 {
+    margin: 0 0 18px;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.authorGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.authorCard {
+    padding: 20px;
+    border: 1px solid var(--blog-border);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.74);
+}
+
+.authorCard h3 {
+    margin: 0 0 10px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.authorCard p {
+    margin: 0;
+    color: var(--blog-muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
 .footer {
     padding: 28px 0;
     border-top: 1px solid var(--blog-border);
@@ -401,7 +439,8 @@
     }
 
     .postGrid,
-    .articleBody {
+    .articleBody,
+    .authorGrid {
         grid-template-columns: 1fr;
     }
 

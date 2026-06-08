@@ -2,7 +2,20 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { apiRequest, getSearchSession, type SearchSessionPayload } from "@/lib/api";
+import {
+    answerSearchIntake,
+    apiRequest,
+    getSearchSession,
+    startSearchIntake,
+    type AIReasoningItem,
+    type AssistantMessage,
+    type SearchIntakeQuestion,
+    type SearchIntakeResponse,
+    type SearchIntakeStatus,
+    type SearchRequirementsSummary,
+    type SearchSessionPayload,
+    type SearchSourceType,
+} from "@/lib/api";
 import type { SearchPageBootstrapPayload } from "@/lib/search-page-bootstrap";
 import SaveToListDialog from "../_components/SaveToListDialog";
 import { previewCandidateToImportPayload } from "@/lib/organization";
@@ -29,9 +42,17 @@ import {
     MagnifyingGlassIcon,
     PlusIcon,
 } from "@/components/ui/icons";
-import CandidatePanel, { type PreviewData } from "./CandidatePanel";
+import AIIntakeDrawer from "./AIIntakeDrawer";
+import AIIntakeSheet from "./AIIntakeSheet";
+import CandidatePanel, {
+    MISSING_PREVIEW_EVIDENCE,
+    type CandidateMatchRationale,
+    type PreviewData,
+} from "./CandidatePanel";
 import styles from "./langgraph-search.module.css";
 import PreviewGrid, { type PreviewGridRow } from "./preview-grid";
+import SearchBriefSummary from "./SearchBriefSummary";
+import SearchSourceTabs from "./SearchSourceTabs";
 
 type SearchResultItem = PreviewGridRow;
 
@@ -175,17 +196,42 @@ interface FilterMetadata {
     workforce_role_suggestions?: string[];
 }
 
-type ViewState = "idle" | "parsing" | "review" | "searching" | "results" | "diagnosis";
+type ViewState =
+    | "idle"
+    | "parsing"
+    | "intake_generating"
+    | "intake_clarifying"
+    | "review"
+    | "searching"
+    | "results"
+    | "diagnosis";
 const SESSION_KEY = "langgraph_search_preview_state_v1";
 type SessionResumeStage = "idle" | "review" | "results";
+type IntakeReasoningView = "summary" | "evidence" | "filters" | "assumptions" | "not_used";
 
 interface SearchPageState {
     query: string;
+    sourceType: SearchSourceType;
+    jobDescription: string;
+    roleTitle: string;
+    intakeStatus: SearchIntakeStatus;
+    intakeDrawerOpen: boolean;
+    intakeQuestions: SearchIntakeQuestion[];
+    missingSlots: string[];
+    requirementsSummary: SearchRequirementsSummary | null;
+    readinessScore: number;
+    assistantMessages: AssistantMessage[];
+    reasoningSummary: string | null;
+    reasoningItems: AIReasoningItem[];
+    reasoningPanelOpen: boolean;
+    reasoningView: IntakeReasoningView;
+    intakeAnswerPendingQuestionId: string | null;
     viewState: ViewState;
     error: string;
     searchSessionId: string | null;
     checkpointId: string | null;
     popupModel: PopupIntentModel;
+    confirmedPopupModel: PopupIntentModel | null;
     /** Desktop Tahoe filter popup visibility (>=769px). */
     desktopFiltersOpen: boolean;
     /** True once the recruiter has manually edited any filter in the popup/sheet.
@@ -212,9 +258,16 @@ interface SearchPageState {
 
 type SearchPageAction =
     | { type: "hydrate"; payload: Partial<SearchPageState> }
+    | { type: "session_hydrated_with_intake"; payload: Partial<SearchPageState> }
     | { type: "patch"; payload: Partial<SearchPageState> }
+    | { type: "source_mode_changed"; sourceType: SearchSourceType }
+    | { type: "intake_start_pending" }
+    | { type: "intake_response_applied"; payload: SearchIntakeResponse }
+    | { type: "intake_answer_pending"; questionId: string }
+    | { type: "intake_failed"; message: string }
+    | { type: "reasoning_view_changed"; view: IntakeReasoningView }
     | { type: "parse_success"; payload: { searchSessionId: string; checkpointId: string; popupModel: PopupIntentModel } }
-    | { type: "execute_success"; payload: ExecuteResponse }
+    | { type: "execute_success"; payload: ExecuteResponse; confirmedIntent?: PopupIntentModel }
     | { type: "page_loaded"; payload: PreviewPageResponse }
     | { type: "set_current_page"; page: number }
     | { type: "toggle_candidate"; candidateId: number | null };
@@ -237,11 +290,27 @@ function sanitizePersistedState(payload: Partial<SearchPageState>): Partial<Sear
 function initialSearchState(): SearchPageState {
     return {
         query: "",
+        sourceType: "prompt",
+        jobDescription: "",
+        roleTitle: "",
+        intakeStatus: "draft",
+        intakeDrawerOpen: false,
+        intakeQuestions: [],
+        missingSlots: [],
+        requirementsSummary: null,
+        readinessScore: 0,
+        assistantMessages: [],
+        reasoningSummary: null,
+        reasoningItems: [],
+        reasoningPanelOpen: false,
+        reasoningView: "summary",
+        intakeAnswerPendingQuestionId: null,
         viewState: "idle",
         error: "",
         searchSessionId: null,
         checkpointId: null,
         popupModel: emptyPopupModel(),
+        confirmedPopupModel: null,
         desktopFiltersOpen: false,
         popupDirty: false,
         mobileFiltersOpen: false,
@@ -262,12 +331,111 @@ function initialSearchState(): SearchPageState {
     };
 }
 
+function viewStateForIntakeStatus(status: SearchIntakeStatus): ViewState {
+    if (status === "generating") return "intake_generating";
+    if (status === "needs_clarification") return "intake_clarifying";
+    if (status === "ready_for_review" || status === "executed") return "review";
+    if (status === "failed") return "idle";
+    return "idle";
+}
+
+function stateFromIntakeResponse(response: SearchIntakeResponse): Partial<SearchPageState> {
+    return {
+        searchSessionId: response.search_session_id,
+        checkpointId: response.search_session_id,
+        popupModel: (response.popup_model as unknown as PopupIntentModel | null) || emptyPopupModel(),
+        confirmedPopupModel: null,
+        popupDirty: false,
+        needsFreshSession: false,
+        intakeStatus: response.status,
+        intakeDrawerOpen: true,
+        intakeQuestions: response.questions ?? [],
+        missingSlots: response.missing_slots ?? [],
+        requirementsSummary: response.requirements_summary ?? null,
+        readinessScore: response.readiness_score ?? 0,
+        assistantMessages: response.assistant_messages ?? [],
+        reasoningSummary: response.reasoning_summary ?? null,
+        reasoningItems: response.reasoning_items ?? [],
+        reasoningPanelOpen: Boolean(response.reasoning_summary || response.reasoning_items?.length),
+        intakeAnswerPendingQuestionId: null,
+        viewState: viewStateForIntakeStatus(response.status),
+        error: "",
+        diagnosis: null,
+        diagnosisType: null,
+        rootCause: null,
+        suggestions: [],
+        queryHash: null,
+        pagesByNumber: {},
+        currentPage: 1,
+        totalResults: null,
+        totalPages: 1,
+        previewTotalResults: null,
+        activeCandidateId: null,
+        paginatingPage: null,
+    };
+}
+
+function clearedIntakeState(): Partial<SearchPageState> {
+    return {
+        jobDescription: "",
+        roleTitle: "",
+        ...clearedIntakeArtifactsState(),
+    };
+}
+
+function clearedIntakeArtifactsState(): Partial<SearchPageState> {
+    return {
+        intakeStatus: "draft",
+        intakeDrawerOpen: false,
+        intakeQuestions: [],
+        missingSlots: [],
+        requirementsSummary: null,
+        readinessScore: 0,
+        assistantMessages: [],
+        reasoningSummary: null,
+        reasoningItems: [],
+        reasoningPanelOpen: false,
+        reasoningView: "summary",
+        intakeAnswerPendingQuestionId: null,
+    };
+}
+
+function clearedSearchRunState(): Partial<SearchPageState> {
+    return {
+        searchSessionId: null,
+        checkpointId: null,
+        popupModel: emptyPopupModel(),
+        confirmedPopupModel: null,
+        desktopFiltersOpen: false,
+        popupDirty: false,
+        mobileFiltersOpen: false,
+        needsFreshSession: false,
+        queryHash: null,
+        pagesByNumber: {},
+        currentPage: 1,
+        totalResults: null,
+        totalPages: 1,
+        previewTotalResults: null,
+        previewCap: 100,
+        diagnosis: null,
+        diagnosisType: null,
+        rootCause: null,
+        suggestions: [],
+        activeCandidateId: null,
+        paginatingPage: null,
+        viewState: "idle",
+    };
+}
+
 function searchStateReducer(state: SearchPageState, action: SearchPageAction): SearchPageState {
     switch (action.type) {
         case "hydrate":
+        case "session_hydrated_with_intake":
             {
                 const restoredViewState =
-                    action.payload.viewState === "parsing" || action.payload.viewState === "searching"
+                    action.payload.viewState === "parsing"
+                    || action.payload.viewState === "intake_generating"
+                    || action.payload.viewState === "searching"
                         ? (action.payload.pagesByNumber && Object.keys(action.payload.pagesByNumber).length > 0
                             ? (action.payload.diagnosis ? "diagnosis" : "results")
                             : "idle")
@@ -282,12 +450,66 @@ function searchStateReducer(state: SearchPageState, action: SearchPageAction): S
             }
         case "patch":
             return { ...state, ...action.payload };
+        case "source_mode_changed":
+            if (action.sourceType === state.sourceType) {
+                return state;
+            }
+            return {
+                ...state,
+                ...clearedSearchRunState(),
+                sourceType: action.sourceType,
+                ...(action.sourceType === "prompt"
+                    ? clearedIntakeState()
+                    : { ...clearedIntakeArtifactsState(), intakeDrawerOpen: true }),
+                error: "",
+            };
+        case "intake_start_pending":
+            return {
+                ...state,
+                ...clearedSearchRunState(),
+                ...clearedIntakeArtifactsState(),
+                desktopFiltersOpen: state.desktopFiltersOpen,
+                mobileFiltersOpen: state.mobileFiltersOpen,
+                error: "",
+                intakeStatus: "generating",
+                intakeDrawerOpen: true,
+                intakeAnswerPendingQuestionId: null,
+                viewState: "intake_generating",
+            };
+        case "intake_response_applied":
+            return {
+                ...state,
+                ...stateFromIntakeResponse(action.payload),
+            };
+        case "intake_answer_pending":
+            return {
+                ...state,
+                error: "",
+                intakeAnswerPendingQuestionId: action.questionId,
+            };
+        case "intake_failed":
+            return {
+                ...state,
+                error: action.message,
+                intakeStatus: "failed",
+                intakeAnswerPendingQuestionId: null,
+                viewState: state.pagesByNumber[1]?.length ? "results" : "idle",
+            };
+        case "reasoning_view_changed":
+            return {
+                ...state,
+                reasoningPanelOpen: true,
+                reasoningView: action.view,
+            };
         case "parse_success":
             return {
                 ...state,
+                sourceType: "prompt",
+                ...clearedIntakeState(),
                 searchSessionId: action.payload.searchSessionId,
                 checkpointId: action.payload.checkpointId,
                 popupModel: action.payload.popupModel,
+                confirmedPopupModel: null,
                 popupDirty: false,
                 needsFreshSession: false,
                 viewState: "review",
@@ -309,6 +531,9 @@ function searchStateReducer(state: SearchPageState, action: SearchPageAction): S
             return {
                 ...state,
                 viewState: action.payload.diagnosis ? "diagnosis" : "results",
+                intakeStatus: state.sourceType === "prompt" ? state.intakeStatus : "executed",
+                intakeDrawerOpen: state.sourceType === "prompt" ? state.intakeDrawerOpen : false,
+                confirmedPopupModel: action.confirmedIntent ?? state.popupModel,
                 error: "",
                 queryHash: action.payload.query_hash,
                 pagesByNumber: { 1: action.payload.results ?? [] },
@@ -676,11 +901,29 @@ function buildServerSessionHydrationState(
 ): { stage: SessionResumeStage; payload: Partial<SearchPageState> } {
     const popup = (session.popup_model as unknown as PopupIntentModel | null) || emptyPopupModel();
     const latest = session.latest_page;
+    const sourceType = session.source_type ?? "prompt";
+    const intakeStatus = session.intake_status ?? "draft";
     const patch: Partial<SearchPageState> = {
         query: session.prompt || "",
+        sourceType,
+        jobDescription: session.job_description ?? "",
+        roleTitle: session.role_title ?? "",
+        intakeStatus,
+        intakeDrawerOpen: sourceType !== "prompt",
+        intakeQuestions: session.clarification_questions ?? [],
+        missingSlots: session.missing_slots ?? [],
+        requirementsSummary: session.requirements_summary ?? null,
+        readinessScore: session.readiness_score ?? 0,
+        assistantMessages: session.assistant_messages ?? [],
+        reasoningSummary: session.reasoning_summary ?? null,
+        reasoningItems: session.reasoning_items ?? [],
+        reasoningPanelOpen: Boolean(session.reasoning_summary || session.reasoning_items?.length),
+        reasoningView: "summary",
+        intakeAnswerPendingQuestionId: null,
         searchSessionId: session.session_id,
         checkpointId: session.session_id,
         popupModel: popup,
+        confirmedPopupModel: latest && Array.isArray(latest.results) ? popup : null,
         needsFreshSession: false,
         previewCap: 100,
         error: "",
@@ -709,7 +952,10 @@ function buildServerSessionHydrationState(
         patch.totalResults = null;
         patch.previewTotalResults = null;
         patch.queryHash = null;
-        patch.viewState = "review";
+        patch.viewState = sourceType === "prompt" ? "review" : viewStateForIntakeStatus(intakeStatus);
+        if (patch.viewState === "idle" && sourceType !== "prompt") {
+            patch.viewState = "review";
+        }
         return { stage: "review", payload: patch };
     }
 
@@ -718,11 +964,28 @@ function buildServerSessionHydrationState(
 }
 
 function buildBootstrapHydrationState(bootstrap: SearchPageBootstrapPayload): Partial<SearchPageState> {
+    const sourceType = bootstrap.sourceType ?? "prompt";
     return {
         query: bootstrap.prompt || "",
+        sourceType,
+        jobDescription: bootstrap.jobDescription ?? "",
+        roleTitle: bootstrap.roleTitle ?? "",
+        intakeStatus: sourceType === "prompt" ? "draft" : "ready_for_review",
+        intakeDrawerOpen: sourceType !== "prompt",
+        intakeQuestions: [],
+        missingSlots: [],
+        requirementsSummary: bootstrap.requirementsSummary ?? null,
+        readinessScore: 0,
+        assistantMessages: [],
+        reasoningSummary: bootstrap.reasoningSummary ?? null,
+        reasoningItems: [],
+        reasoningPanelOpen: Boolean(bootstrap.reasoningSummary),
+        reasoningView: "summary",
+        intakeAnswerPendingQuestionId: null,
         searchSessionId: bootstrap.searchSessionId,
         checkpointId: bootstrap.searchSessionId,
         popupModel: (bootstrap.popupModel as PopupIntentModel | null) || emptyPopupModel(),
+        confirmedPopupModel: null,
         popupDirty: false,
         needsFreshSession: false,
         queryHash: null,
@@ -777,6 +1040,297 @@ function toPreviewData(item: SearchResultItem): PreviewData {
     };
 }
 
+const MAX_CANDIDATE_MATCH_RATIONALES = 6;
+
+type PreviewEvidenceSource = {
+    label: string;
+    value: string | null | undefined;
+};
+
+function normalizedMatchText(value: string | null | undefined): string {
+    return (value ?? "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+}
+
+function cleanCriteria(values: Array<string | null | undefined>): string[] {
+    const seen = new Set<string>();
+    const criteria: string[] = [];
+    values.forEach((value) => {
+        const trimmed = (value ?? "").trim();
+        const key = trimmed.toLowerCase();
+        if (!trimmed || seen.has(key)) return;
+        seen.add(key);
+        criteria.push(trimmed);
+    });
+    return criteria;
+}
+
+function findPreviewEvidence(
+    criteria: string[],
+    sources: PreviewEvidenceSource[],
+): { criterion: string; evidence: string } | null {
+    for (const criterion of criteria) {
+        const normalizedCriterion = normalizedMatchText(criterion);
+        if (!normalizedCriterion) continue;
+        for (const source of sources) {
+            const normalizedSource = normalizedMatchText(source.value);
+            if (normalizedSource && normalizedSource.includes(normalizedCriterion)) {
+                return {
+                    criterion,
+                    evidence: `${source.label}: ${source.value}`,
+                };
+            }
+        }
+    }
+    return null;
+}
+
+function pushCandidateRationale(
+    rationales: CandidateMatchRationale[],
+    next: CandidateMatchRationale,
+): void {
+    if (rationales.length >= MAX_CANDIDATE_MATCH_RATIONALES) return;
+    const duplicate = rationales.some(
+        (item) => item.title === next.title && item.criterion === next.criterion && item.evidence === next.evidence,
+    );
+    if (!duplicate) {
+        rationales.push(next);
+    }
+}
+
+function pushMissingPreviewEvidence(
+    rationales: CandidateMatchRationale[],
+    title: string,
+    criterion: string,
+): void {
+    pushCandidateRationale(rationales, {
+        title,
+        criterion,
+        evidence: MISSING_PREVIEW_EVIDENCE,
+        confidence: "low",
+    });
+}
+
+function buildCandidateMatchRationales(
+    model: PopupIntentModel | null,
+    preview: PreviewData | null,
+): CandidateMatchRationale[] {
+    if (!model || !preview) return [];
+
+    const rationales: CandidateMatchRationale[] = [];
+    const generalFilters = model.general ?? emptyPopupModel().general;
+    const titleCriteria = cleanCriteria(model.job?.current_title_keywords ?? []);
+    const titleMatch = findPreviewEvidence(titleCriteria, [
+        { label: "Current title", value: preview.job_title },
+        { label: "Headline", value: preview.headline },
+    ]);
+    if (titleMatch) {
+        pushCandidateRationale(rationales, {
+            title: "Current title matched",
+            criterion: `Title: ${titleMatch.criterion}`,
+            evidence: titleMatch.evidence,
+            confidence: titleMatch.evidence.startsWith("Current title") ? "high" : "medium",
+        });
+    } else if (titleCriteria.length > 0 && !preview.job_title && !preview.headline) {
+        pushMissingPreviewEvidence(rationales, "Title evidence unavailable", `Title: ${titleCriteria.join(", ")}`);
+    }
+
+    const skillCriteria = cleanCriteria(model.keywords?.skills ?? []);
+    const skillMatch = findPreviewEvidence(skillCriteria, [
+        { label: "Headline", value: preview.headline },
+        { label: "Current title", value: preview.job_title },
+    ]);
+    if (skillMatch) {
+        pushCandidateRationale(rationales, {
+            title: "Skill evidence in preview",
+            criterion: `Skill: ${skillMatch.criterion}`,
+            evidence: skillMatch.evidence,
+            confidence: "medium",
+        });
+    } else if (skillCriteria.length > 0) {
+        pushMissingPreviewEvidence(rationales, "Skill evidence unavailable", `Skills: ${skillCriteria.join(", ")}`);
+    }
+
+    const locationCriteria = cleanCriteria([
+        ...(model.locations?.cities ?? []),
+        ...(model.locations?.states ?? []),
+        ...(model.locations?.countries ?? []),
+    ]);
+    const locationMatch = findPreviewEvidence(locationCriteria, [
+        { label: "Location", value: preview.location_full },
+        { label: "Country", value: preview.location_country },
+    ]);
+    if (locationMatch) {
+        pushCandidateRationale(rationales, {
+            title: "Location matched",
+            criterion: `Location: ${locationMatch.criterion}`,
+            evidence: locationMatch.evidence,
+            confidence: "high",
+        });
+    } else if (locationCriteria.length > 0 && !preview.location_full && !preview.location_country) {
+        pushMissingPreviewEvidence(rationales, "Location evidence unavailable", `Location: ${locationCriteria.join(", ")}`);
+    }
+
+    const currentCompanyCriteria = cleanCriteria(model.company?.current_company_names ?? []);
+    const currentCompanyMatch = findPreviewEvidence(currentCompanyCriteria, [
+        { label: "Current company", value: preview.company_name },
+    ]);
+    if (currentCompanyMatch) {
+        pushCandidateRationale(rationales, {
+            title: "Current company matched",
+            criterion: `Company: ${currentCompanyMatch.criterion}`,
+            evidence: currentCompanyMatch.evidence,
+            confidence: "high",
+        });
+    }
+
+    const backgroundCompanyCriteria = cleanCriteria([
+        ...(model.company?.past_company_names ?? []),
+        ...(model.company?.optional_company_names ?? []),
+    ]);
+    const backgroundCompanyMatch = findPreviewEvidence(backgroundCompanyCriteria, [
+        { label: "Current company", value: preview.company_name },
+    ]);
+    if (backgroundCompanyMatch) {
+        pushCandidateRationale(rationales, {
+            title: "Company background evidence in preview",
+            criterion: `Company background: ${backgroundCompanyMatch.criterion}`,
+            evidence: backgroundCompanyMatch.evidence,
+            confidence: "medium",
+        });
+    } else if (backgroundCompanyCriteria.length > 0) {
+        pushMissingPreviewEvidence(
+            rationales,
+            "Company background evidence unavailable",
+            `Company background: ${backgroundCompanyCriteria.join(", ")}`,
+        );
+    }
+
+    const industryCriteria = cleanCriteria([
+        ...(model.company?.industries ?? []),
+        ...(model.company?.optional_industries ?? []),
+    ]);
+    const industryMatch = findPreviewEvidence(industryCriteria, [
+        { label: "Company industry", value: preview.company_industry },
+    ]);
+    if (industryMatch) {
+        pushCandidateRationale(rationales, {
+            title: "Industry matched",
+            criterion: `Industry: ${industryMatch.criterion}`,
+            evidence: industryMatch.evidence,
+            confidence: "high",
+        });
+    } else if (industryCriteria.length > 0 && !preview.company_industry) {
+        pushMissingPreviewEvidence(rationales, "Industry evidence unavailable", `Industry: ${industryCriteria.join(", ")}`);
+    }
+
+    const departmentCriteria = cleanCriteria(model.job?.departments ?? []);
+    const departmentMatch = findPreviewEvidence(departmentCriteria, [
+        { label: "Department", value: preview.department },
+    ]);
+    if (departmentMatch) {
+        pushCandidateRationale(rationales, {
+            title: "Department matched",
+            criterion: `Department: ${departmentMatch.criterion}`,
+            evidence: departmentMatch.evidence,
+            confidence: "high",
+        });
+    } else if (departmentCriteria.length > 0 && !preview.department) {
+        pushMissingPreviewEvidence(rationales, "Department evidence unavailable", `Department: ${departmentCriteria.join(", ")}`);
+    }
+
+    const managementCriteria = cleanCriteria(model.job?.management_levels ?? []);
+    const managementMatch = findPreviewEvidence(managementCriteria, [
+        { label: "Management level", value: preview.management_level },
+    ]);
+    if (managementMatch) {
+        pushCandidateRationale(rationales, {
+            title: "Management level matched",
+            criterion: `Management level: ${managementMatch.criterion}`,
+            evidence: managementMatch.evidence,
+            confidence: "high",
+        });
+    } else if (managementCriteria.length > 0 && !preview.management_level) {
+        pushMissingPreviewEvidence(
+            rationales,
+            "Management level evidence unavailable",
+            `Management level: ${managementCriteria.join(", ")}`,
+        );
+    }
+
+    if (generalFilters.min_experience_months !== null || generalFilters.max_experience_months !== null) {
+        const minYears = generalFilters.min_experience_months !== null
+            ? `${Math.round(generalFilters.min_experience_months / 12)}+ years`
+            : null;
+        const maxYears = generalFilters.max_experience_months !== null
+            ? `up to ${Math.round(generalFilters.max_experience_months / 12)} years`
+            : null;
+        pushMissingPreviewEvidence(
+            rationales,
+            "Experience evidence unavailable",
+            `Experience: ${cleanCriteria([minYears, maxYears]).join(", ")}`,
+        );
+    }
+
+    const educationCriteria = cleanCriteria([
+        ...(model.education?.institution_names ?? []),
+        ...(model.education?.degree_keywords ?? []),
+    ]);
+    if (educationCriteria.length > 0) {
+        pushMissingPreviewEvidence(rationales, "Education evidence unavailable", `Education: ${educationCriteria.join(", ")}`);
+    }
+
+    const certificationCriteria = cleanCriteria([
+        ...(model.certifications?.title_keywords ?? []),
+        ...(model.certifications?.issuers ?? []),
+    ]);
+    if (certificationCriteria.length > 0) {
+        pushMissingPreviewEvidence(
+            rationales,
+            "Certification evidence unavailable",
+            `Certification: ${certificationCriteria.join(", ")}`,
+        );
+    }
+
+    const languageCriteria = cleanCriteria((model.languages ?? []).map((item) => item.language));
+    if (languageCriteria.length > 0) {
+        pushMissingPreviewEvidence(rationales, "Language evidence unavailable", `Language: ${languageCriteria.join(", ")}`);
+    }
+
+    const companySizeCriteria = cleanCriteria([
+        ...(model.company?.company_size_ranges ?? []),
+        ...(model.company?.optional_company_size_ranges ?? []),
+    ]);
+    if (companySizeCriteria.length > 0) {
+        pushMissingPreviewEvidence(
+            rationales,
+            "Company size evidence unavailable",
+            `Company size: ${companySizeCriteria.join(", ")}`,
+        );
+    }
+
+    const hqCriteria = cleanCriteria([
+        ...(model.company?.company_hq_countries ?? []),
+        ...(model.company?.optional_company_hq_countries ?? []),
+    ]);
+    if (hqCriteria.length > 0) {
+        pushMissingPreviewEvidence(rationales, "Company HQ evidence unavailable", `Company HQ: ${hqCriteria.join(", ")}`);
+    }
+
+    if (preview.score !== null && rationales.length > 0 && rationales.length < MAX_CANDIDATE_MATCH_RATIONALES) {
+        pushCandidateRationale(rationales, {
+            title: "Preview score returned",
+            criterion: "Coresignal preview score",
+            evidence: `Preview score returned: ${preview.score.toFixed(2)}. This is not a full fit score.`,
+            confidence: "low",
+        });
+    }
+
+    return rationales;
+}
+
 function notifyCreditsChanged() {
     clearAnalyticsCache();
     if (typeof window !== "undefined") {
@@ -796,6 +1350,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
     const [saveDialogOpen, setSaveDialogOpen] = useState(false);
     const [popupSearchPending, setPopupSearchPending] = useState(false);
+    const [desktopLayout, setDesktopLayout] = useState(() => isDesktopViewport());
     const sessionUrlConsumedRef = useRef<string | null>(null);
     const bootstrapAppliedRef = useRef<string | null>(null);
     const previousQueryHashRef = useRef<string | null>(null);
@@ -815,6 +1370,10 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
         const row = allLoadedRows.find((item) => item.id === state.activeCandidateId);
         return row ? toPreviewData(row) : null;
     }, [allLoadedRows, state.activeCandidateId]);
+    const activeCandidateMatchRationales = useMemo(
+        () => buildCandidateMatchRationales(state.confirmedPopupModel, activeCandidate),
+        [activeCandidate, state.confirmedPopupModel],
+    );
     const hasResumeEligibleResults = state.viewState === "results" || state.viewState === "diagnosis";
 
     const clearSessionParam = useCallback(() => {
@@ -872,6 +1431,17 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
     }, []);
 
     useEffect(() => {
+        if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+        const mediaQuery = window.matchMedia("(min-width: 769px)");
+        const updateLayout = () => setDesktopLayout(mediaQuery.matches);
+        updateLayout();
+        mediaQuery.addEventListener?.("change", updateLayout);
+        return () => {
+            mediaQuery.removeEventListener?.("change", updateLayout);
+        };
+    }, []);
+
+    useEffect(() => {
         if (typeof window === "undefined") {
             setHydrated(true);
             return;
@@ -913,7 +1483,12 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
             try {
                 const session = await getSearchSession(sessionFromUrl);
                 const hydration = buildServerSessionHydrationState(session);
-                dispatch({ type: "hydrate", payload: sanitizePersistedState(hydration.payload) });
+                dispatch({
+                    type: hydration.payload.sourceType && hydration.payload.sourceType !== "prompt"
+                        ? "session_hydrated_with_intake"
+                        : "hydrate",
+                    payload: sanitizePersistedState(hydration.payload),
+                });
                 if (hydration.stage !== "results") {
                     openFilterSurface();
                     clearSessionParam();
@@ -1009,6 +1584,59 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
         });
     }, []);
 
+    async function handleGenerateSearchPlan() {
+        const trimmedPrompt = state.query.trim();
+        const trimmedJd = state.jobDescription.trim();
+        const trimmedRoleTitle = state.roleTitle.trim();
+        if (state.sourceType === "prompt") return;
+        if (!trimmedJd) return;
+
+        try {
+            dispatch({ type: "intake_start_pending" });
+            const response = await startSearchIntake({
+                source_type: state.sourceType,
+                search_prompt: trimmedPrompt || null,
+                job_description: trimmedJd,
+                role_title: trimmedRoleTitle || null,
+            });
+            dispatch({ type: "intake_response_applied", payload: response });
+        } catch (err: unknown) {
+            dispatch({
+                type: "intake_failed",
+                message: err instanceof Error ? err.message : "Unable to generate the search plan.",
+            });
+        }
+    }
+
+    async function handleAnswerIntakeQuestion(question: SearchIntakeQuestion, answer: unknown) {
+        if (!state.searchSessionId) return;
+        try {
+            dispatch({ type: "intake_answer_pending", questionId: question.id });
+            const response = await answerSearchIntake(state.searchSessionId, {
+                question_id: question.id,
+                answer,
+            });
+            dispatch({ type: "intake_response_applied", payload: response });
+        } catch (err: unknown) {
+            dispatch({
+                type: "intake_failed",
+                message: err instanceof Error ? err.message : "Unable to apply the answer.",
+            });
+        }
+    }
+
+    function handleUseDefaultAnswer(question: SearchIntakeQuestion) {
+        const option =
+            question.default_option_index !== null && question.default_option_index >= 0
+                ? question.options[question.default_option_index]
+                : null;
+        void handleAnswerIntakeQuestion(question, option ?? { label: "Use defaults", use_default: true });
+    }
+
+    function handleSkipQuestion(question: SearchIntakeQuestion) {
+        void handleAnswerIntakeQuestion(question, { label: "Skip", skip: true });
+    }
+
     /**
      * Single recruiter action: "Find candidates".
      * Always anchor a fresh session via /search/parse, then resume the
@@ -1034,6 +1662,41 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
         try {
             setSelectedIds(new Set());
             dispatch({ type: "patch", payload: { error: "", viewState: "searching" } });
+
+            if (state.sourceType !== "prompt") {
+                const sessionId = state.searchSessionId;
+                const checkpointId = state.checkpointId ?? sessionId;
+                if (!sessionId || !checkpointId) {
+                    dispatch({
+                        type: "patch",
+                        payload: {
+                            error: "Generate a search plan before running a JD-derived search.",
+                            viewState: state.intakeQuestions.length > 0 ? "intake_clarifying" : "review",
+                        },
+                    });
+                    return false;
+                }
+
+                const executeResponse = await apiRequest<ExecuteResponse>("/search/execute", {
+                    method: "POST",
+                    body: {
+                        search_session_id: sessionId,
+                        checkpoint_id: checkpointId,
+                        confirmed_intent: popupModel,
+                    },
+                });
+                dispatch({ type: "execute_success", payload: executeResponse, confirmedIntent: popupModel });
+                notifyCreditsChanged();
+                dispatch({
+                    type: "patch",
+                    payload: {
+                        popupDirty: false,
+                        mobileFiltersOpen: false,
+                        ...(closeDesktopOnSuccess ? { desktopFiltersOpen: false } : {}),
+                    },
+                });
+                return true;
+            }
 
             const wasDirty = state.popupDirty;
             const preEditPopupModel = popupModel;
@@ -1069,7 +1732,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                     confirmed_intent: intentForExecute,
                 },
             });
-            dispatch({ type: "execute_success", payload: executeResponse });
+            dispatch({ type: "execute_success", payload: executeResponse, confirmedIntent: intentForExecute });
             notifyCreditsChanged();
             // Keep the filter editor aligned to the recruiter's now-effective state.
             dispatch({
@@ -1371,6 +2034,9 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
 
     const sections = metadata?.sections ?? [];
     const activeSectionData = sections.find((section) => section.id === activeSection) ?? sections[0];
+    const isJdMode = state.sourceType !== "prompt";
+    const showPromptInput = state.sourceType !== "job_description";
+    const canGenerateSearchPlan = isJdMode && Boolean(state.jobDescription.trim());
     const showPreviewCapBanner =
         state.totalResults != null && state.previewTotalResults != null && state.totalResults > 0;
     const showStartNewSearch =
@@ -1382,28 +2048,94 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
 
     const findButtonDisabled =
         state.viewState === "parsing" ||
+        state.viewState === "intake_generating" ||
         state.viewState === "searching" ||
-        (!state.query.trim() && countActiveFilters(popupModel) === 0);
-    const isBusy = state.viewState === "parsing" || state.viewState === "searching";
+        (isJdMode
+            ? (!state.searchSessionId || countActiveFilters(popupModel) === 0)
+            : (!state.query.trim() && countActiveFilters(popupModel) === 0));
+    const canFindCandidates = !findButtonDisabled;
+    const isBusy =
+        state.viewState === "parsing"
+        || state.viewState === "intake_generating"
+        || state.viewState === "searching";
+    const showAssistantSurface = isJdMode && state.intakeDrawerOpen && !activeCandidate;
+    const assistantSurfaceProps = {
+        status: state.intakeStatus,
+        summary: state.requirementsSummary,
+        roleTitle: state.roleTitle,
+        questions: state.intakeQuestions,
+        missingSlots: state.missingSlots,
+        readinessScore: state.readinessScore,
+        reasoningSummary: state.reasoningSummary,
+        reasoningItems: state.reasoningItems,
+        reasoningView: state.reasoningView,
+        pendingQuestionId: state.intakeAnswerPendingQuestionId,
+        isBusy,
+        canGeneratePlan: canGenerateSearchPlan,
+        canFindCandidates,
+        onGeneratePlan: () => void handleGenerateSearchPlan(),
+        onAnswerQuestion: (question: SearchIntakeQuestion, answer: unknown) => void handleAnswerIntakeQuestion(question, answer),
+        onUseDefault: (question: SearchIntakeQuestion) => handleUseDefaultAnswer(question),
+        onSkip: (question: SearchIntakeQuestion) => handleSkipQuestion(question),
+        onOpenFilters: openFilterSurface,
+        onFindCandidates: () => void runFindCandidates(),
+        onReasoningViewChange: (view: IntakeReasoningView) => dispatch({ type: "reasoning_view_changed", view }),
+        onCollapse: () => dispatch({ type: "patch", payload: { intakeDrawerOpen: false } }),
+    };
     return (
         <Box className={styles.page}>
             <Box className={styles.searchBar}>
                 <form onSubmit={handleFindCandidates}>
+                    <SearchSourceTabs
+                        value={state.sourceType}
+                        disabled={isBusy}
+                        onChange={(sourceType) => dispatch({ type: "source_mode_changed", sourceType })}
+                    />
+                    {isJdMode ? (
+                        <div className={styles.jdInputGrid}>
+                            <label className={styles.inputLabel}>
+                                <span>Role title</span>
+                                <TextField.Root
+                                    aria-label="Role title"
+                                    size="3"
+                                    placeholder="Senior Backend Engineer"
+                                    value={state.roleTitle}
+                                    onChange={(event) => dispatch({ type: "patch", payload: { roleTitle: event.target.value } })}
+                                    disabled={isBusy}
+                                />
+                            </label>
+                            <label className={`${styles.inputLabel} ${styles.jdTextareaLabel}`}>
+                                <span>Job description</span>
+                                <textarea
+                                    aria-label="Job description"
+                                    className={styles.jdTextarea}
+                                    placeholder="Paste the job description or role brief"
+                                    value={state.jobDescription}
+                                    onChange={(event) => dispatch({ type: "patch", payload: { jobDescription: event.target.value } })}
+                                    disabled={isBusy}
+                                    rows={4}
+                                />
+                            </label>
+                        </div>
+                    ) : null}
                     <Flex gap="3" align="center" wrap="wrap">
-                        <Box style={{ flexGrow: 1, minWidth: 0 }}>
-                            <TextField.Root
-                                ref={searchInputRef}
-                                size="3"
-                                placeholder='Try: "Senior ML engineers in Europe with Python skills"'
-                                value={state.query}
-                                onChange={(event) => dispatch({ type: "patch", payload: { query: event.target.value } })}
-                                disabled={isBusy}
-                            >
-                                <TextField.Slot>
-                                    <MagnifyingGlassIcon width="16" height="16" />
-                                </TextField.Slot>
-                            </TextField.Root>
-                        </Box>
+                        {showPromptInput ? (
+                            <Box style={{ flexGrow: 1, minWidth: 0 }}>
+                                <TextField.Root
+                                    ref={searchInputRef}
+                                    size="3"
+                                    placeholder='Try: "Senior ML engineers in Europe with Python skills"'
+                                    value={state.query}
+                                    onChange={(event) => dispatch({ type: "patch", payload: { query: event.target.value } })}
+                                    disabled={isBusy}
+                                    aria-label="Search prompt"
+                                >
+                                    <TextField.Slot>
+                                        <MagnifyingGlassIcon width="16" height="16" />
+                                    </TextField.Slot>
+                                </TextField.Root>
+                            </Box>
+                        ) : null}
                         {showPreviewCapBanner ? (
                             <PreviewCapBanner
                                 className={styles.inlineResultsCount}
@@ -1444,17 +2176,41 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                             </Button>
                         ) : null}
                         {!hasResultView ? (
-                            <Button
-                                size="3"
-                                className={styles.findCandidatesButton}
-                                type="submit"
-                                disabled={findButtonDisabled}
-                            >
-                                {isBusy ? <Spinner /> : "Find candidates"}
-                            </Button>
+                            <>
+                                {isJdMode ? (
+                                    <Button
+                                        size="3"
+                                        variant="soft"
+                                        className={styles.findCandidatesButton}
+                                        type="button"
+                                        disabled={!canGenerateSearchPlan || isBusy}
+                                        onClick={() => void handleGenerateSearchPlan()}
+                                    >
+                                        {state.viewState === "intake_generating" ? <Spinner /> : "Generate search plan"}
+                                    </Button>
+                                ) : null}
+                                <Button
+                                    size="3"
+                                    className={styles.findCandidatesButton}
+                                    type="submit"
+                                    disabled={findButtonDisabled}
+                                >
+                                    {state.viewState === "searching" ? <Spinner /> : "Find candidates"}
+                                </Button>
+                            </>
                         ) : null}
                     </Flex>
                 </form>
+                {isJdMode && hasResultView && !state.intakeDrawerOpen ? (
+                    <SearchBriefSummary
+                        summary={state.requirementsSummary}
+                        roleTitle={state.roleTitle}
+                        missingSlots={state.missingSlots}
+                        readinessScore={state.readinessScore}
+                        compact
+                        onOpen={() => dispatch({ type: "patch", payload: { intakeDrawerOpen: true } })}
+                    />
+                ) : null}
                 <div className={styles.workflowRail} aria-label="Recruiter workflow">
                     <span>Search</span>
                     <span>Review filters</span>
@@ -1476,13 +2232,21 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
 
             <Box className={styles.shellGrid}>
                 <Box className={styles.resultsArea} style={{ position: "relative" }}>
-                    {(state.viewState === "idle" || state.viewState === "review") && (
+                    {(state.viewState === "idle" || state.viewState === "review" || state.viewState === "intake_clarifying") && (
                         <Flex direction="column" align="center" justify="center" gap="4" className={styles.emptyState}>
                             <MagnifyingGlassIcon width="52" height="52" />
                             <Heading size="5">Search, review filters, then run the query</Heading>
                             <Text size="2" color="gray" align="center" style={{ maxWidth: 520 }}>
                                 Type a natural-language query, refine filters in the popup (or skip them), and page through the top 100 preview matches in 20-result pages.
                             </Text>
+                        </Flex>
+                    )}
+
+                    {state.viewState === "intake_generating" && (
+                        <Flex direction="column" align="center" gap="3" py="9">
+                            <Spinner size="3" />
+                            <Heading size="4">Building search plan</Heading>
+                            <Text size="2" color="gray">Reading the JD and mapping it to editable filters.</Text>
                         </Flex>
                     )}
 
@@ -1573,6 +2337,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                 {activeCandidate && (
                     <CandidatePanel
                         preview={activeCandidate}
+                        matchRationales={activeCandidateMatchRationales}
                         onClose={() => dispatch({ type: "toggle_candidate", candidateId: null })}
                         onSaveToList={(id) => {
                             setSelectedIds(new Set([id]));
@@ -1580,6 +2345,12 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                         }}
                     />
                 )}
+                {showAssistantSurface && desktopLayout ? (
+                    <AIIntakeDrawer {...assistantSurfaceProps} />
+                ) : null}
+                {showAssistantSurface && !desktopLayout ? (
+                    <AIIntakeSheet {...assistantSurfaceProps} />
+                ) : null}
             </Box>
 
             <Dialog.Root
@@ -1633,11 +2404,17 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                                 <Button
                                     size="2"
                                     variant="soft"
-                                    disabled={!state.query.trim() || isBusy}
-                                    onClick={() => void handleMatchPrompt()}
-                                    title="Replace filters with what the prompt parses to"
+                                    disabled={isJdMode ? !canGenerateSearchPlan || isBusy : !state.query.trim() || isBusy}
+                                    onClick={() => {
+                                        if (isJdMode) {
+                                            void handleGenerateSearchPlan();
+                                            return;
+                                        }
+                                        void handleMatchPrompt();
+                                    }}
+                                    title={isJdMode ? "Replace filters with what the JD maps to" : "Replace filters with what the prompt parses to"}
                                 >
-                                    Match prompt
+                                    {isJdMode ? "Match JD again" : "Match prompt"}
                                 </Button>
                                 <Button size="2" disabled={findButtonDisabled} onClick={() => void handlePopupFindCandidates()}>
                                     {popupSearchPending ? <Spinner /> : "Find candidates"}
