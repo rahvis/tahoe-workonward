@@ -52,7 +52,6 @@ import CandidatePanel, {
 import styles from "./langgraph-search.module.css";
 import PreviewGrid, { type PreviewGridRow } from "./preview-grid";
 import SearchBriefSummary from "./SearchBriefSummary";
-import SearchSourceTabs from "./SearchSourceTabs";
 
 type SearchResultItem = PreviewGridRow;
 
@@ -2086,11 +2085,6 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
         <Box className={styles.page}>
             <Box className={styles.searchBar}>
                 <form onSubmit={handleFindCandidates}>
-                    <SearchSourceTabs
-                        value={state.sourceType}
-                        disabled={isBusy}
-                        onChange={(sourceType) => dispatch({ type: "source_mode_changed", sourceType })}
-                    />
                     {isJdMode ? (
                         <div className={styles.jdInputGrid}>
                             <label className={styles.inputLabel}>

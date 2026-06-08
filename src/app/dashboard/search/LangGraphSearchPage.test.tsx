@@ -547,51 +547,15 @@ test("clicking Find candidates parses + runs in one shot and syncs session url",
     });
 });
 
-test("source tabs switch visible inputs without changing prompt mode behavior", async () => {
-    const user = userEvent.setup();
+test("source mode tabs are hidden and prompt search remains the visible entry point", async () => {
     render(<LangGraphSearchPage />);
 
-    expect(await screen.findByRole("tab", { name: "Prompt" })).toHaveAttribute("aria-selected", "true");
+    await screen.findByLabelText("Search prompt");
+    expect(screen.queryByRole("tab", { name: "Prompt" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Job description" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Prompt + JD" })).not.toBeInTheDocument();
     expect(screen.getByLabelText("Search prompt")).toBeInTheDocument();
     expect(screen.queryByLabelText("Job description")).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("tab", { name: "Job description" }));
-    expect(screen.getByRole("tab", { name: "Job description" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByLabelText("Role title")).toBeInTheDocument();
-    expect(screen.getByLabelText("Job description")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Search prompt")).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("tab", { name: "Prompt + JD" }));
-    expect(screen.getByRole("tab", { name: "Prompt + JD" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByLabelText("Search prompt")).toBeInTheDocument();
-    expect(screen.getByLabelText("Job description")).toBeInTheDocument();
-});
-
-test("source mode changes clear generated intake and result state before a new run", async () => {
-    const user = userEvent.setup();
-    render(<LangGraphSearchPage />);
-
-    await user.click(await screen.findByRole("tab", { name: "Job description" }));
-    await user.type(screen.getByLabelText("Job description"), "Senior Backend Engineer for Go services.");
-    await user.click(screen.getAllByRole("button", { name: "Generate search plan" })[0]);
-    await user.click(await screen.findByRole("button", { name: "Bay Area" }));
-    await user.click(screen.getAllByRole("button", { name: "Find candidates" })[0]);
-
-    expect(await screen.findByText("Casey Cho")).toBeInTheDocument();
-    expect(mockedApiRequest.mock.calls.filter(([path]) => path === "/search/parse")).toHaveLength(0);
-
-    await user.click(screen.getByRole("tab", { name: "Prompt" }));
-
-    expect(screen.queryByText("Casey Cho")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Search prompt")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Filters" })).toBeInTheDocument();
-
-    await user.type(screen.getByLabelText("Search prompt"), "ml engineer");
-    await user.click(screen.getByRole("button", { name: "Find candidates" }));
-
-    await waitFor(() => {
-        expect(mockedApiRequest.mock.calls.filter(([path]) => path === "/search/parse")).toHaveLength(1);
-    });
 });
 
 test("JD bootstrap tolerates legacy empty requirements summary", async () => {
@@ -617,202 +581,6 @@ test("JD bootstrap tolerates legacy empty requirements summary", async () => {
     const assistant = await screen.findByLabelText("AI Search Assistant");
     expect(within(assistant).getByText("Must-have")).toBeInTheDocument();
     expect(within(assistant).getAllByText("Not set").length).toBeGreaterThan(0);
-});
-
-test("JD mode disables Generate search plan until a JD exists", async () => {
-    const user = userEvent.setup();
-    render(<LangGraphSearchPage />);
-
-    await user.click(await screen.findByRole("tab", { name: "Job description" }));
-    screen.getAllByRole("button", { name: "Generate search plan" }).forEach((button) => {
-        expect(button).toBeDisabled();
-    });
-
-    await user.type(screen.getByLabelText("Job description"), "We need a Senior Backend Engineer using Go.");
-    screen.getAllByRole("button", { name: "Generate search plan" }).forEach((button) => {
-        expect(button).toBeEnabled();
-    });
-});
-
-test("Generate search plan starts intake and does not execute search", async () => {
-    const user = userEvent.setup();
-    render(<LangGraphSearchPage />);
-
-    await user.click(await screen.findByRole("tab", { name: "Job description" }));
-    await user.type(screen.getByLabelText("Role title"), "Senior Backend Engineer");
-    await user.type(screen.getByLabelText("Job description"), "We need a Senior Backend Engineer using Go and Kafka.");
-    await user.click(screen.getAllByRole("button", { name: "Generate search plan" })[0]);
-
-    expect(await screen.findByText("What geography should this search target?")).toBeInTheDocument();
-    expect(mockedStartSearchIntake).toHaveBeenCalledWith({
-        source_type: "job_description",
-        search_prompt: null,
-        job_description: "We need a Senior Backend Engineer using Go and Kafka.",
-        role_title: "Senior Backend Engineer",
-    });
-    expect(mockedApiRequest.mock.calls.some(([path]) => path === "/search/execute")).toBe(false);
-    await user.click(screen.getByRole("tab", { name: "Reasoning" }));
-    expect(screen.getByText(/Tahoe mapped the JD to a senior backend search/i)).toBeInTheDocument();
-    expect(screen.getByText("Go is a hard skill")).toBeInTheDocument();
-});
-
-test("answering an intake question updates filters and uses confirmed popup model for JD execute", async () => {
-    const user = userEvent.setup();
-    render(<LangGraphSearchPage />);
-
-    await user.click(await screen.findByRole("tab", { name: "Job description" }));
-    await user.type(screen.getByLabelText("Job description"), "Senior Backend Engineer for Go services.");
-    await user.click(screen.getAllByRole("button", { name: "Generate search plan" })[0]);
-    await user.click(await screen.findByRole("button", { name: "Bay Area" }));
-
-    await waitFor(() => {
-        expect(mockedAnswerSearchIntake).toHaveBeenCalledWith("intake-session-1", {
-            question_id: "location_scope",
-            answer: intakeQuestion.options[1],
-        });
-    });
-    expect(await screen.findByText("Bay Area")).toBeInTheDocument();
-    await user.click(screen.getByRole("tab", { name: "Reasoning" }));
-    expect((await screen.findAllByText(/Bay Area city filters/i)).length).toBeGreaterThan(0);
-
-    await user.click(screen.getAllByRole("button", { name: "Find candidates" })[0]);
-
-    await waitFor(() => {
-        expect(mockedApiRequest).toHaveBeenCalledWith(
-            "/search/execute",
-            expect.objectContaining({ method: "POST" }),
-        );
-    });
-
-    const parseCalls = mockedApiRequest.mock.calls.filter(([path]) => path === "/search/parse");
-    expect(parseCalls).toHaveLength(0);
-
-    const executeCall = mockedApiRequest.mock.calls.find(([path]) => path === "/search/execute");
-    const payload = executeCall?.[1]?.body as { confirmed_intent: typeof intakeAnsweredPopupModelResponse };
-    expect(payload).toEqual(
-        expect.objectContaining({
-            search_session_id: "intake-session-1",
-            checkpoint_id: "intake-session-1",
-        }),
-    );
-    expect(payload.confirmed_intent.locations.states).toEqual(["California"]);
-    expect(payload.confirmed_intent.locations.cities).toEqual(["San Francisco", "San Jose", "Oakland"]);
-});
-
-test("assistant drawer renders questions and grouped reasoning tabs", async () => {
-    const user = userEvent.setup();
-    render(<LangGraphSearchPage />);
-
-    await user.click(await screen.findByRole("tab", { name: "Job description" }));
-    await user.type(screen.getByLabelText("Job description"), "Senior Backend Engineer for Go services.");
-    await user.click(screen.getAllByRole("button", { name: "Generate search plan" })[0]);
-
-    const assistant = await screen.findByLabelText("AI Search Assistant");
-    expect(within(assistant).getByText("What geography should this search target?")).toBeInTheDocument();
-    expect(within(assistant).getByRole("tab", { name: "Questions" })).toHaveAttribute("aria-selected", "true");
-
-    await user.click(within(assistant).getByRole("tab", { name: "Reasoning" }));
-    expect(within(assistant).getByText("Why Tahoe chose this")).toBeInTheDocument();
-    expect(within(assistant).getByText("Go is a hard skill")).toBeInTheDocument();
-
-    await user.click(within(assistant).getByRole("button", { name: "Mapped filters" }));
-    expect(within(assistant).getByText("inferred_skills")).toBeInTheDocument();
-
-    await user.click(within(assistant).getByRole("button", { name: "Assumptions" }));
-    expect(within(assistant).getByText("Remote is not a hard location")).toBeInTheDocument();
-
-    await user.click(within(assistant).getByRole("button", { name: "Not used" }));
-    expect(within(assistant).getByText("Collaborative culture was not used")).toBeInTheDocument();
-});
-
-test("assistant drawer Use defaults applies the default question option", async () => {
-    const user = userEvent.setup();
-    render(<LangGraphSearchPage />);
-
-    await user.click(await screen.findByRole("tab", { name: "Job description" }));
-    await user.type(screen.getByLabelText("Job description"), "Senior Backend Engineer for Go services.");
-    await user.click(screen.getAllByRole("button", { name: "Generate search plan" })[0]);
-
-    const assistant = await screen.findByLabelText("AI Search Assistant");
-    await user.click(within(assistant).getByRole("button", { name: "Use defaults" }));
-
-    await waitFor(() => {
-        expect(mockedAnswerSearchIntake).toHaveBeenCalledWith("intake-session-1", {
-            question_id: "location_scope",
-            answer: intakeQuestion.options[0],
-        });
-    });
-});
-
-test("assistant drawer Skip records a skipped question", async () => {
-    const user = userEvent.setup();
-    render(<LangGraphSearchPage />);
-
-    await user.click(await screen.findByRole("tab", { name: "Job description" }));
-    await user.type(screen.getByLabelText("Job description"), "Senior Backend Engineer for Go services.");
-    await user.click(screen.getAllByRole("button", { name: "Generate search plan" })[0]);
-
-    const assistant = await screen.findByLabelText("AI Search Assistant");
-    await user.click(within(assistant).getByRole("button", { name: "Skip" }));
-
-    await waitFor(() => {
-        expect(mockedAnswerSearchIntake).toHaveBeenCalledWith("intake-session-1", {
-            question_id: "location_scope",
-            answer: { label: "Skip", skip: true },
-        });
-    });
-});
-
-test("assistant Open filters action opens the existing filter modal", async () => {
-    const user = userEvent.setup();
-    render(<LangGraphSearchPage />);
-
-    await user.click(await screen.findByRole("tab", { name: "Job description" }));
-    await user.type(screen.getByLabelText("Job description"), "Senior Backend Engineer for Go services.");
-    await user.click(screen.getAllByRole("button", { name: "Generate search plan" })[0]);
-
-    const assistant = await screen.findByLabelText("AI Search Assistant");
-    await user.click(within(assistant).getByRole("button", { name: "Open filters" }));
-
-    expect(await screen.findByLabelText("Search filters")).toBeInTheDocument();
-});
-
-test("mobile JD mode opens the assistant as a bottom sheet", async () => {
-    setViewportMode("mobile");
-    const user = userEvent.setup();
-    render(<LangGraphSearchPage />);
-
-    await user.click(await screen.findByRole("tab", { name: "Job description" }));
-
-    expect(await screen.findByRole("dialog", { name: "AI Search Assistant" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Close AI assistant" })).toBeInTheDocument();
-});
-
-test("candidate panel replaces the assistant after JD results", async () => {
-    const user = userEvent.setup();
-    render(<LangGraphSearchPage />);
-
-    await user.click(await screen.findByRole("tab", { name: "Job description" }));
-    await user.type(screen.getByLabelText("Job description"), "Senior Backend Engineer for Go services.");
-    await user.click(screen.getAllByRole("button", { name: "Generate search plan" })[0]);
-    await user.click(await screen.findByRole("button", { name: "Bay Area" }));
-    await user.click(screen.getAllByRole("button", { name: "Find candidates" })[0]);
-
-    expect(await screen.findByText("Casey Cho")).toBeInTheDocument();
-    expect(screen.queryByLabelText("AI Search Assistant")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Open" })).toBeInTheDocument();
-
-    const candidateRow = screen.getByRole("checkbox", { name: "Select Casey Cho" }).closest("tr");
-    expect(candidateRow).not.toBeNull();
-    await user.click(candidateRow as HTMLTableRowElement);
-
-    expect(await screen.findByLabelText("Candidate panel")).toBeInTheDocument();
-    expect(screen.queryByLabelText("AI Search Assistant")).not.toBeInTheDocument();
-    expect(screen.getByText("Why this matched")).toBeInTheDocument();
-    expect(screen.getByText("Current title matched")).toBeInTheDocument();
-    expect(screen.getByText("Location matched")).toBeInTheDocument();
-    expect(screen.getAllByText("Not enough preview data for this criterion").length).toBeGreaterThan(0);
-    expect(mockedApiRequest.mock.calls.some(([path]) => String(path).toLowerCase().includes("collect"))).toBe(false);
 });
 
 test("candidate side panel can save the active result to a list", async () => {
@@ -1005,7 +773,10 @@ test("hydrates an intake session with JD context and reasoning", async () => {
 
     render(<LangGraphSearchPage />);
 
-    expect(await screen.findByRole("tab", { name: "Job description" })).toHaveAttribute("aria-selected", "true");
+    await screen.findByLabelText("Job description");
+    expect(screen.queryByRole("tab", { name: "Prompt" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Job description" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Prompt + JD" })).not.toBeInTheDocument();
     expect(screen.getByLabelText("Job description")).toHaveValue("Senior Backend Engineer JD");
     expect(screen.getByLabelText("Role title")).toHaveValue("Senior Backend Engineer");
     expect(screen.getByText("What geography should this search target?")).toBeInTheDocument();
