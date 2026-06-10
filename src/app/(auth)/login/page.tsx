@@ -20,6 +20,12 @@ export default function LoginPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+
+        if (!email.trim() || !password) {
+            setError('Please enter your email and password.');
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -47,7 +53,14 @@ export default function LoginPage() {
                 {error && (
                     <div className="tahoe-banner tahoe-banner-error" role="alert">
                         <ExclamationTriangleIcon />
-                        <span>{error}</span>
+                        <span>
+                            {error}
+                            {error.toLowerCase().includes('verify your email') && (
+                                <span className={styles.bannerLinks}>
+                                    <Link href={`/resend-verification?email=${encodeURIComponent(email.trim().toLowerCase())}`} className={styles.authLink}>Resend verification email</Link>
+                                </span>
+                            )}
+                        </span>
                     </div>
                 )}
 
@@ -57,7 +70,7 @@ export default function LoginPage() {
                     onSuccess={() => router.push('/dashboard')}
                 />
 
-                <form onSubmit={handleSubmit} className={styles.form}>
+                <form onSubmit={handleSubmit} className={styles.form} noValidate>
                     <div className={styles.field}>
                         <label htmlFor="login-email" className="tahoe-label">Email</label>
                         <div className={styles.inputShell}>

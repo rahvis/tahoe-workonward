@@ -95,6 +95,26 @@ export function CheckCircledIcon(props: IconProps) {
     );
 }
 
+export function EyeOpenIcon(props: IconProps) {
+    return (
+        <SvgIcon viewBox="0 0 20 20" {...props}>
+            <path d="M2.5 10S5 4.75 10 4.75 17.5 10 17.5 10 15 15.25 10 15.25 2.5 10 2.5 10z" />
+            <circle cx="10" cy="10" r="2.25" />
+        </SvgIcon>
+    );
+}
+
+export function EyeClosedIcon(props: IconProps) {
+    return (
+        <SvgIcon viewBox="0 0 20 20" {...props}>
+            <path d="M4 4l12 12" />
+            <path d="M8.4 8.4a2.25 2.25 0 0 0 3.2 3.2" />
+            <path d="M6.1 6.3C3.9 7.6 2.5 10 2.5 10s2.5 5.25 7.5 5.25c1.15 0 2.16-.28 3.04-.7" />
+            <path d="M9.4 4.8C9.6 4.77 9.8 4.75 10 4.75c5 0 7.5 5.25 7.5 5.25s-.62 1.3-1.82 2.6" />
+        </SvgIcon>
+    );
+}
+
 export function PersonIcon(props: IconProps) {
     return (
         <SvgIcon viewBox="0 0 20 20" {...props}>

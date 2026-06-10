@@ -114,6 +114,67 @@
     color: var(--tahoe-color-danger);
 }
 
+.passwordToggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 4px;
+    margin: -4px -8px -4px 0;
+    border: 0;
+    background: transparent;
+    color: var(--tahoe-color-text-tertiary);
+    cursor: pointer;
+}
+
+.passwordToggle:hover {
+    color: var(--tahoe-color-text-secondary);
+}
+
+.checklist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.checklistItem,
+.checklistItemMet {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checklistItem {
+    color: var(--tahoe-color-text-tertiary);
+}
+
+.checklistItemMet {
+    color: var(--tahoe-color-text-primary);
+}
+
+.checklistMark {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.checklistDot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    display: inline-block;
+}
+
+.checklistNote {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: var(--tahoe-color-text-tertiary);
+}
+
 .footerLinks {
     display: grid;
     gap: 10px;

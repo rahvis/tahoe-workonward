@@ -3,8 +3,10 @@ import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { apiRequest } from '@/lib/api';
-import { LockClosedIcon, ExclamationTriangleIcon, CheckCircledIcon } from '@/components/ui/icons';
+import { ExclamationTriangleIcon, CheckCircledIcon } from '@/components/ui/icons';
 import AuthShell from '@/components/auth/AuthShell';
+import PasswordInput from '@/components/auth/PasswordInput';
+import PasswordChecklist from '@/components/auth/PasswordChecklist';
 import styles from '../auth.module.css';
 
 function ResetPasswordForm() {
@@ -88,35 +90,27 @@ function ResetPasswordForm() {
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <div className={styles.field}>
                         <label htmlFor="reset-password" className="tahoe-label">New Password</label>
-                        <div className={styles.inputShell}>
-                            <span className={styles.inputIcon}><LockClosedIcon /></span>
-                            <input
-                                id="reset-password"
-                                className={styles.input}
-                                placeholder="At least 12 characters"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
-                        </div>
+                        <PasswordInput
+                            id="reset-password"
+                            value={password}
+                            onChange={setPassword}
+                            placeholder="At least 12 characters"
+                            autoComplete="new-password"
+                        />
                     </div>
 
                     <div className={styles.field}>
                         <label htmlFor="reset-confirm-password" className="tahoe-label">Confirm Password</label>
-                        <div className={styles.inputShell}>
-                            <span className={styles.inputIcon}><LockClosedIcon /></span>
-                            <input
-                                id="reset-confirm-password"
-                                className={styles.input}
-                                placeholder="Re-enter your password"
-                                type="password"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                required
-                            />
-                        </div>
+                        <PasswordInput
+                            id="reset-confirm-password"
+                            value={confirmPassword}
+                            onChange={setConfirmPassword}
+                            placeholder="Re-enter your password"
+                            autoComplete="new-password"
+                        />
                     </div>
+
+                    <PasswordChecklist password={password} confirmPassword={confirmPassword} showMatch minLength={12} />
 
                     <button className="tahoe-button" type="submit" disabled={loading}>
                         {loading ? 'Resetting password...' : 'Reset Password'}

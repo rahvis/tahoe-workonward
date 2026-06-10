@@ -3,10 +3,12 @@ import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiRequest } from '@/lib/api';
-import { PersonIcon, EnvelopeClosedIcon, LockClosedIcon, ExclamationTriangleIcon, CheckCircledIcon } from '@/components/ui/icons';
+import { PersonIcon, EnvelopeClosedIcon, ExclamationTriangleIcon, CheckCircledIcon } from '@/components/ui/icons';
 import AltchaField, { type AltchaFieldHandle } from '@/components/auth/AltchaField';
 import GoogleAuthSection from '@/components/auth/GoogleAuthSection';
 import AuthShell from '@/components/auth/AuthShell';
+import PasswordInput from '@/components/auth/PasswordInput';
+import PasswordChecklist from '@/components/auth/PasswordChecklist';
 import styles from '../auth.module.css';
 
 export default function SignupPage() {
@@ -19,12 +21,19 @@ export default function SignupPage() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [needsVerification, setNeedsVerification] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setSuccess('');
+        setNeedsVerification(false);
+
+        if (!firstName.trim() || !lastName.trim() || !email.trim() || !password || !confirmPassword) {
+            setError('Please fill in all fields.');
+            return;
+        }
 
         if (password !== confirmPassword) {
             setError('Passwords do not match');
@@ -57,6 +66,7 @@ export default function SignupPage() {
                     altcha,
                 },
             });
+            setNeedsVerification(!response.is_verified);
             setSuccess(
                 response.is_verified
                     ? 'Account created successfully! You can now sign in.'
@@ -111,6 +121,12 @@ export default function SignupPage() {
                         <span>
                             {success}
                             <span className={styles.bannerLinks}>
+                                {needsVerification && (
+                                    <>
+                                        <Link href={`/resend-verification?email=${encodeURIComponent(email.trim().toLowerCase())}`} className={styles.authLink}>Resend email</Link>
+                                        {' · '}
+                                    </>
+                                )}
                                 <Link href="/login" className={styles.authLink}>Go to sign in</Link>
                             </span>
                         </span>
@@ -123,7 +139,7 @@ export default function SignupPage() {
                     onSuccess={() => router.push('/dashboard')}
                 />
 
-                <form onSubmit={handleSubmit} className={styles.form}>
+                <form onSubmit={handleSubmit} className={styles.form} noValidate>
                     <div className={styles.fieldGridTwo}>
                         <div className={styles.field}>
                             <label htmlFor="signup-first-name" className="tahoe-label">First Name</label>
@@ -174,35 +190,27 @@ export default function SignupPage() {
 
                     <div className={styles.field}>
                         <label htmlFor="signup-password" className="tahoe-label">Password</label>
-                        <div className={styles.inputShell}>
-                            <span className={styles.inputIcon}><LockClosedIcon /></span>
-                            <input
-                                id="signup-password"
-                                className={styles.input}
-                                placeholder="At least 12 characters"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
-                        </div>
+                        <PasswordInput
+                            id="signup-password"
+                            value={password}
+                            onChange={setPassword}
+                            placeholder="At least 12 characters"
+                            autoComplete="new-password"
+                        />
                     </div>
 
                     <div className={styles.field}>
                         <label htmlFor="signup-confirm-password" className="tahoe-label">Confirm Password</label>
-                        <div className={styles.inputShell}>
-                            <span className={styles.inputIcon}><LockClosedIcon /></span>
-                            <input
-                                id="signup-confirm-password"
-                                className={styles.input}
-                                placeholder="Re-enter your password"
-                                type="password"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                required
-                            />
-                        </div>
+                        <PasswordInput
+                            id="signup-confirm-password"
+                            value={confirmPassword}
+                            onChange={setConfirmPassword}
+                            placeholder="Re-enter your password"
+                            autoComplete="new-password"
+                        />
                     </div>
+
+                    <PasswordChecklist password={password} confirmPassword={confirmPassword} showMatch minLength={12} />
 
                     <AltchaField ref={altchaRef} flow="signup" />
 

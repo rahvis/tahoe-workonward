@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { apiRequest } from '@/lib/api';
@@ -8,9 +8,7 @@ import AltchaField, { type AltchaFieldHandle } from '@/components/auth/AltchaFie
 import AuthShell from '@/components/auth/AuthShell';
 import styles from '../auth.module.css';
 
-import { Suspense } from 'react';
-
-function ForgotPasswordContent() {
+function ResendVerificationContent() {
     const searchParams = useSearchParams();
     const altchaRef = useRef<AltchaFieldHandle>(null);
     const prefillEmail = searchParams.get('email') || '';
@@ -42,14 +40,16 @@ function ForgotPasswordContent() {
             if (!altcha) {
                 throw new Error('Human verification is required');
             }
-            await apiRequest('/auth/forgot-password', {
+            await apiRequest('/auth/resend-verification', {
                 method: 'POST',
-                body: { email, altcha },
+                body: { email: email.trim().toLowerCase(), altcha },
             });
-            setSuccess('Password reset link sent! Check your email.');
+            setSuccess(
+                'If your account needs verification, a new link is on its way. Check your email.',
+            );
             altchaRef.current?.reset();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to send reset link');
+            setError(err instanceof Error ? err.message : 'Failed to send verification email');
             altchaRef.current?.reset();
         } finally {
             setLoading(false);
@@ -58,8 +58,9 @@ function ForgotPasswordContent() {
 
     return (
         <AuthShell
-            title="Forgot password?"
-            subtitle="Enter your email and Tahoe will send a reset link."
+            title="Resend verification"
+            subtitle="Enter your email and Tahoe will send a fresh verification link."
+            panelNote="Use this if the original verification email expired or never arrived."
         >
             <div className={styles.stack}>
                 {error && (
@@ -78,11 +79,11 @@ function ForgotPasswordContent() {
 
                 <form onSubmit={handleSubmit} className={styles.form} noValidate>
                     <div className={styles.field}>
-                        <label htmlFor="forgot-password-email" className="tahoe-label">Email</label>
+                        <label htmlFor="resend-email" className="tahoe-label">Email</label>
                         <div className={styles.inputShell}>
                             <span className={styles.inputIcon}><EnvelopeClosedIcon /></span>
                             <input
-                                id="forgot-password-email"
+                                id="resend-email"
                                 className={styles.input}
                                 placeholder="you@example.com"
                                 type="email"
@@ -93,16 +94,16 @@ function ForgotPasswordContent() {
                         </div>
                     </div>
 
-                    <AltchaField ref={altchaRef} flow="forgot-password" />
+                    <AltchaField ref={altchaRef} flow="resend-verification" />
 
                     <button className="tahoe-button" type="submit" disabled={loading}>
-                        {loading ? 'Sending reset link...' : 'Send Reset Link'}
+                        {loading ? 'Sending...' : 'Resend verification email'}
                     </button>
                 </form>
 
                 <div className={styles.footerLinks}>
                     <div>
-                        Remember your password? <Link href="/login" className={styles.authLink}>Sign in</Link>
+                        Already verified? <Link href="/login" className={styles.authLink}>Sign in</Link>
                     </div>
                 </div>
             </div>
@@ -110,10 +111,10 @@ function ForgotPasswordContent() {
     );
 }
 
-export default function ForgotPasswordPage() {
+export default function ResendVerificationPage() {
     return (
         <Suspense fallback={<div className={styles.loadingState}><span className="tahoe-spinner" /><span>Loading...</span></div>}>
-            <ForgotPasswordContent />
+            <ResendVerificationContent />
         </Suspense>
     );
 }
