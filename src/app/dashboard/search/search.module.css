@@ -1,17 +1,10 @@
-/* Route shell: owns the single-screen height budget and stacks an optional
- * banner above the search page so the page fills the *remaining* space rather
- * than starting a second full screen below the banner. */
+/* Route shell: owns the single-screen height budget for the search page. */
 .searchRouteShell {
     display: flex;
     flex-direction: column;
     height: calc(100vh - 70px);
     min-height: 0;
     overflow: hidden;
-}
-
-.creditCallout {
-    flex: 0 0 auto;
-    margin-bottom: 12px;
 }
 
 .pageWrapper {

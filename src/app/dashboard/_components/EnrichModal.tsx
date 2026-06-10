@@ -57,7 +57,6 @@ export default function EnrichModal({
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
-    const [lowCreditState, setLowCreditState] = useState<'healthy' | 'low' | 'critical' | 'empty'>('healthy');
 
     useEffect(() => {
         if (!open) {
@@ -78,12 +77,10 @@ export default function EnrichModal({
                 const response = await fetchBillingSummary();
                 if (!cancelled) {
                     setBalance(response.available_credits);
-                    setLowCreditState(response.low_credit_state);
                 }
             } catch {
                 if (!cancelled) {
                     setBalance(0);
-                    setLowCreditState('healthy');
                 }
             }
         }
@@ -253,10 +250,6 @@ export default function EnrichModal({
                     {isInsufficient ? (
                         <div className="tahoe-banner tahoe-banner-error">
                             Balance is lower than the requested estimate. Top up the workspace before starting this run.
-                        </div>
-                    ) : lowCreditState === 'low' || lowCreditState === 'critical' || lowCreditState === 'empty' ? (
-                        <div className="tahoe-banner">
-                            Credit runway is getting tight. Tahoe spends expiring subscription credits first and charges enrichment only when data is found.
                         </div>
                     ) : null}
 

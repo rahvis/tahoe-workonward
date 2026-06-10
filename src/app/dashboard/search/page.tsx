@@ -9,7 +9,7 @@ import {
     type SearchPageBootstrapPayload,
 } from "@/lib/search-page-bootstrap";
 import SaveToListDialog from "../_components/SaveToListDialog";
-import { fetchBillingSummary, previewCandidateToImportPayload, type BillingSummary } from "@/lib/organization";
+import { previewCandidateToImportPayload } from "@/lib/organization";
 import { clearAnalyticsCache } from "../analytics/_components/analytics-cache";
 import {
     Badge,
@@ -1025,7 +1025,6 @@ function SearchPageInner() {
         () => (typeof window === "undefined" ? null : readSearchPageBootstrap()),
         [],
     );
-    const [billingSummary, setBillingSummary] = useState<BillingSummary | null>(null);
 
     useEffect(() => {
         if (bootstrap) {
@@ -1033,45 +1032,11 @@ function SearchPageInner() {
         }
     }, [bootstrap]);
 
-    useEffect(() => {
-        let cancelled = false;
-        async function loadBilling() {
-            try {
-                const summary = await fetchBillingSummary();
-                if (!cancelled) {
-                    setBillingSummary(summary);
-                }
-            } catch {
-                if (!cancelled) {
-                    setBillingSummary(null);
-                }
-            }
-        }
-        void loadBilling();
-        window.addEventListener('tahoe:credits-updated', loadBilling);
-        return () => {
-            cancelled = true;
-            window.removeEventListener('tahoe:credits-updated', loadBilling);
-        };
-    }, []);
-
     const forcedMode = searchParams.get("mode");
     const resolvedMode = forcedMode ?? bootstrap?.mode ?? (SEARCH_LANGGRAPH_ENABLED ? "langgraph" : "legacy");
 
     return (
         <div className={styles.searchRouteShell}>
-            {billingSummary && ['low', 'critical', 'empty'].includes(billingSummary.low_credit_state) ? (
-                <Box className={styles.creditCallout}>
-                    <Callout.Root color={billingSummary.low_credit_state === 'low' ? 'orange' : 'red'}>
-                        <Callout.Icon>
-                            <ExclamationTriangleIcon />
-                        </Callout.Icon>
-                        <Callout.Text>
-                            Credit runway is getting tight. Tahoe only charges search when it makes a new provider-backed preview fetch, and top-up credits never expire.
-                        </Callout.Text>
-                    </Callout.Root>
-                </Box>
-            ) : null}
             {resolvedMode === "langgraph"
                 ? <LangGraphSearchPage bootstrap={bootstrap?.mode === "langgraph" ? bootstrap : null} />
                 : <LegacySearchPage bootstrap={bootstrap?.mode === "legacy" ? bootstrap : null} />}
