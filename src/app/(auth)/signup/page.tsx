@@ -71,7 +71,7 @@ export default function SignupPage() {
         } catch (err) {
             if (err instanceof Error) {
                 if (err.message.includes('Email already registered')) {
-                    setError('Email already registered. Use Forgot password to regain access.');
+                    setError('Email already registered. Please sign in.');
                 } else if (err.message.includes('Database unavailable')) {
                     setError('Backend is unavailable right now. Please try again shortly.');
                 } else if (err.message.includes('verify your email')) {
@@ -93,16 +93,7 @@ export default function SignupPage() {
                 {error && (
                     <div className="tahoe-banner tahoe-banner-error" role="alert">
                         <ExclamationTriangleIcon />
-                        <span>
-                            {error}
-                            {error.includes('Forgot password') && (
-                                <span className={styles.bannerLinks}>
-                                    <Link href={`/forgot-password?email=${encodeURIComponent(email.trim().toLowerCase())}`} className={styles.authLink}>
-                                        Forgot password
-                                    </Link>
-                                </span>
-                            )}
-                        </span>
+                        <span>{error}</span>
                     </div>
                 )}
 

@@ -2,8 +2,6 @@ export const PUBLIC_COOKIE_CONSENT_PATHS = new Set([
   "/",
   "/login",
   "/signup",
-  "/forgot-password",
-  "/reset-password",
   "/verify-email",
   "/privacy",
   "/terms",
@@ -94,7 +92,7 @@ export function buildCookieConsentConfig() {
               {
                 title: "What Tahoe currently uses",
                 description:
-                  "<ul><li>Authentication token storage for signed-in product access</li><li>Session-based recruiter workflow state, such as saved-search restart context</li><li>Google identity and sign-in support where you choose to use it</li><li>Anti-abuse and security tooling for login, signup, and recovery flows</li><li>Optional Google Analytics measurement on the public landing page if you enable analytics</li></ul>",
+                  "<ul><li>Authentication token storage for signed-in product access</li><li>Session-based recruiter workflow state, such as saved-search restart context</li><li>Google identity and sign-in support where you choose to use it</li><li>Anti-abuse and security tooling for login, signup, and verification flows</li><li>Optional Google Analytics measurement on the public landing page if you enable analytics</li></ul>",
               },
               {
                 title: "Browser controls and more information",

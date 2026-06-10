@@ -10,7 +10,7 @@ export interface AltchaFieldHandle {
 }
 
 interface AltchaFieldProps {
-    flow: 'signup' | 'login' | 'forgot-password' | 'resend-verification' | 'partner-application';
+    flow: 'signup' | 'login' | 'resend-verification' | 'partner-application';
 }
 
 interface AltchaStateDetail {

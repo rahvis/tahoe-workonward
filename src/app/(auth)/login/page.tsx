@@ -103,9 +103,6 @@ export default function LoginPage() {
 
                 <div className={styles.footerLinks}>
                     <div>
-                        <Link href="/forgot-password" className={styles.authLink}>Forgot password?</Link>
-                    </div>
-                    <div>
                         Don&apos;t have an account? <Link href="/signup" className={styles.authLink}>Sign up</Link>
                     </div>
                 </div>

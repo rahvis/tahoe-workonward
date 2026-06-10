@@ -18,6 +18,7 @@ import {
     GearIcon,
 } from '@/components/ui/icons';
 import BrandMark from '@/components/branding/BrandMark';
+import ProviderCreditsPanel from '@/app/dashboard/_components/ProviderCreditsPanel';
 import styles from './dashboard.module.css';
 
 type PrimarySection = 'search' | 'projects' | 'mailboxes' | 'outreach' | 'billing' | 'analytics' | 'settings';
@@ -234,6 +235,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </nav>
 
                     <div className={styles.sidebarFooter}>
+                        <ProviderCreditsPanel collapsed={collapsed} />
                         <button className={`${styles.navButton} ${styles.logoutButton}`} type="button" onClick={handleLogout}>
                             <span className={styles.navIcon}><ExitIcon width="18" height="18" /></span>
                             {!collapsed ? <span className={styles.navLabel}>Log out</span> : null}

@@ -173,6 +173,30 @@ export interface CreditBalanceResponse {
     currency: 'credits';
 }
 
+export interface ProviderCreditBucket {
+    allocated: number;
+    used: number;
+    remaining: number;
+}
+
+export interface ProviderAccountBalances {
+    coresignal_search_remaining: number | null;
+    coresignal_collect_remaining: number | null;
+    fullenrich_balance: number | null;
+}
+
+export interface ProviderCreditsResponse {
+    workspace_id: string;
+    enabled: boolean;
+    buckets: Record<string, ProviderCreditBucket>;
+    account: ProviderAccountBalances;
+    allocated_at: string | null;
+}
+
+export async function fetchProviderCredits(options?: { signal?: AbortSignal }) {
+    return apiRequest<ProviderCreditsResponse>('/credits/providers', options);
+}
+
 export interface BillingLimits {
     mailboxes: number;
     active_campaigns: number;
