@@ -30,7 +30,16 @@ export async function apiRequest<T>(
         config.body = JSON.stringify(body);
     }
 
-    const response = await fetch(getApiUrl(endpoint), config);
+    let response: Response;
+    try {
+        response = await fetch(getApiUrl(endpoint), config);
+    } catch {
+        // fetch() rejects with a TypeError ("Load failed" / "Failed to fetch")
+        // when the request never reaches the server — offline, DNS/CORS, or the
+        // API briefly unavailable (e.g. mid-deploy). Surface an actionable message
+        // instead of the browser's cryptic default.
+        throw new Error("Couldn't reach the server. Please check your connection and try again.");
+    }
 
     if (!response.ok) {
         let error;
