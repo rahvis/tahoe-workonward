@@ -31,8 +31,8 @@ export default function SignupPage() {
             return;
         }
 
-        if (password.length < 8) {
-            setError('Password must be at least 8 characters');
+        if (password.length < 12) {
+            setError('Password must be at least 12 characters');
             return;
         }
 
@@ -179,7 +179,7 @@ export default function SignupPage() {
                             <input
                                 id="signup-password"
                                 className={styles.input}
-                                placeholder="At least 8 characters"
+                                placeholder="At least 12 characters"
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}

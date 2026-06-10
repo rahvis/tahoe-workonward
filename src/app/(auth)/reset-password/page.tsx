@@ -26,8 +26,8 @@ function ResetPasswordForm() {
             return;
         }
 
-        if (password.length < 8) {
-            setError('Password must be at least 8 characters');
+        if (password.length < 12) {
+            setError('Password must be at least 12 characters');
             return;
         }
 
@@ -93,7 +93,7 @@ function ResetPasswordForm() {
                             <input
                                 id="reset-password"
                                 className={styles.input}
-                                placeholder="At least 8 characters"
+                                placeholder="At least 12 characters"
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}

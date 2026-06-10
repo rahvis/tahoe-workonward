@@ -52,7 +52,7 @@ test('submits signup with ALTCHA payload and shows verification message', async 
     await user.type(screen.getByPlaceholderText('John'), 'Tina');
     await user.type(screen.getByPlaceholderText('Doe'), 'Ng');
     await user.type(screen.getByPlaceholderText('you@example.com'), 'tina@example.com');
-    await user.type(screen.getByPlaceholderText('At least 8 characters'), 'super-secret');
+    await user.type(screen.getByPlaceholderText('At least 12 characters'), 'super-secret');
     await user.type(screen.getByPlaceholderText('Re-enter your password'), 'super-secret');
     await user.click(screen.getByRole('button', { name: 'Create Account' }));
 
