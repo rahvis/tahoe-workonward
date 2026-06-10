@@ -1059,9 +1059,9 @@ function SearchPageInner() {
     const resolvedMode = forcedMode ?? bootstrap?.mode ?? (SEARCH_LANGGRAPH_ENABLED ? "langgraph" : "legacy");
 
     return (
-        <>
+        <div className={styles.searchRouteShell}>
             {billingSummary && ['low', 'critical', 'empty'].includes(billingSummary.low_credit_state) ? (
-                <Box className={styles.pageWrapper} mb="4">
+                <Box className={styles.creditCallout}>
                     <Callout.Root color={billingSummary.low_credit_state === 'low' ? 'orange' : 'red'}>
                         <Callout.Icon>
                             <ExclamationTriangleIcon />
@@ -1075,13 +1075,13 @@ function SearchPageInner() {
             {resolvedMode === "langgraph"
                 ? <LangGraphSearchPage bootstrap={bootstrap?.mode === "langgraph" ? bootstrap : null} />
                 : <LegacySearchPage bootstrap={bootstrap?.mode === "legacy" ? bootstrap : null} />}
-        </>
+        </div>
     );
 }
 
 export default function SearchPage() {
     return (
-        <Suspense fallback={<Box className={styles.pageWrapper}><span className="tahoe-spinner" /></Box>}>
+        <Suspense fallback={<Box className={styles.searchRouteShell}><span className="tahoe-spinner" /></Box>}>
             <SearchPageInner />
         </Suspense>
     );

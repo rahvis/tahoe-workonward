@@ -1,7 +1,23 @@
-.pageWrapper {
+/* Route shell: owns the single-screen height budget and stacks an optional
+ * banner above the search page so the page fills the *remaining* space rather
+ * than starting a second full screen below the banner. */
+.searchRouteShell {
     display: flex;
     flex-direction: column;
     height: calc(100vh - 70px);
+    min-height: 0;
+    overflow: hidden;
+}
+
+.creditCallout {
+    flex: 0 0 auto;
+    margin-bottom: 12px;
+}
+
+.pageWrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
     min-height: 0;
     overflow: hidden;
     font-family: var(--tahoe-font-body);
