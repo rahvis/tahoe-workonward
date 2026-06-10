@@ -1,10 +1,9 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { apiRequest } from '@/lib/api';
 import { EnvelopeClosedIcon, ExclamationTriangleIcon, CheckCircledIcon } from '@/components/ui/icons';
-import AltchaField, { type AltchaFieldHandle } from '@/components/auth/AltchaField';
 import AuthShell from '@/components/auth/AuthShell';
 import styles from '../auth.module.css';
 
@@ -12,7 +11,6 @@ import { Suspense } from 'react';
 
 function ForgotPasswordContent() {
     const searchParams = useSearchParams();
-    const altchaRef = useRef<AltchaFieldHandle>(null);
     const prefillEmail = searchParams.get('email') || '';
     const [email, setEmail] = useState(prefillEmail);
     const [error, setError] = useState('');
@@ -38,19 +36,13 @@ function ForgotPasswordContent() {
         setLoading(true);
 
         try {
-            const altcha = await altchaRef.current?.ensureVerified();
-            if (!altcha) {
-                throw new Error('Human verification is required');
-            }
             await apiRequest('/auth/forgot-password', {
                 method: 'POST',
-                body: { email, altcha },
+                body: { email },
             });
             setSuccess('Password reset link sent! Check your email.');
-            altchaRef.current?.reset();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to send reset link');
-            altchaRef.current?.reset();
         } finally {
             setLoading(false);
         }
@@ -92,8 +84,6 @@ function ForgotPasswordContent() {
                             />
                         </div>
                     </div>
-
-                    <AltchaField ref={altchaRef} flow="forgot-password" />
 
                     <button className="tahoe-button" type="submit" disabled={loading}>
                         {loading ? 'Sending reset link...' : 'Send Reset Link'}

@@ -1,10 +1,9 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiRequest } from '@/lib/api';
 import { PersonIcon, EnvelopeClosedIcon, ExclamationTriangleIcon, CheckCircledIcon } from '@/components/ui/icons';
-import AltchaField, { type AltchaFieldHandle } from '@/components/auth/AltchaField';
 import GoogleAuthSection from '@/components/auth/GoogleAuthSection';
 import AuthShell from '@/components/auth/AuthShell';
 import PasswordInput from '@/components/auth/PasswordInput';
@@ -13,7 +12,6 @@ import styles from '../auth.module.css';
 
 export default function SignupPage() {
     const router = useRouter();
-    const altchaRef = useRef<AltchaFieldHandle>(null);
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
@@ -51,10 +49,6 @@ export default function SignupPage() {
 
         setLoading(true);
         try {
-            const altcha = await altchaRef.current?.ensureVerified();
-            if (!altcha) {
-                throw new Error('Human verification is required');
-            }
             const response = await apiRequest<{ is_verified: boolean }>('/auth/signup', {
                 method: 'POST',
                 body: {
@@ -63,7 +57,6 @@ export default function SignupPage() {
                     email: normalizedEmail,
                     password,
                     confirm_password: confirmPassword,
-                    altcha,
                 },
             });
             setNeedsVerification(!response.is_verified);
@@ -75,7 +68,6 @@ export default function SignupPage() {
             setError('');
             setPassword('');
             setConfirmPassword('');
-            altchaRef.current?.reset();
         } catch (err) {
             if (err instanceof Error) {
                 if (err.message.includes('Email already registered')) {
@@ -90,7 +82,6 @@ export default function SignupPage() {
             } else {
                 setError('Registration failed.');
             }
-            altchaRef.current?.reset();
         } finally {
             setLoading(false);
         }
@@ -211,8 +202,6 @@ export default function SignupPage() {
                     </div>
 
                     <PasswordChecklist password={password} confirmPassword={confirmPassword} showMatch minLength={12} />
-
-                    <AltchaField ref={altchaRef} flow="signup" />
 
                     <button className="tahoe-button" type="submit" disabled={loading}>
                         {loading ? 'Creating account...' : 'Create Account'}

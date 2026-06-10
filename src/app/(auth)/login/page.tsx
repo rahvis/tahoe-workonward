@@ -1,17 +1,15 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiRequest, setToken } from '@/lib/api';
 import { EnvelopeClosedIcon, LockClosedIcon, ExclamationTriangleIcon } from '@/components/ui/icons';
-import AltchaField, { type AltchaFieldHandle } from '@/components/auth/AltchaField';
 import GoogleAuthSection from '@/components/auth/GoogleAuthSection';
 import AuthShell from '@/components/auth/AuthShell';
 import styles from '../auth.module.css';
 
 export default function LoginPage() {
     const router = useRouter();
-    const altchaRef = useRef<AltchaFieldHandle>(null);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -29,19 +27,14 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const altcha = await altchaRef.current?.ensureVerified();
-            if (!altcha) {
-                throw new Error('Human verification is required');
-            }
             const data = await apiRequest<{ access_token: string }>('/auth/login', {
                 method: 'POST',
-                body: { email, password, altcha },
+                body: { email, password },
             });
             setToken(data.access_token);
             router.push('/dashboard');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Login failed');
-            altchaRef.current?.reset();
         } finally {
             setLoading(false);
         }
@@ -102,8 +95,6 @@ export default function LoginPage() {
                             />
                         </div>
                     </div>
-
-                    <AltchaField ref={altchaRef} flow="login" />
 
                     <button className="tahoe-button" type="submit" disabled={loading}>
                         {loading ? 'Signing in...' : 'Sign In'}

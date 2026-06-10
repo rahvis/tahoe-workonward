@@ -1,16 +1,14 @@
 'use client';
-import { useEffect, useRef, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { apiRequest } from '@/lib/api';
 import { EnvelopeClosedIcon, ExclamationTriangleIcon, CheckCircledIcon } from '@/components/ui/icons';
-import AltchaField, { type AltchaFieldHandle } from '@/components/auth/AltchaField';
 import AuthShell from '@/components/auth/AuthShell';
 import styles from '../auth.module.css';
 
 function ResendVerificationContent() {
     const searchParams = useSearchParams();
-    const altchaRef = useRef<AltchaFieldHandle>(null);
     const prefillEmail = searchParams.get('email') || '';
     const [email, setEmail] = useState(prefillEmail);
     const [error, setError] = useState('');
@@ -36,21 +34,15 @@ function ResendVerificationContent() {
         setLoading(true);
 
         try {
-            const altcha = await altchaRef.current?.ensureVerified();
-            if (!altcha) {
-                throw new Error('Human verification is required');
-            }
             await apiRequest('/auth/resend-verification', {
                 method: 'POST',
-                body: { email: email.trim().toLowerCase(), altcha },
+                body: { email: email.trim().toLowerCase() },
             });
             setSuccess(
                 'If your account needs verification, a new link is on its way. Check your email.',
             );
-            altchaRef.current?.reset();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to send verification email');
-            altchaRef.current?.reset();
         } finally {
             setLoading(false);
         }
@@ -93,8 +85,6 @@ function ResendVerificationContent() {
                             />
                         </div>
                     </div>
-
-                    <AltchaField ref={altchaRef} flow="resend-verification" />
 
                     <button className="tahoe-button" type="submit" disabled={loading}>
                         {loading ? 'Sending...' : 'Resend verification email'}
