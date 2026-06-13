@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
     answerSearchIntake,
     apiRequest,
+    ApiError,
     getSearchSession,
     startSearchIntake,
     type AIReasoningItem,
@@ -1637,6 +1638,58 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
     }
 
     /**
+     * Run /search/execute, silently recovering from an expired/missing session.
+     *
+     * A 404 means the search session was not found or has expired (for example
+     * it was created on a different backend instance and TTL'd out before the
+     * recruiter clicked Find candidates). Rather than dead-end the recruiter, we
+     * re-anchor a fresh session via /search/parse and retry once, preserving the
+     * recruiter's confirmed filters. Any other error is rethrown unchanged.
+     */
+    async function executeSearchWithRecovery(params: {
+        sessionId: string;
+        checkpointId: string;
+        confirmedIntent: PopupIntentModel;
+        reanchorPrompt: string;
+    }): Promise<ExecuteResponse> {
+        const { sessionId, checkpointId, confirmedIntent, reanchorPrompt } = params;
+        try {
+            return await apiRequest<ExecuteResponse>("/search/execute", {
+                method: "POST",
+                body: {
+                    search_session_id: sessionId,
+                    checkpoint_id: checkpointId,
+                    confirmed_intent: confirmedIntent,
+                },
+            });
+        } catch (err: unknown) {
+            if (!(err instanceof ApiError && err.status === 404 && reanchorPrompt)) {
+                throw err;
+            }
+            const reparse = await apiRequest<ParseResponse>("/search/parse", {
+                method: "POST",
+                body: { search_prompt: reanchorPrompt },
+            });
+            dispatch({
+                type: "patch",
+                payload: {
+                    searchSessionId: reparse.search_session_id,
+                    checkpointId: reparse.checkpoint_id,
+                    needsFreshSession: false,
+                },
+            });
+            return await apiRequest<ExecuteResponse>("/search/execute", {
+                method: "POST",
+                body: {
+                    search_session_id: reparse.search_session_id,
+                    checkpoint_id: reparse.checkpoint_id,
+                    confirmed_intent: confirmedIntent,
+                },
+            });
+        }
+    }
+
+    /**
      * Single recruiter action: "Find candidates".
      * Always anchor a fresh session via /search/parse, then resume the
      * await_human_review interrupt via /search/execute. Filter-editor edits win:
@@ -1676,13 +1729,11 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                     return false;
                 }
 
-                const executeResponse = await apiRequest<ExecuteResponse>("/search/execute", {
-                    method: "POST",
-                    body: {
-                        search_session_id: sessionId,
-                        checkpoint_id: checkpointId,
-                        confirmed_intent: popupModel,
-                    },
+                const executeResponse = await executeSearchWithRecovery({
+                    sessionId,
+                    checkpointId,
+                    confirmedIntent: popupModel,
+                    reanchorPrompt: searchPromptForRun,
                 });
                 dispatch({ type: "execute_success", payload: executeResponse, confirmedIntent: popupModel });
                 notifyCreditsChanged();
@@ -1723,13 +1774,11 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                 },
             });
 
-            const executeResponse = await apiRequest<ExecuteResponse>("/search/execute", {
-                method: "POST",
-                body: {
-                    search_session_id: parseResponse.search_session_id,
-                    checkpoint_id: parseResponse.checkpoint_id,
-                    confirmed_intent: intentForExecute,
-                },
+            const executeResponse = await executeSearchWithRecovery({
+                sessionId: parseResponse.search_session_id,
+                checkpointId: parseResponse.checkpoint_id,
+                confirmedIntent: intentForExecute,
+                reanchorPrompt: searchPromptForRun,
             });
             dispatch({ type: "execute_success", payload: executeResponse, confirmedIntent: intentForExecute });
             notifyCreditsChanged();

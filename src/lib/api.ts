@@ -7,6 +7,21 @@ interface RequestOptions {
     signal?: AbortSignal;
 }
 
+/**
+ * Error thrown by {@link apiRequest} for a non-OK HTTP response. Extends Error
+ * (so existing `err instanceof Error` / `err.message` handling keeps working)
+ * while also exposing the HTTP `status` for callers that need to branch on it
+ * — e.g. silently recovering from a 404 expired-session.
+ */
+export class ApiError extends Error {
+    readonly status: number;
+    constructor(status: number, message: string) {
+        super(message);
+        this.name = "ApiError";
+        this.status = status;
+    }
+}
+
 export async function apiRequest<T>(
     endpoint: string,
     options: RequestOptions = {}
@@ -56,7 +71,7 @@ export async function apiRequest<T>(
         } else if (typeof detailStr === 'object') {
             detailStr = JSON.stringify(detailStr);
         }
-        throw new Error(detailStr);
+        throw new ApiError(response.status, detailStr);
     }
 
     return response.json();

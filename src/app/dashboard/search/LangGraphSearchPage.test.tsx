@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
-import { answerSearchIntake, apiRequest, getSearchSession, startSearchIntake } from "@/lib/api";
+import { answerSearchIntake, apiRequest, ApiError, getSearchSession, startSearchIntake } from "@/lib/api";
 import LangGraphSearchPage from "./LangGraphSearchPage";
 
 const mockRouterPush = vi.fn();
@@ -12,6 +12,14 @@ let desktopViewport = true;
 vi.mock("@/lib/api", () => ({
     answerSearchIntake: vi.fn(),
     apiRequest: vi.fn(),
+    ApiError: class ApiError extends Error {
+        status: number;
+        constructor(status: number, message: string) {
+            super(message);
+            this.name = "ApiError";
+            this.status = status;
+        }
+    },
     getSearchSession: vi.fn(),
     startSearchIntake: vi.fn(),
 }));
@@ -702,6 +710,55 @@ test("desktop popup keeps filters open when popup-launched search fails", async 
     await waitFor(() => {
         expect(screen.queryByText("Searching candidates...")).not.toBeInTheDocument();
     });
+});
+
+test("recovers from an expired session by silently re-parsing and retrying execute", async () => {
+    let parseCalls = 0;
+    let executeCalls = 0;
+    mockedApiRequest.mockImplementation(async (path, init) => {
+        if (path === "/search/filter-metadata") return metadataResponse;
+        if (path === "/search/parse") {
+            parseCalls += 1;
+            return {
+                search_session_id: parseCalls === 1 ? "session-stale" : "session-fresh",
+                checkpoint_id: parseCalls === 1 ? "session-stale" : "session-fresh",
+                parsed_intent: {},
+                confidence: "medium",
+                ambiguities: [],
+                semantic_expansions: popupModelResponse.semantic_expansions,
+                popup_model: popupModelResponse,
+                cache_hit: null,
+                langsmith_run_id: null,
+            };
+        }
+        if (path === "/search/execute") {
+            executeCalls += 1;
+            if (executeCalls === 1) {
+                // First attempt: the session has expired / isn't found.
+                throw new ApiError(404, "Search session not found or expired. Please run the search again.");
+            }
+            return executeResultsResponse;
+        }
+        throw new Error(`Unhandled path: ${String(path)} ${JSON.stringify(init)}`);
+    });
+
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Filters" }));
+    const dialog = await screen.findByLabelText("Search filters");
+    await user.type(getPopupInput("Min Followers"), "300");
+    await user.click(within(dialog).getByRole("button", { name: "Find candidates" }));
+
+    // The recruiter sees results, not the 404 — recovery happened silently.
+    expect(await screen.findByText("Casey Cho")).toBeInTheDocument();
+    expect(
+        screen.queryByText("Search session not found or expired. Please run the search again."),
+    ).not.toBeInTheDocument();
+    // Proof of recovery: parse ran twice (initial + re-anchor) and execute twice
+    // (the 404, then the successful retry).
+    expect(parseCalls).toBe(2);
+    expect(executeCalls).toBe(2);
 });
 
 test("hydrates a parse-only session into the review modal and clears the session url", async () => {
