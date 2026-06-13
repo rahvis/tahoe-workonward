@@ -52,30 +52,43 @@ function trackSocialClick(platform: string) {
     trackLandingEvent('landing_social_click', { platform });
 }
 
-export function PublicSiteHeader() {
+export function PublicSiteHeader({ placement = 'blog' }: { placement?: string } = {}) {
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
     return (
         <header className={styles.header}>
             <div className={styles.container}>
                 <div className={styles.headerInner}>
-                    <Link href="/" className={styles.logoLink} aria-label="Tahoe home">
+                    <Link
+                        href="/"
+                        className={styles.logoLink}
+                        aria-label="Tahoe home"
+                        onClick={(event) => {
+                            // On the landing page itself, smooth-scroll to top instead
+                            // of a no-op navigation. Harmless elsewhere (not on "/").
+                            if (typeof window !== 'undefined' && window.location.pathname === '/') {
+                                event.preventDefault();
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                setMobileNavOpen(false);
+                            }
+                        }}
+                    >
                         <Logo />
                     </Link>
 
                     <nav className={styles.desktopNav} aria-label="Primary">
-                        <Link href="/product" onClick={() => trackSectionNav('product', 'blog_header_desktop')}>Product</Link>
-                        <Link href="/features" onClick={() => trackSectionNav('features', 'blog_header_desktop')}>Features</Link>
-                        <Link href="/pricing" onClick={() => trackSectionNav('pricing', 'blog_header_desktop')}>Pricing</Link>
-                        <Link href="/customers" onClick={() => trackSectionNav('customers', 'blog_header_desktop')}>Customers</Link>
-                        <Link href="/blogs" onClick={() => trackBlogNav('blog_header_desktop')}>Blog</Link>
+                        <Link href="/product" onClick={() => trackSectionNav('product', `${placement}_header_desktop`)}>Product</Link>
+                        <Link href="/features" onClick={() => trackSectionNav('features', `${placement}_header_desktop`)}>Features</Link>
+                        <Link href="/pricing" onClick={() => trackSectionNav('pricing', `${placement}_header_desktop`)}>Pricing</Link>
+                        <Link href="/customers" onClick={() => trackSectionNav('customers', `${placement}_header_desktop`)}>Customers</Link>
+                        <Link href="/blogs" onClick={() => trackBlogNav(`${placement}_header_desktop`)}>Blog</Link>
                     </nav>
 
                     <div className={styles.headerActions}>
-                        <Link href="/login" className={styles.textAction} onClick={() => trackAuthCta('sign_in', 'blog_header_desktop')}>
+                        <Link href="/login" className={styles.textAction} onClick={() => trackAuthCta('sign_in', `${placement}_header_desktop`)}>
                             Sign in
                         </Link>
-                        <Link href="/signup" className={styles.secondaryAction} onClick={() => trackAuthCta('start_free_trial', 'blog_header_desktop')}>
+                        <Link href="/signup" className={styles.secondaryAction} onClick={() => trackAuthCta('start_free_trial', `${placement}_header_desktop`)}>
                             Start free trial <ArrowUpRightIcon />
                         </Link>
                         <button
@@ -84,7 +97,7 @@ export function PublicSiteHeader() {
                             aria-expanded={mobileNavOpen}
                             aria-label="Toggle navigation"
                             onClick={() => {
-                                trackLandingEvent('landing_mobile_nav_toggle', { state: mobileNavOpen ? 'closed' : 'open', placement: 'blog' });
+                                trackLandingEvent('landing_mobile_nav_toggle', { state: mobileNavOpen ? 'closed' : 'open', placement });
                                 setMobileNavOpen((open) => !open);
                             }}
                         >
@@ -95,14 +108,14 @@ export function PublicSiteHeader() {
 
                 {mobileNavOpen && (
                     <div className={styles.mobileNav} aria-label="Mobile navigation">
-                        <Link href="/product" onClick={() => { trackSectionNav('product', 'blog_header_mobile'); setMobileNavOpen(false); }}>Product</Link>
-                        <Link href="/features" onClick={() => { trackSectionNav('features', 'blog_header_mobile'); setMobileNavOpen(false); }}>Features</Link>
-                        <Link href="/pricing" onClick={() => { trackSectionNav('pricing', 'blog_header_mobile'); setMobileNavOpen(false); }}>Pricing</Link>
-                        <Link href="/customers" onClick={() => { trackSectionNav('customers', 'blog_header_mobile'); setMobileNavOpen(false); }}>Customers</Link>
-                        <Link href="/blogs" onClick={() => { trackBlogNav('blog_header_mobile'); setMobileNavOpen(false); }}>Blog</Link>
+                        <Link href="/product" onClick={() => { trackSectionNav('product', `${placement}_header_mobile`); setMobileNavOpen(false); }}>Product</Link>
+                        <Link href="/features" onClick={() => { trackSectionNav('features', `${placement}_header_mobile`); setMobileNavOpen(false); }}>Features</Link>
+                        <Link href="/pricing" onClick={() => { trackSectionNav('pricing', `${placement}_header_mobile`); setMobileNavOpen(false); }}>Pricing</Link>
+                        <Link href="/customers" onClick={() => { trackSectionNav('customers', `${placement}_header_mobile`); setMobileNavOpen(false); }}>Customers</Link>
+                        <Link href="/blogs" onClick={() => { trackBlogNav(`${placement}_header_mobile`); setMobileNavOpen(false); }}>Blog</Link>
                         <div className={styles.mobileAuthActions}>
-                            <Link href="/login" className={styles.textAction} onClick={() => trackAuthCta('sign_in', 'blog_header_mobile')}>Sign in</Link>
-                            <Link href="/signup" className={styles.secondaryAction} onClick={() => trackAuthCta('start_free_trial', 'blog_header_mobile')}>Start free trial</Link>
+                            <Link href="/login" className={styles.textAction} onClick={() => trackAuthCta('sign_in', `${placement}_header_mobile`)}>Sign in</Link>
+                            <Link href="/signup" className={styles.secondaryAction} onClick={() => trackAuthCta('start_free_trial', `${placement}_header_mobile`)}>Start free trial</Link>
                         </div>
                     </div>
                 )}
@@ -111,7 +124,7 @@ export function PublicSiteHeader() {
     );
 }
 
-export function PublicSiteFooter() {
+export function PublicSiteFooter({ placement = 'blog' }: { placement?: string } = {}) {
     return (
         <footer className={styles.footer}>
             <div className={styles.container}>
@@ -126,13 +139,13 @@ export function PublicSiteFooter() {
 
                     <div>
                         <h3>Product</h3>
-                        <Link href="/features" onClick={() => trackSectionNav('features', 'blog_footer_column')}>Features</Link>
-                        <Link href="/pricing" onClick={() => trackSectionNav('pricing', 'blog_footer_column')}>Pricing</Link>
+                        <Link href="/features" onClick={() => trackSectionNav('features', `${placement}_footer_column`)}>Features</Link>
+                        <Link href="/pricing" onClick={() => trackSectionNav('pricing', `${placement}_footer_column`)}>Pricing</Link>
                     </div>
 
                     <div>
                         <h3>Company</h3>
-                        <Link href="/blogs" onClick={() => trackBlogNav('blog_footer_column')}>Blog</Link>
+                        <Link href="/blogs" onClick={() => trackBlogNav(`${placement}_footer_column`)}>Blog</Link>
                         <a
                             href="/resources"
                             target="_blank"
@@ -141,8 +154,8 @@ export function PublicSiteFooter() {
                         >
                             Resources
                         </a>
-                        <Link href="/customers" onClick={() => trackSectionNav('customers', 'blog_footer_column')}>Customers</Link>
-                        <Link href="/product" onClick={() => trackSectionNav('product', 'blog_footer_column')}>Product vision</Link>
+                        <Link href="/customers" onClick={() => trackSectionNav('customers', `${placement}_footer_column`)}>Customers</Link>
+                        <Link href="/product" onClick={() => trackSectionNav('product', `${placement}_footer_column`)}>Product vision</Link>
                         <a
                             href="/partner"
                             target="_blank"
@@ -179,14 +192,14 @@ export function PublicSiteFooter() {
                 <div className={styles.footerBottom}>
                     <span>© 2026 WorkOnward. Made for recruiters who would rather hire than negotiate contracts.</span>
                     <div className={styles.footerBottomLinks}>
-                        <Link href="/product" onClick={() => trackSectionNav('product', 'blog_footer_bottom')}>Product</Link>
-                        <Link href="/pricing" onClick={() => trackSectionNav('pricing', 'blog_footer_bottom')}>Pricing</Link>
-                        <Link href="/blogs" onClick={() => trackBlogNav('blog_footer_bottom')}>Blog</Link>
+                        <Link href="/product" onClick={() => trackSectionNav('product', `${placement}_footer_bottom`)}>Product</Link>
+                        <Link href="/pricing" onClick={() => trackSectionNav('pricing', `${placement}_footer_bottom`)}>Pricing</Link>
+                        <Link href="/blogs" onClick={() => trackBlogNav(`${placement}_footer_bottom`)}>Blog</Link>
                         <Link href="/privacy">Privacy</Link>
                         <Link href="/cookie">Cookie</Link>
                         <CookieSettingsButton className={styles.footerBottomButton}>Cookie settings</CookieSettingsButton>
                         <Link href="/terms">Terms</Link>
-                        <Link href="/login" onClick={() => trackAuthCta('sign_in', 'blog_footer_bottom')}>Sign in</Link>
+                        <Link href="/login" onClick={() => trackAuthCta('sign_in', `${placement}_footer_bottom`)}>Sign in</Link>
                     </div>
                 </div>
             </div>

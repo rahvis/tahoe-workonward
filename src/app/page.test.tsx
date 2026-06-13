@@ -28,6 +28,13 @@ test('renders Tahoe landing content with auth CTAs pointing to dedicated routes'
     ).toBe(true);
     expect(screen.getByText(/continue with google or email\. no credit card\./i)).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /cookie settings/i }).length).toBeGreaterThan(0);
+    // The shared footer must be present on the home page too, including the
+    // Resources link (consistent footer across every page, opens in a new tab).
+    const resourcesLink = screen
+        .getAllByRole('link', { name: /^resources$/i })
+        .find((link) => link.getAttribute('href') === '/resources');
+    expect(resourcesLink).toBeDefined();
+    expect(resourcesLink).toHaveAttribute('target', '_blank');
     expect(screen.queryByTestId('google-signin-button')).not.toBeInTheDocument();
     expect(screen.queryByTestId('google-signup-button')).not.toBeInTheDocument();
 });

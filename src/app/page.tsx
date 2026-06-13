@@ -4,8 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Inter, Montserrat } from 'next/font/google';
 import { useEffect, useMemo, useState } from 'react';
-import { HamburgerMenuIcon, Cross1Icon } from '@/components/ui/icons';
-import CookieSettingsButton from '@/components/consent/CookieSettingsButton';
+import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
 import { trackLandingEvent } from '@/lib/public-analytics';
 import styles from './page.module.css';
 
@@ -533,26 +532,13 @@ function BillingAndAnalyticsScreen() {
 }
 
 export default function LandingPage() {
-    const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<ScreenTab>('search');
     const [queryIndex, setQueryIndex] = useState(0);
     const [typedQuery, setTypedQuery] = useState('');
     const [showResults, setShowResults] = useState(false);
 
-    const trackSectionNav = (section: string, placement: string) => {
-        trackLandingEvent('landing_section_nav_click', { section, placement });
-    };
-
     const trackAuthCta = (cta: string, placement: string) => {
         trackLandingEvent('landing_auth_cta_click', { cta, placement });
-    };
-
-    const trackBlogNav = (placement: string) => {
-        trackLandingEvent('landing_blog_nav_click', { placement });
-    };
-
-    const trackSocialClick = (platform: string) => {
-        trackLandingEvent('landing_social_click', { platform });
     };
 
     const handleTabSelect = (tab: ScreenTab) => {
@@ -643,69 +629,7 @@ export default function LandingPage() {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd).replace(/</g, '\\u003c') }}
             />
-            <header className={styles.header}>
-                <div className={styles.container}>
-                    <div className={styles.headerInner}>
-                        <Link
-                            href="/"
-                            className={styles.logoLink}
-                            aria-label="Tahoe home"
-                            onClick={(event) => {
-                                if (typeof window !== 'undefined' && window.location.pathname === '/') {
-                                    event.preventDefault();
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                    setMobileNavOpen(false);
-                                }
-                            }}
-                        >
-                            <Logo />
-                        </Link>
-
-                        <nav className={styles.desktopNav} aria-label="Primary">
-                            <Link href="/product" onClick={() => trackSectionNav('product', 'header_desktop')}>Product</Link>
-                            <Link href="/features" onClick={() => trackSectionNav('features', 'header_desktop')}>Features</Link>
-                            <Link href="/pricing" onClick={() => trackSectionNav('pricing', 'header_desktop')}>Pricing</Link>
-                            <Link href="/customers" onClick={() => trackSectionNav('customers', 'header_desktop')}>Customers</Link>
-                            <Link href="/blogs" onClick={() => trackBlogNav('header_desktop')}>Blog</Link>
-                        </nav>
-
-                        <div className={styles.headerActions}>
-                            <Link href="/login" className={styles.textAction} onClick={() => trackAuthCta('sign_in', 'header_desktop')}>
-                                Sign in
-                            </Link>
-                            <Link href="/signup" className={styles.secondaryAction} onClick={() => trackAuthCta('start_free_trial', 'header_desktop')}>
-                                Start free trial <ArrowUpRightIcon />
-                            </Link>
-                            <button
-                                type="button"
-                                className={styles.mobileToggle}
-                                aria-expanded={mobileNavOpen}
-                                aria-label="Toggle navigation"
-                                onClick={() => {
-                                    trackLandingEvent('landing_mobile_nav_toggle', { state: mobileNavOpen ? 'closed' : 'open' });
-                                    setMobileNavOpen((open) => !open);
-                                }}
-                            >
-                                {mobileNavOpen ? <Cross1Icon /> : <HamburgerMenuIcon />}
-                            </button>
-                        </div>
-                    </div>
-
-                    {mobileNavOpen && (
-                        <div className={styles.mobileNav} aria-label="Mobile navigation">
-                            <Link href="/product" onClick={() => { trackSectionNav('product', 'header_mobile'); setMobileNavOpen(false); }}>Product</Link>
-                            <Link href="/features" onClick={() => { trackSectionNav('features', 'header_mobile'); setMobileNavOpen(false); }}>Features</Link>
-                            <Link href="/pricing" onClick={() => { trackSectionNav('pricing', 'header_mobile'); setMobileNavOpen(false); }}>Pricing</Link>
-                            <Link href="/customers" onClick={() => { trackSectionNav('customers', 'header_mobile'); setMobileNavOpen(false); }}>Customers</Link>
-                            <Link href="/blogs" onClick={() => { trackBlogNav('header_mobile'); setMobileNavOpen(false); }}>Blog</Link>
-                            <div className={styles.mobileAuthActions}>
-                                <Link href="/login" className={styles.textAction} onClick={() => trackAuthCta('sign_in', 'header_mobile')}>Sign in</Link>
-                                <Link href="/signup" className={styles.secondaryAction} onClick={() => trackAuthCta('start_free_trial', 'header_mobile')}>Start free trial</Link>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </header>
+            <PublicSiteHeader placement="home" />
 
             <section className={styles.hero}>
                 <div className={styles.container}>
@@ -1013,76 +937,7 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            <footer className={styles.footer}>
-                <div className={styles.container}>
-                    <div className={styles.footerGrid}>
-                        <div className={styles.footerBrand}>
-                            <Logo />
-                            <p>
-                                Tahoe is the honest recruiter operating system: search in plain English, enrich cleanly,
-                                send from your inbox, and keep the workflow operationally calm.
-                            </p>
-                        </div>
-
-                        <div>
-                            <h3>Product</h3>
-                            <Link href="/features" onClick={() => trackSectionNav('features', 'footer_column')}>Features</Link>
-                            <Link href="/pricing" onClick={() => trackSectionNav('pricing', 'footer_column')}>Pricing</Link>
-                        </div>
-
-                        <div>
-                            <h3>Company</h3>
-                            <Link href="/blogs" onClick={() => trackBlogNav('footer_column')}>Blog</Link>
-                            <Link href="/customers" onClick={() => trackSectionNav('customers', 'footer_column')}>Customers</Link>
-                            <Link href="/product" onClick={() => trackSectionNav('product', 'footer_column')}>Product vision</Link>
-                            <a
-                                href="/partner"
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={() => trackLandingEvent('footer_partner_clicked')}
-                            >
-                                Partner program
-                            </a>
-                        </div>
-
-                        <div>
-                            <h3>Legal</h3>
-                            <Link href="/privacy">Privacy</Link>
-                            <Link href="/cookie">Cookie</Link>
-                            <CookieSettingsButton className={styles.footerColumnButton}>Cookie settings</CookieSettingsButton>
-                            <Link href="/terms">Terms</Link>
-                        </div>
-
-                        <div>
-                            <h3>Contact</h3>
-                            <span>info@workonward.com</span>
-                            <span className={styles.addressText}>124 E 14th St, New York, NY 10003</span>
-                        </div>
-                    </div>
-
-                    <div className={styles.socialLinksRow}>
-                        <a href="https://www.linkedin.com/company/workonward" target="_blank" rel="noreferrer" onClick={() => trackSocialClick('linkedin')}>LinkedIn</a>
-                        <a href="https://www.facebook.com/workonward" target="_blank" rel="noreferrer" onClick={() => trackSocialClick('facebook')}>Facebook</a>
-                        <a href="https://x.com/workonward" target="_blank" rel="noreferrer" onClick={() => trackSocialClick('x')}>X</a>
-                        <a href="https://www.instagram.com/workonward" target="_blank" rel="noreferrer" onClick={() => trackSocialClick('instagram')}>Instagram</a>
-                        <a href="https://www.youtube.com/@workonward" target="_blank" rel="noreferrer" onClick={() => trackSocialClick('youtube')}>YouTube</a>
-                    </div>
-
-                    <div className={styles.footerBottom}>
-                        <span>© 2026 WorkOnward. Made for recruiters who would rather hire than negotiate contracts.</span>
-                        <div className={styles.footerBottomLinks}>
-                            <Link href="/product" onClick={() => trackSectionNav('product', 'footer_bottom')}>Product</Link>
-                            <Link href="/pricing" onClick={() => trackSectionNav('pricing', 'footer_bottom')}>Pricing</Link>
-                            <Link href="/blogs" onClick={() => trackBlogNav('footer_bottom')}>Blog</Link>
-                            <Link href="/privacy">Privacy</Link>
-                            <Link href="/cookie">Cookie</Link>
-                            <CookieSettingsButton className={styles.footerBottomButton}>Cookie settings</CookieSettingsButton>
-                            <Link href="/terms">Terms</Link>
-                            <Link href="/login" onClick={() => trackAuthCta('sign_in', 'footer_bottom')}>Sign in</Link>
-                        </div>
-                    </div>
-                </div>
-            </footer>
+            <PublicSiteFooter placement="home" />
         </main>
     );
 }
