@@ -49,6 +49,25 @@ export function Cross2Icon(props: IconProps) {
     return <Cross1Icon {...props} />;
 }
 
+export function MicrophoneIcon(props: IconProps) {
+    return (
+        <SvgIcon {...props}>
+            <rect x="6" y="1.5" width="4" height="8" rx="2" />
+            <path d="M3.5 7a4.5 4.5 0 0 0 9 0" />
+            <path d="M8 11.5v3" />
+            <path d="M5.5 14.5h5" />
+        </SvgIcon>
+    );
+}
+
+export function StopIcon(props: IconProps) {
+    return (
+        <SvgIcon {...props}>
+            <rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor" stroke="none" />
+        </SvgIcon>
+    );
+}
+
 export function EnvelopeClosedIcon(props: IconProps) {
     return (
         <SvgIcon {...props}>

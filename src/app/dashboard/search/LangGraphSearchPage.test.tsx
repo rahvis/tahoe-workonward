@@ -24,6 +24,34 @@ vi.mock("@/lib/api", () => ({
     startSearchIntake: vi.fn(),
 }));
 
+// Voice search: stub the mic hook so MicButton renders deterministically and
+// start() simply feeds a transcript through the page's onTranscript callback
+// (jsdom has no MediaRecorder/getUserMedia).
+const dictationMock = vi.hoisted(() => ({
+    supported: true,
+    status: "idle" as "idle" | "recording" | "transcribing" | "error",
+    amplitude: 0,
+    errorMessage: null as string | null,
+    nextTranscript: "senior data engineers in berlin",
+    transcriptCb: null as ((text: string) => void) | null,
+    clearError: vi.fn(),
+    stop: vi.fn(),
+}));
+vi.mock("./useDictation", () => ({
+    useDictation: (cb: (text: string) => void) => {
+        dictationMock.transcriptCb = cb;
+        return {
+            supported: dictationMock.supported,
+            status: dictationMock.status,
+            amplitude: dictationMock.amplitude,
+            errorMessage: dictationMock.errorMessage,
+            start: () => dictationMock.transcriptCb?.(dictationMock.nextTranscript),
+            stop: dictationMock.stop,
+            clearError: dictationMock.clearError,
+        };
+    },
+}));
+
 vi.mock("./CandidatePanel", () => ({
     __esModule: true,
     MISSING_PREVIEW_EVIDENCE: "Not enough preview data for this criterion",
@@ -486,6 +514,13 @@ beforeEach(() => {
     setupApiMocks();
     mockedStartSearchIntake.mockResolvedValue(intakeStartResponse);
     mockedAnswerSearchIntake.mockResolvedValue(intakeAnswerResponse);
+    dictationMock.supported = true;
+    dictationMock.status = "idle";
+    dictationMock.amplitude = 0;
+    dictationMock.errorMessage = null;
+    dictationMock.transcriptCb = null;
+    dictationMock.clearError.mockReset();
+    dictationMock.stop.mockReset();
 });
 
 test("desktop page keeps Filters visible and opens the Tahoe popup with backend-declared controls", async () => {
@@ -540,19 +575,133 @@ test("desktop popup closes from Done and persists active filter count on the Fil
     expect(screen.getByRole("button", { name: "Filters (1)" })).toBeInTheDocument();
 });
 
-test("clicking Find candidates parses + runs in one shot and syncs session url", async () => {
+test("Find candidates parses then opens the filter popup for review before executing", async () => {
     const user = userEvent.setup();
     render(<LangGraphSearchPage />);
 
     await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "ml engineer");
     await user.click(screen.getAllByRole("button", { name: "Find candidates" })[0]);
 
-    // Auto-run: parse then execute fire back-to-back; results render directly.
-    expect(await screen.findByText("Casey Cho")).toBeInTheDocument();
+    // Step 1: parse runs and the filter popup opens for review — no execute yet.
+    const dialog = await screen.findByLabelText("Search filters");
+    expect(mockedApiRequest.mock.calls.some(([path]) => path === "/search/parse")).toBe(true);
+    expect(mockedApiRequest.mock.calls.some(([path]) => path === "/search/execute")).toBe(false);
+    expect(screen.queryByText("Casey Cho")).not.toBeInTheDocument();
     expect(mockedStartSearchIntake).not.toHaveBeenCalled();
+
+    // Step 2: confirm inside the popup → execute runs and results render.
+    await user.click(within(dialog).getByRole("button", { name: "Find candidates" }));
+    expect(await screen.findByText("Casey Cho")).toBeInTheDocument();
     await waitFor(() => {
+        expect(mockedApiRequest.mock.calls.some(([path]) => path === "/search/execute")).toBe(true);
         expect(mockRouterReplace).toHaveBeenCalledWith("/dashboard/search/new?session=session-1");
     });
+});
+
+test("executes the filters the recruiter reviewed, even if a re-parse would differ", async () => {
+    // The review parse and the execute-time re-parse return DIFFERENT filters.
+    // The recruiter reviewed the first; that's what must be executed.
+    const reviewedModel = popupModelResponse;
+    const divergentModel = {
+        ...popupModelResponse,
+        general: { ...popupModelResponse.general, min_followers: 99999 },
+    };
+    let parseCalls = 0;
+    mockedApiRequest.mockImplementation(async (path) => {
+        if (path === "/search/filter-metadata") return metadataResponse;
+        if (path === "/search/parse") {
+            parseCalls += 1;
+            return {
+                search_session_id: `session-${parseCalls}`,
+                checkpoint_id: `session-${parseCalls}`,
+                parsed_intent: {},
+                popup_model: parseCalls === 1 ? reviewedModel : divergentModel,
+            };
+        }
+        if (path === "/search/execute") return executeResultsResponse;
+        throw new Error(`Unhandled path: ${String(path)}`);
+    });
+
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "ml engineer");
+    await user.click(screen.getAllByRole("button", { name: "Find candidates" })[0]);
+    const dialog = await screen.findByLabelText("Search filters");
+    await user.click(within(dialog).getByRole("button", { name: "Find candidates" }));
+
+    await screen.findByText("Casey Cho");
+    const executeCall = mockedApiRequest.mock.calls.find(([path]) => path === "/search/execute");
+    const payload = executeCall?.[1]?.body as { confirmed_intent: typeof popupModelResponse };
+    // Reviewed value wins; the divergent re-parse (99999) is not used.
+    expect(payload.confirmed_intent.general.min_followers).toBe(reviewedModel.general.min_followers);
+});
+
+test("voice search fills the prompt box with the Deepgram transcript", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    const micButton = await screen.findByRole("button", { name: "Start voice search" });
+    await user.click(micButton);
+
+    const input = screen.getByLabelText("Search prompt") as HTMLInputElement;
+    await waitFor(() => {
+        expect(input.value).toBe("senior data engineers in berlin");
+    });
+});
+
+test("voice search appends the transcript to text the recruiter already typed", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "remote");
+    await user.click(await screen.findByRole("button", { name: "Start voice search" }));
+
+    const input = screen.getByLabelText("Search prompt") as HTMLInputElement;
+    await waitFor(() => {
+        expect(input.value).toBe("remote senior data engineers in berlin");
+    });
+});
+
+test("shows staged progress copy while the prompt is being parsed", async () => {
+    const user = userEvent.setup();
+    const deferred = createDeferred<unknown>();
+    mockedApiRequest.mockImplementation(async (path) => {
+        if (path === "/search/parse") return deferred.promise;
+        throw new Error(`Unhandled path: ${String(path)}`);
+    });
+    render(<LangGraphSearchPage />);
+
+    await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "ml engineer");
+    await user.click(screen.getAllByRole("button", { name: "Find candidates" })[0]);
+
+    expect(await screen.findByText("Understanding your request…")).toBeInTheDocument();
+    deferred.resolve({
+        search_session_id: "session-1",
+        checkpoint_id: "session-1",
+        parsed_intent: {},
+        popup_model: popupModelResponse,
+    });
+});
+
+test("hides the mic when the browser cannot capture audio", async () => {
+    dictationMock.supported = false;
+    render(<LangGraphSearchPage />);
+
+    await screen.findByLabelText("Search prompt");
+    expect(screen.queryByRole("button", { name: "Start voice search" })).not.toBeInTheDocument();
+});
+
+test("surfaces a dictation error and dismisses it when the recruiter resumes typing", async () => {
+    dictationMock.status = "error";
+    dictationMock.errorMessage = "Microphone access was blocked. Allow it in your browser, or type your search.";
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    expect(await screen.findByText(/Microphone access was blocked/i)).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Search prompt"), "ml");
+    expect(dictationMock.clearError).toHaveBeenCalled();
 });
 
 test("source mode tabs are hidden and prompt search remains the visible entry point", async () => {
@@ -597,6 +746,8 @@ test("candidate side panel can save the active result to a list", async () => {
 
     await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "backend engineer");
     await user.click(screen.getByRole("button", { name: "Find candidates" }));
+    const reviewDialog = await screen.findByLabelText("Search filters");
+    await user.click(within(reviewDialog).getByRole("button", { name: "Find candidates" }));
 
     await screen.findByText("Casey Cho");
     const candidateRow = screen.getByRole("checkbox", { name: "Select Casey Cho" }).closest("tr");
@@ -663,8 +814,8 @@ test("desktop popup shows a loading overlay while popup-launched search is in pr
     await user.type(getPopupInput("Min Followers"), "300");
     await user.click(within(dialog).getByRole("button", { name: "Find candidates" }));
 
-    expect(await screen.findByText("Searching candidates...")).toBeInTheDocument();
-    expect(screen.getByText(/Applying your filters, validating the search, and fetching the first preview matches\./i)).toBeInTheDocument();
+    expect(await screen.findByText("Searching candidates…")).toBeInTheDocument();
+    expect(screen.getByText("Validating your filters…")).toBeInTheDocument();
     expect(screen.getByLabelText("Search filters")).toBeInTheDocument();
 
     executeDeferred.resolve(executeResultsResponse);
@@ -708,7 +859,7 @@ test("desktop popup keeps filters open when popup-launched search fails", async 
     expect(await screen.findByText("Unable to run recruiter search.")).toBeInTheDocument();
     expect(screen.getByLabelText("Search filters")).toBeInTheDocument();
     await waitFor(() => {
-        expect(screen.queryByText("Searching candidates...")).not.toBeInTheDocument();
+        expect(screen.queryByText("Searching candidates…")).not.toBeInTheDocument();
     });
 });
 
@@ -930,6 +1081,8 @@ test("Reset filters clears recruiter edits from the desktop popup", async () => 
     await screen.findByRole("button", { name: "Filters" });
     await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "ml engineer");
     await user.click(screen.getByRole("button", { name: "Find candidates" }));
+    const reviewDialog = await screen.findByLabelText("Search filters");
+    await user.click(within(reviewDialog).getByRole("button", { name: "Find candidates" }));
     await screen.findByText("Casey Cho");
 
     await user.click(screen.getByRole("button", { name: /Filters \(\d+\)/ }));
@@ -998,7 +1151,11 @@ test("popup edits before Find candidates win over the parse response (popupDirty
     await user.type(followersInput, "500");
 
     await user.click(screen.getByRole("button", { name: "Done" }));
+    // Two-step: the main button re-parses and reopens the review popup with the
+    // recruiter's edits preserved; confirming in the popup executes.
     await user.click(screen.getByRole("button", { name: "Find candidates" }));
+    const reviewDialog = await screen.findByLabelText("Search filters");
+    await user.click(within(reviewDialog).getByRole("button", { name: "Find candidates" }));
 
     await waitFor(() => {
         expect(mockedApiRequest).toHaveBeenCalledWith(
@@ -1033,6 +1190,8 @@ test("renders the full preview grid and reuses cached page 1 when paging back", 
 
     await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "backend engineers");
     await user.click(screen.getByRole("button", { name: "Find candidates" }));
+    const reviewDialog = await screen.findByLabelText("Search filters");
+    await user.click(within(reviewDialog).getByRole("button", { name: "Find candidates" }));
 
     expect(await screen.findByText("Professional Profile URL")).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Select all rows" })).toBeInTheDocument();
@@ -1093,6 +1252,8 @@ test("Start new search clears results, selection, storage, and session URL state
 
     await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "backend engineers");
     await user.click(screen.getByRole("button", { name: "Find candidates" }));
+    const reviewDialog = await screen.findByLabelText("Search filters");
+    await user.click(within(reviewDialog).getByRole("button", { name: "Find candidates" }));
 
     expect(await screen.findByText("Casey Cho")).toBeInTheDocument();
     await user.click(screen.getByRole("checkbox", { name: "Select Casey Cho" }));

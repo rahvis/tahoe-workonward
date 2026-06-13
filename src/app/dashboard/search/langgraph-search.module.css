@@ -686,6 +686,143 @@
     color: #ffffff;
 }
 
+/* --- Voice search (mic + waveform) --------------------------------------- */
+.promptInputWrap {
+    position: relative;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+/* Reserve room on the right so dictated/typed text never runs under the mic. */
+.promptInputWrap :global(.tui-textfield__input) {
+    padding-right: 40px;
+}
+
+.micButton {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    border: 0;
+    background: transparent;
+    color: var(--tahoe-color-text-secondary);
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+}
+
+.micButton:hover:not(:disabled) {
+    background: rgba(32, 32, 32, 0.08);
+    color: var(--tahoe-color-text-primary);
+}
+
+.micButton:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.micWaveformOverlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px 0 14px;
+    border-radius: var(--tahoe-radius-lg);
+    background: white;
+    box-shadow: inset 0 0 0 1px rgba(32, 32, 32, 0.12);
+    z-index: 2;
+}
+
+.micRecordingDot {
+    flex: 0 0 auto;
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: #e5484d;
+    animation: micPulse 1.2s ease-in-out infinite;
+}
+
+.micWaveform {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex: 1 1 auto;
+    height: 22px;
+    overflow: hidden;
+}
+
+.micWaveformBar {
+    flex: 1 1 auto;
+    min-width: 2px;
+    max-width: 4px;
+    height: 100%;
+    border-radius: 2px;
+    background: #202020;
+    transform: scaleY(0.12);
+    transform-origin: center;
+    transition: transform 90ms ease-out;
+}
+
+.micElapsed {
+    flex: 0 0 auto;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.micStopButton {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    border: 0;
+    background: #202020;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.micStopButton:hover {
+    background: #000000;
+}
+
+.micError {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #c62a2f;
+}
+
+@keyframes micPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+
+/* --- Staged progress card (parse phase) ---------------------------------- */
+.stageProgressCard {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    padding: 16px 18px;
+    border-radius: var(--tahoe-radius-lg);
+    border: 1px solid rgba(32, 32, 32, 0.1);
+    background: white;
+}
+
+.stageProgressMessage {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--tahoe-color-text-primary);
+}
+
 .inlineResultsCount {
     flex: 0 0 auto;
     margin: 0 !important;

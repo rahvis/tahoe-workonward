@@ -81,6 +81,45 @@ export function getApiUrl(endpoint: string): string {
     return `${API_URL}${endpoint}`;
 }
 
+/**
+ * Upload a recorded audio clip for speech-to-text and return the transcript.
+ *
+ * Sends the raw audio bytes as the request body (the blob's MIME type becomes
+ * the Content-Type) rather than JSON, so it can't reuse {@link apiRequest}.
+ * Throws {@link ApiError} on a non-OK response, matching apiRequest's contract.
+ */
+export async function transcribeAudio(blob: Blob): Promise<{ transcript: string }> {
+    const token =
+        typeof window !== "undefined" ? localStorage.getItem("tahoe_token") : null;
+
+    let response: Response;
+    try {
+        response = await fetch(getApiUrl("/search/transcribe"), {
+            method: "POST",
+            headers: {
+                "Content-Type": blob.type || "audio/webm",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: blob,
+        });
+    } catch {
+        throw new Error("Couldn't reach the server. Please check your connection and try again.");
+    }
+
+    if (!response.ok) {
+        let detail = `HTTP ${response.status}`;
+        try {
+            const error = await response.json();
+            if (error?.detail) detail = typeof error.detail === "string" ? error.detail : JSON.stringify(error.detail);
+        } catch {
+            // keep the default detail
+        }
+        throw new ApiError(response.status, detail);
+    }
+
+    return response.json();
+}
+
 export function setToken(token: string) {
     localStorage.setItem("tahoe_token", token);
 }

@@ -51,8 +51,15 @@ import CandidatePanel, {
     type PreviewData,
 } from "./CandidatePanel";
 import styles from "./langgraph-search.module.css";
+import MicButton from "./MicButton";
 import PreviewGrid, { type PreviewGridRow } from "./preview-grid";
 import SearchBriefSummary from "./SearchBriefSummary";
+import { useDictation } from "./useDictation";
+import {
+    PARSE_STAGE_MESSAGES,
+    SEARCH_STAGE_MESSAGES,
+    useStagedMessages,
+} from "./useStagedMessages";
 
 type SearchResultItem = PreviewGridRow;
 
@@ -1356,6 +1363,23 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
     const previousQueryHashRef = useRef<string | null>(null);
     const searchInputRef = useRef<HTMLInputElement | null>(null);
 
+    // Voice search: dictated text is appended to whatever is already typed, then
+    // we refocus the input so the recruiter can keep editing. The query ref lets
+    // the transcript callback read the latest query without re-subscribing.
+    const stateQueryRef = useRef(state.query);
+    stateQueryRef.current = state.query;
+    const dictation = useDictation(
+        useCallback((text: string) => {
+            const existing = stateQueryRef.current.trim();
+            dispatch({
+                type: "patch",
+                payload: { query: existing ? `${existing} ${text}` : text },
+            });
+            window.setTimeout(() => searchInputRef.current?.focus(), 0);
+        }, []),
+    );
+    const isDictating = dictation.status === "recording" || dictation.status === "transcribing";
+
     const popupModel = state.popupModel;
     const currentResults = useMemo(
         () => state.pagesByNumber[state.currentPage] ?? [],
@@ -1756,11 +1780,16 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                 body: { search_prompt: searchPromptForRun },
             });
 
-            // If the recruiter has manual edits, keep them. Otherwise, use the
-            // parse's popup_model as the new filter-editor state.
-            const intentForExecute = wasDirty
-                ? preEditPopupModel
-                : (parseResponse.popup_model ?? emptyPopupModel());
+            // What the recruiter reviewed is authoritative. If they hand-edited
+            // (dirty) OR they already have populated filters from the review
+            // step, execute exactly those — never silently swap in a fresh
+            // re-parse the recruiter never saw. Only fall back to the parse's
+            // popup_model when there's nothing reviewed yet (e.g. the popup was
+            // opened via Filters before any parse populated it).
+            const intentForExecute =
+                wasDirty || countActiveFilters(preEditPopupModel) > 0
+                    ? preEditPopupModel
+                    : (parseResponse.popup_model ?? emptyPopupModel());
 
             dispatch({
                 type: "patch",
@@ -1809,9 +1838,49 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
         }
     }
 
+    /**
+     * Step 1 of the mandatory two-step prompt flow: parse the prompt (showing
+     * staged progress) and open the filter popup pre-filled for review. The
+     * recruiter then reviews/edits and clicks Find candidates inside the popup
+     * to execute (handlePopupFindCandidates). JD mode already has its own
+     * two-step (Generate search plan → review → execute).
+     */
+    async function handlePromptReview() {
+        const searchPromptForRun = getSearchPromptForRun(state.query, popupModel);
+        const hasFilters = countActiveFilters(popupModel) > 0;
+        if (!searchPromptForRun && !hasFilters) return;
+        // If the recruiter has hand-edited filters, their edits win: re-parsing
+        // anchors a session but we restore their popupModel afterwards so the
+        // review popup shows what they set, not what the prompt re-derived.
+        const wasDirty = state.popupDirty;
+        const preEditPopupModel = popupModel;
+        try {
+            if (searchPromptForRun) {
+                await parseQuery(searchPromptForRun);
+                if (wasDirty) {
+                    dispatch({ type: "patch", payload: { popupModel: preEditPopupModel, popupDirty: true } });
+                }
+            }
+            openFilterSurface();
+        } catch (err: unknown) {
+            dispatch({
+                type: "patch",
+                payload: {
+                    error: err instanceof Error ? err.message : "Couldn't understand that search. Please try again.",
+                    viewState: "idle",
+                },
+            });
+        }
+    }
+
     async function handleFindCandidates(event?: { preventDefault(): void }) {
         event?.preventDefault();
-        await runFindCandidates();
+        if (isDictating) return;
+        if (state.sourceType !== "prompt") {
+            await runFindCandidates();
+            return;
+        }
+        await handlePromptReview();
     }
 
     async function handlePopupFindCandidates() {
@@ -2095,6 +2164,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
     const hasResultView = state.viewState === "results" || state.viewState === "diagnosis";
 
     const findButtonDisabled =
+        isDictating ||
         state.viewState === "parsing" ||
         state.viewState === "intake_generating" ||
         state.viewState === "searching" ||
@@ -2106,6 +2176,14 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
         state.viewState === "parsing"
         || state.viewState === "intake_generating"
         || state.viewState === "searching";
+    const parseStageMessage = useStagedMessages(
+        PARSE_STAGE_MESSAGES,
+        state.viewState === "parsing",
+    );
+    const searchStageMessage = useStagedMessages(
+        SEARCH_STAGE_MESSAGES,
+        popupSearchPending || state.viewState === "searching",
+    );
     const showAssistantSurface = isJdMode && state.intakeDrawerOpen && !activeCandidate;
     const assistantSurfaceProps = {
         status: state.intakeStatus,
@@ -2163,20 +2241,31 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                     ) : null}
                     <Flex gap="3" align="center" wrap="wrap">
                         {showPromptInput ? (
-                            <Box style={{ flexGrow: 1, minWidth: 0 }}>
+                            <Box className={styles.promptInputWrap}>
                                 <TextField.Root
                                     ref={searchInputRef}
                                     size="3"
                                     placeholder='Try: "Senior ML engineers in Europe with Python skills"'
                                     value={state.query}
-                                    onChange={(event) => dispatch({ type: "patch", payload: { query: event.target.value } })}
-                                    disabled={isBusy}
+                                    onChange={(event) => {
+                                        if (dictation.errorMessage) dictation.clearError();
+                                        dispatch({ type: "patch", payload: { query: event.target.value } });
+                                    }}
+                                    disabled={isBusy || isDictating}
                                     aria-label="Search prompt"
                                 >
                                     <TextField.Slot>
                                         <MagnifyingGlassIcon width="16" height="16" />
                                     </TextField.Slot>
                                 </TextField.Root>
+                                <MicButton
+                                    supported={dictation.supported}
+                                    status={dictation.status}
+                                    amplitude={dictation.amplitude}
+                                    disabled={isBusy}
+                                    onStart={() => void dictation.start()}
+                                    onStop={dictation.stop}
+                                />
                             </Box>
                         ) : null}
                         {showPreviewCapBanner ? (
@@ -2244,6 +2333,17 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                         ) : null}
                     </Flex>
                 </form>
+                {dictation.errorMessage ? (
+                    <Text as="p" className={styles.micError} role="alert">
+                        {dictation.errorMessage}
+                    </Text>
+                ) : null}
+                {state.viewState === "parsing" ? (
+                    <Box className={styles.stageProgressCard} role="status" aria-live="polite">
+                        <Spinner size="2" />
+                        <Text className={styles.stageProgressMessage}>{parseStageMessage}</Text>
+                    </Box>
+                ) : null}
                 {isJdMode && hasResultView && !state.intakeDrawerOpen ? (
                     <SearchBriefSummary
                         summary={state.requirementsSummary}
@@ -2475,9 +2575,9 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                                     <Box className={styles.filtersDialogLoadingSpinner}>
                                         <Spinner size="3" />
                                     </Box>
-                                    <Heading size="4">Searching candidates...</Heading>
+                                    <Heading size="4">Searching candidates…</Heading>
                                     <Text size="2" color="gray" align="center">
-                                        Applying your filters, validating the search, and fetching the first preview matches.
+                                        {searchStageMessage}
                                     </Text>
                                 </Box>
                             </Box>
