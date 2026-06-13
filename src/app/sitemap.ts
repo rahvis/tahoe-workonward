@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { blogPosts } from '@/lib/blog-posts';
+import { resources } from '@/lib/resources';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.com';
 
@@ -58,6 +59,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
             priority: 0.9,
         },
         {
+            url: absoluteUrl('/resources'),
+            lastModified: new Date('2026-06-13T00:00:00.000Z'),
+            changeFrequency: 'weekly',
+            priority: 0.7,
+        },
+        {
             url: absoluteUrl('/privacy'),
             lastModified: new Date('2026-06-05T00:00:00.000Z'),
             changeFrequency: 'yearly',
@@ -84,5 +91,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: 0.8,
     }));
 
-    return [...staticRoutes, ...blogRoutes];
+    const resourceRoutes = resources.map((resource) => ({
+        url: absoluteUrl(`/resources/${resource.slug}`),
+        lastModified: new Date(`${resource.updated}T00:00:00.000Z`),
+        changeFrequency: 'monthly' as const,
+        priority: 0.7,
+    }));
+
+    return [...staticRoutes, ...blogRoutes, ...resourceRoutes];
 }

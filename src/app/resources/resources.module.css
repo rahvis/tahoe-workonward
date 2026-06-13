@@ -1,0 +1,249 @@
+/*
+ * Resource-specific content styling. Layout/chrome classes are reused from
+ * ../blogs/blogs.module.css so /resources matches /blogs exactly; this module
+ * only adds the rich-content pieces a tips article needs (intro lead, section
+ * headings, and tip lists). The --blog-* custom properties are inherited from
+ * the shared `.page` wrapper, so colors stay consistent with the blog.
+ */
+
+.intro {
+    display: grid;
+    gap: 14px;
+    margin: 0 0 8px;
+}
+
+.intro p {
+    margin: 0;
+    color: var(--blog-muted);
+    font-size: 17px;
+    line-height: 1.65;
+}
+
+.sectionHeading {
+    margin: 0 0 16px;
+    color: var(--blog-text);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.tipList {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 14px;
+    counter-reset: tip;
+}
+
+.tipListOrdered {
+    counter-reset: tip;
+}
+
+.tipItem {
+    position: relative;
+    padding: 16px 18px;
+    border: 1px solid var(--blog-border);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.74);
+    color: var(--blog-muted);
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.tipListOrdered .tipItem {
+    counter-increment: tip;
+    padding-left: 54px;
+}
+
+.tipListOrdered .tipItem::before {
+    content: counter(tip);
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--blog-accent);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.tipTerm {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--blog-text);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Plain checklist (no term, no number): tighter card with an accent marker. */
+.checklist {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 10px;
+}
+
+.checklistItem {
+    position: relative;
+    padding: 12px 16px 12px 38px;
+    border: 1px solid var(--blog-border);
+    border-radius: 8px;
+    background: var(--blog-soft);
+    color: var(--blog-text);
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+.checklistItem::before {
+    content: '';
+    position: absolute;
+    left: 16px;
+    top: 18px;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--blog-accent);
+}
+
+/* Callout quote */
+.calloutQuote {
+    margin: 0;
+    padding: 16px 20px;
+    border-left: 3px solid var(--blog-accent);
+    border-radius: 0 8px 8px 0;
+    background: var(--blog-soft);
+}
+
+.calloutQuote p {
+    margin: 0;
+    color: var(--blog-text);
+    font-size: 16px;
+    line-height: 1.6;
+    font-weight: 500;
+}
+
+.calloutQuote cite {
+    display: block;
+    margin-top: 8px;
+    color: var(--blog-muted);
+    font-size: 14px;
+    font-style: normal;
+}
+
+/* Search example: tier chip + prompt code box + note */
+.example {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+}
+
+.tierChip {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.tierSimple {
+    background: #e6f4ea;
+    color: #1f7a43;
+}
+
+.tierModerate {
+    background: #fdf0e6;
+    color: #b0590f;
+}
+
+.tierComplex {
+    background: #eae6fb;
+    color: #5a3fb0;
+}
+
+.promptBox {
+    margin: 0;
+    padding: 14px 16px;
+    border: 1px solid var(--blog-border);
+    border-radius: 8px;
+    background: #1e1e1e;
+    color: #f4f2ee;
+    font-family: var(--font-geist-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+    font-size: 14px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-x: auto;
+}
+
+.promptBox code {
+    font-family: inherit;
+    color: inherit;
+    background: none;
+}
+
+.exampleNote {
+    margin: 0;
+    color: var(--blog-muted);
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+/* Tables */
+.tableWrap {
+    margin: 0;
+    overflow-x: auto;
+    border: 1px solid var(--blog-border);
+    border-radius: 8px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.tableCaption {
+    caption-side: top;
+    padding: 12px 14px;
+    text-align: left;
+    color: var(--blog-muted);
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--blog-soft);
+}
+
+.table th,
+.table td {
+    padding: 10px 14px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--blog-border);
+    line-height: 1.5;
+}
+
+.table th {
+    color: var(--blog-text);
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.6);
+    white-space: nowrap;
+}
+
+.table td {
+    color: var(--blog-muted);
+}
+
+.table tbody tr:last-child th,
+.table tbody tr:last-child td {
+    border-bottom: none;
+}

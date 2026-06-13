@@ -133,6 +133,14 @@ export function PublicSiteFooter() {
                     <div>
                         <h3>Company</h3>
                         <Link href="/blogs" onClick={() => trackBlogNav('blog_footer_column')}>Blog</Link>
+                        <a
+                            href="/resources"
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={() => trackLandingEvent('footer_resources_clicked')}
+                        >
+                            Resources
+                        </a>
                         <Link href="/customers" onClick={() => trackSectionNav('customers', 'blog_footer_column')}>Customers</Link>
                         <Link href="/product" onClick={() => trackSectionNav('product', 'blog_footer_column')}>Product vision</Link>
                         <a
