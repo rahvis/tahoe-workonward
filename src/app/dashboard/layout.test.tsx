@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import DashboardLayout from './layout';
@@ -159,20 +159,32 @@ test('dashboard nav keeps mailboxes below outreach with distinct icons', async (
     expect(outreachIcon).not.toEqual(mailboxesIcon);
 });
 
-test('dashboard nav includes the analytics section', async () => {
-    const user = userEvent.setup();
+test('links Analytics and Billing directly to their landing pages without subnav', async () => {
     render(
         <DashboardLayout>
             <div>Dashboard Content</div>
         </DashboardLayout>,
     );
 
-    const analyticsButton = await screen.findByRole('button', { name: /analytics/i });
-    expect(analyticsButton).toBeInTheDocument();
-    await user.click(analyticsButton);
-    expect(await screen.findByRole('link', { name: /overview/i })).toBeInTheDocument();
-    // Funnel, Campaign Performance, and Credit Spend are removed from the side panel menu.
-    expect(screen.queryByRole('link', { name: /funnel/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /campaign performance/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /credit spend/i })).not.toBeInTheDocument();
+    const sidebar = await screen.findByRole('navigation', { name: /primary dashboard navigation/i });
+
+    // Analytics is a direct link to the overview — no expandable subnav.
+    expect(within(sidebar).getByRole('link', { name: /analytics/i })).toHaveAttribute(
+        'href',
+        '/dashboard/analytics/overview',
+    );
+    expect(within(sidebar).queryByRole('button', { name: /analytics/i })).not.toBeInTheDocument();
+    expect(within(sidebar).queryByRole('link', { name: /^overview$/i })).not.toBeInTheDocument();
+    expect(within(sidebar).queryByRole('link', { name: /funnel/i })).not.toBeInTheDocument();
+    expect(within(sidebar).queryByRole('link', { name: /campaign performance/i })).not.toBeInTheDocument();
+    expect(within(sidebar).queryByRole('link', { name: /credit spend/i })).not.toBeInTheDocument();
+
+    // Billing is a direct link to Plan & Credits — no expandable subnav.
+    expect(within(sidebar).getByRole('link', { name: /billing/i })).toHaveAttribute(
+        'href',
+        '/dashboard/billing/plan',
+    );
+    expect(within(sidebar).queryByRole('button', { name: /billing/i })).not.toBeInTheDocument();
+    expect(within(sidebar).queryByRole('link', { name: /plan & credits/i })).not.toBeInTheDocument();
+    expect(within(sidebar).queryByRole('link', { name: /credit ledger/i })).not.toBeInTheDocument();
 });

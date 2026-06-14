@@ -58,18 +58,13 @@ const sectionConfig = {
         label: 'Billing',
         href: '/dashboard/billing/plan',
         icon: <CardStackIcon width="18" height="18" />,
-        subnav: [
-            { href: '/dashboard/billing/plan', label: 'Plan & Credits' },
-            { href: '/dashboard/billing/ledger', label: 'Credit Ledger' },
-        ],
+        subnav: [],
     },
     analytics: {
         label: 'Analytics',
         href: '/dashboard/analytics/overview',
         icon: <BarChartIcon width="18" height="18" />,
-        subnav: [
-            { href: '/dashboard/analytics/overview', label: 'Overview' },
-        ],
+        subnav: [],
     },
     settings: {
         label: 'Settings',
