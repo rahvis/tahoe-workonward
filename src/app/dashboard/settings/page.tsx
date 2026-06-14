@@ -60,6 +60,13 @@ const tabs: Array<{ key: SettingsTab; label: string }> = [
     { key: 'security', label: 'Security' },
 ];
 
+// Tabs hidden from the settings menu. Their content/routes stay intact and remain
+// reachable by direct URL (e.g. ?tab=account for the account-deletion flow); only
+// the menu buttons are removed.
+const HIDDEN_TABS: ReadonlySet<SettingsTab> = new Set(['account', 'integrations', 'notifications', 'security']);
+const DEFAULT_TAB: SettingsTab = 'workspace';
+const visibleTabs = tabs.filter((tab) => !HIDDEN_TABS.has(tab.key));
+
 const timezones = [
     'America/Los_Angeles',
     'America/Denver',
@@ -409,7 +416,7 @@ function SettingsPageContent() {
     const searchParams = useSearchParams();
     const searchParamsString = searchParams.toString();
     const rawTab = new URLSearchParams(searchParamsString).get('tab');
-    const activeTab = isSettingsTab(rawTab) ? rawTab : 'account';
+    const activeTab = isSettingsTab(rawTab) ? rawTab : DEFAULT_TAB;
     const settingsRequestSequenceRef = useRef(0);
     const billingRequestSequenceRef = useRef(0);
 
@@ -471,7 +478,7 @@ function SettingsPageContent() {
         const params = new URLSearchParams(searchParamsString);
         const tab = params.get('tab');
         if (tab && !isSettingsTab(tab)) {
-            params.set('tab', 'account');
+            params.set('tab', DEFAULT_TAB);
             router.replace(`${pathname}?${params.toString()}`, { scroll: false });
         }
     }, [pathname, router, searchParamsString]);
@@ -758,7 +765,7 @@ function SettingsPageContent() {
     return (
         <main className={styles.page}>
             <nav className={styles.tabs} aria-label="Settings sections">
-                {tabs.map((tab) => (
+                {visibleTabs.map((tab) => (
                     <button key={tab.key} type="button" className={activeTab === tab.key ? styles.activeTab : styles.tab} onClick={() => switchTab(tab.key)}>
                         {tab.label}
                     </button>

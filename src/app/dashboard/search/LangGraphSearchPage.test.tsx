@@ -14,10 +14,12 @@ vi.mock("@/lib/api", () => ({
     apiRequest: vi.fn(),
     ApiError: class ApiError extends Error {
         status: number;
-        constructor(status: number, message: string) {
+        detail: unknown;
+        constructor(status: number, message: string, detail?: unknown) {
             super(message);
             this.name = "ApiError";
             this.status = status;
+            this.detail = detail;
         }
     },
     getSearchSession: vi.fn(),
@@ -442,6 +444,9 @@ const intakeAnswerResponse = {
 
 function setupApiMocks() {
     mockedApiRequest.mockImplementation(async (path, init) => {
+        if (path === "/search/access") {
+            return { locked: false, free_search_used: false, subscription_active: false, trial_enabled: true };
+        }
         if (path === "/search/filter-metadata") {
             return metadataResponse;
         }
@@ -596,6 +601,56 @@ test("Find candidates parses then opens the filter popup for review before execu
         expect(mockedApiRequest.mock.calls.some(([path]) => path === "/search/execute")).toBe(true);
         expect(mockRouterReplace).toHaveBeenCalledWith("/dashboard/search/new?session=session-1");
     });
+});
+
+test("shows the upgrade paywall when execute is blocked with subscription_required", async () => {
+    mockedApiRequest.mockImplementation(async (path) => {
+        if (path === "/search/access") {
+            return { locked: false, free_search_used: false, subscription_active: false, trial_enabled: true };
+        }
+        if (path === "/search/filter-metadata") return metadataResponse;
+        if (path === "/search/parse") {
+            return { search_session_id: "s1", checkpoint_id: "s1", parsed_intent: {}, popup_model: popupModelResponse };
+        }
+        if (path === "/search/execute") {
+            throw new ApiError(402, "Payment required", { code: "subscription_required", balance: 0, required: 1 });
+        }
+        if (path === "/billing/catalog") throw new Error("catalog unavailable"); // modal falls back gracefully
+        throw new Error(`Unhandled path: ${String(path)}`);
+    });
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "ml engineer");
+    await user.click(screen.getAllByRole("button", { name: "Find candidates" })[0]);
+    const dialog = await screen.findByLabelText("Search filters");
+    await user.click(within(dialog).getByRole("button", { name: "Find candidates" }));
+
+    expect(await screen.findByText("Upgrade to keep searching")).toBeInTheDocument();
+});
+
+test("locks search proactively when access is locked and never re-parses", async () => {
+    mockedApiRequest.mockImplementation(async (path) => {
+        if (path === "/search/access") {
+            return { locked: true, free_search_used: true, subscription_active: false, trial_enabled: true };
+        }
+        if (path === "/search/filter-metadata") return metadataResponse;
+        if (path === "/billing/catalog") throw new Error("catalog unavailable");
+        throw new Error(`Unhandled path: ${String(path)}`);
+    });
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    // Wait for the access check to resolve and lock the screen.
+    await waitFor(() => expect(mockedApiRequest).toHaveBeenCalledWith("/search/access", undefined));
+
+    await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "ml engineer");
+    await user.click(screen.getAllByRole("button", { name: "Find candidates" })[0]);
+
+    expect(await screen.findByText("Upgrade to keep searching")).toBeInTheDocument();
+    // Proactive: no parse/execute were attempted for the locked recruiter.
+    expect(mockedApiRequest.mock.calls.some(([path]) => path === "/search/parse")).toBe(false);
+    expect(mockedApiRequest.mock.calls.some(([path]) => path === "/search/execute")).toBe(false);
 });
 
 test("executes the filters the recruiter reviewed, even if a re-parse would differ", async () => {

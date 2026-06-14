@@ -20,6 +20,7 @@ import {
 import type { SearchPageBootstrapPayload } from "@/lib/search-page-bootstrap";
 import SaveToListDialog from "../_components/SaveToListDialog";
 import { previewCandidateToImportPayload } from "@/lib/organization";
+import { fetchSearchAccess } from "@/lib/organization";
 import { clearAnalyticsCache } from "../analytics/_components/analytics-cache";
 import PreviewCapBanner from "./preview-cap-banner";
 import {
@@ -54,6 +55,7 @@ import styles from "./langgraph-search.module.css";
 import MicButton from "./MicButton";
 import PreviewGrid, { type PreviewGridRow } from "./preview-grid";
 import SearchBriefSummary from "./SearchBriefSummary";
+import UpgradePaywallModal, { type PaywallReason } from "./UpgradePaywallModal";
 import { useDictation } from "./useDictation";
 import {
     PARSE_STAGE_MESSAGES,
@@ -1380,6 +1382,37 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
     );
     const isDictating = dictation.status === "recording" || dictation.status === "transcribing";
 
+    // Free-search trial paywall. `searchLocked` (from /search/access) means the
+    // recruiter has used their one free search and isn't subscribed; gated actions
+    // open the upgrade modal. The backend 402 (subscription_required) is the
+    // authoritative gate; this drives proactive locking + the modal.
+    const [searchLocked, setSearchLocked] = useState(false);
+    const [paywallReason, setPaywallReason] = useState<PaywallReason | null>(null);
+
+    const refreshAccess = useCallback(async () => {
+        try {
+            const access = await fetchSearchAccess();
+            setSearchLocked(access.locked);
+        } catch {
+            // Non-fatal: the backend 402 still gates the action.
+        }
+    }, []);
+
+    useEffect(() => {
+        void refreshAccess();
+    }, [refreshAccess]);
+
+    /** If `err` is a 402 paywall response, open the upgrade modal and report handled. */
+    const handlePaywallError = useCallback((err: unknown): boolean => {
+        if (err instanceof ApiError && err.status === 402) {
+            const code = (err.detail as { code?: string } | null | undefined)?.code;
+            setPaywallReason(code === "insufficient_credits" ? "insufficient_credits" : "subscription_required");
+            void refreshAccess();
+            return true;
+        }
+        return false;
+    }, [refreshAccess]);
+
     const popupModel = state.popupModel;
     const currentResults = useMemo(
         () => state.pagesByNumber[state.currentPage] ?? [],
@@ -1757,6 +1790,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                 });
                 dispatch({ type: "execute_success", payload: executeResponse, confirmedIntent: popupModel });
                 notifyCreditsChanged();
+                void refreshAccess();
                 dispatch({
                     type: "patch",
                     payload: {
@@ -1807,6 +1841,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
             });
             dispatch({ type: "execute_success", payload: executeResponse, confirmedIntent: intentForExecute });
             notifyCreditsChanged();
+            void refreshAccess();
             // Keep the filter editor aligned to the recruiter's now-effective state.
             dispatch({
                 type: "patch",
@@ -1818,6 +1853,17 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
             });
             return true;
         } catch (err: unknown) {
+            if (handlePaywallError(err)) {
+                dispatch({
+                    type: "patch",
+                    payload: {
+                        error: "",
+                        viewState: currentResults.length > 0 ? "results" : "idle",
+                        paginatingPage: null,
+                    },
+                });
+                return false;
+            }
             dispatch({
                 type: "patch",
                 payload: {
@@ -1872,6 +1918,12 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
     async function handleFindCandidates(event?: { preventDefault(): void }) {
         event?.preventDefault();
         if (isDictating) return;
+        // Free search already used and not subscribed → show the paywall instead of
+        // running another search (also avoids a wasted LLM parse).
+        if (searchLocked) {
+            setPaywallReason("subscription_required");
+            return;
+        }
         if (state.sourceType !== "prompt") {
             await runFindCandidates();
             return;
@@ -1880,6 +1932,10 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
     }
 
     async function handlePopupFindCandidates() {
+        if (searchLocked) {
+            setPaywallReason("subscription_required");
+            return;
+        }
         await runFindCandidates({ closeDesktopOnSuccess: true, launchedFromPopup: true });
     }
 
@@ -1902,7 +1958,14 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
             return;
         }
         if (state.pagesByNumber[targetPage]) {
+            // Already-fetched pages are free to view even when locked.
             dispatch({ type: "set_current_page", page: targetPage });
+            return;
+        }
+        // Fetching a new page costs a credit; a locked (free-search-used) recruiter
+        // must subscribe first. Show the paywall instead of a doomed 402.
+        if (searchLocked) {
+            setPaywallReason("subscription_required");
             return;
         }
         try {
@@ -1913,6 +1976,10 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
             dispatch({ type: "page_loaded", payload: response });
             notifyCreditsChanged();
         } catch (err: unknown) {
+            if (handlePaywallError(err)) {
+                dispatch({ type: "patch", payload: { error: "", paginatingPage: null } });
+                return;
+            }
             dispatch({
                 type: "patch",
                 payload: {
@@ -2554,6 +2621,12 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                 }}
                 onOpenList={(list) => openSavedList(list.id)}
                 onEnrichList={(list) => openSavedList(list.id, { enrich: true })}
+            />
+
+            <UpgradePaywallModal
+                open={paywallReason !== null}
+                reason={paywallReason ?? "subscription_required"}
+                onClose={() => setPaywallReason(null)}
             />
 
             {state.mobileFiltersOpen && (

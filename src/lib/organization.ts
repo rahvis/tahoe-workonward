@@ -208,6 +208,8 @@ export interface BillingPlan {
     monthly_price_usd: number;
     yearly_price_usd: number;
     monthly_credits: number;
+    provider_search_credits?: number;
+    provider_enrich_credits?: number;
     limits: BillingLimits;
     stripe_product_lookup_key: string;
     stripe_monthly_price_lookup_key: string;
@@ -220,6 +222,8 @@ export interface TopUpPack {
     price_usd: number;
     stripe_product_lookup_key: string;
     stripe_price_lookup_key: string;
+    /** Provider bucket this pack refills: "coresignal_search" | "fullenrich". */
+    bucket?: string | null;
 }
 
 export interface BillingCatalogResponse {
@@ -229,6 +233,18 @@ export interface BillingCatalogResponse {
     low_credit_thresholds: number[];
     automatic_tax_enabled: boolean;
     portal_enabled: boolean;
+}
+
+export interface SearchAccessResponse {
+    /** True when the recruiter has used their free search and isn't subscribed. */
+    locked: boolean;
+    free_search_used: boolean;
+    subscription_active: boolean;
+    trial_enabled: boolean;
+}
+
+export async function fetchSearchAccess(options?: { signal?: AbortSignal }) {
+    return apiRequest<SearchAccessResponse>('/search/access', options);
 }
 
 export interface BillingCreditBucket {

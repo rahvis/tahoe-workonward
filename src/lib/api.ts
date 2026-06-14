@@ -15,10 +15,14 @@ interface RequestOptions {
  */
 export class ApiError extends Error {
     readonly status: number;
-    constructor(status: number, message: string) {
+    /** Raw parsed `detail` from the error body (object/array/string), when present.
+     * Lets callers branch on structured codes, e.g. `detail.code === "subscription_required"`. */
+    readonly detail: unknown;
+    constructor(status: number, message: string, detail?: unknown) {
         super(message);
         this.name = "ApiError";
         this.status = status;
+        this.detail = detail;
     }
 }
 
@@ -71,7 +75,7 @@ export async function apiRequest<T>(
         } else if (typeof detailStr === 'object') {
             detailStr = JSON.stringify(detailStr);
         }
-        throw new ApiError(response.status, detailStr);
+        throw new ApiError(response.status, detailStr, error.detail);
     }
 
     return response.json();

@@ -1,0 +1,82 @@
+.paywallContent {
+    padding: 0;
+}
+
+.paywallHeader {
+    padding: 22px 24px 14px;
+}
+
+.paywallTitle {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--tahoe-color-text-primary);
+}
+
+.paywallDescription {
+    margin: 8px 0 0;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.planGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    padding: 4px 24px 8px;
+}
+
+@media (max-width: 640px) {
+    .planGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.planLoading {
+    grid-column: 1 / -1;
+    min-height: 96px;
+}
+
+.planCard {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 16px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 10px;
+    background: #ffffff;
+}
+
+.planName {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.planPrice {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--tahoe-color-text-primary);
+}
+
+.planPer {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.planCredits {
+    font-size: 13px;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.paywallActions {
+    padding: 8px 24px 22px;
+    border-top: 1px solid var(--tahoe-color-border-subtle);
+    margin-top: 8px;
+    padding-top: 16px;
+}

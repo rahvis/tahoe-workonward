@@ -29,36 +29,36 @@ beforeEach(() => {
     mockedFetchProviderCredits.mockReset();
 });
 
-test('does not prompt when provider credits are still available', async () => {
+test('shows only Search and Enrich (Starter 300/200) and does not prompt when available', async () => {
     mockedFetchProviderCredits.mockResolvedValue(providerCredits({
-        coresignal_search: { allocated: 100, used: 0, remaining: 100 },
-        coresignal_collect: { allocated: 200, used: 0, remaining: 200 },
-        fullenrich: { allocated: 100, used: 0, remaining: 100 },
+        coresignal_search: { allocated: 300, used: 0, remaining: 300 },
+        coresignal_collect: { allocated: 0, used: 0, remaining: 0 },
+        fullenrich: { allocated: 200, used: 0, remaining: 200 },
     }));
 
     render(<ProviderCreditsPanel />);
 
     const panel = await screen.findByLabelText('Provider credits');
     expect(within(panel).getByText('Search')).toBeInTheDocument();
-    expect(within(panel).getByText('Collect')).toBeInTheDocument();
     expect(within(panel).getByText('Enrich')).toBeInTheDocument();
-    expect(within(panel).getAllByText('100/100')).toHaveLength(2);
+    // Collect is no longer shown.
+    expect(within(panel).queryByText('Collect')).not.toBeInTheDocument();
+    expect(within(panel).getByText('300/300')).toBeInTheDocument();
     expect(within(panel).getByText('200/200')).toBeInTheDocument();
     expect(screen.queryByRole('dialog', { name: 'Add credits' })).not.toBeInTheDocument();
 });
 
-test('prompts for top-up credits when combined provider usage reaches 95 percent', async () => {
+test('prompts to top up when a single bucket (enrich) runs out', async () => {
     mockedFetchProviderCredits.mockResolvedValue(providerCredits({
-        coresignal_search: { allocated: 100, used: 95, remaining: 5 },
-        coresignal_collect: { allocated: 200, used: 190, remaining: 10 },
-        fullenrich: { allocated: 100, used: 95, remaining: 5 },
+        coresignal_search: { allocated: 300, used: 10, remaining: 290 }, // plenty
+        coresignal_collect: { allocated: 0, used: 0, remaining: 0 },
+        fullenrich: { allocated: 200, used: 200, remaining: 0 },         // depleted
     }));
 
     render(<ProviderCreditsPanel collapsed />);
 
     expect(await screen.findByRole('dialog', { name: 'Add credits' })).toBeInTheDocument();
-    expect(screen.getByText(/used 95% of your Search, Collect, and Enrich provider credits/i)).toBeInTheDocument();
-    expect(screen.getByText(/380 of 400 provider credits consumed/i)).toBeInTheDocument();
+    expect(screen.getByText(/Your Enrich credit is running low/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Add credits' })).toHaveAttribute(
         'href',
         'https://tahoe.workonward.com/dashboard/billing/plan?tab=topups',

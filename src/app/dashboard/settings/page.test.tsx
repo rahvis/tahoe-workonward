@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 
@@ -453,13 +453,33 @@ test('payment tab renders safe card summary and opens Stripe portal flow', async
     });
 });
 
-test('invalid tab falls back to account and normalizes the URL without scrolling', async () => {
+test('settings menu hides Account, Integrations, Notifications, and Security tabs', async () => {
+    render(<SettingsPage />);
+
+    const menu = await screen.findByRole('navigation', { name: /settings sections/i });
+    // Removed from the menu.
+    for (const hidden of ['Account', 'Integrations', 'Notifications', 'Security']) {
+        expect(within(menu).queryByRole('button', { name: hidden })).not.toBeInTheDocument();
+    }
+    // Still present.
+    for (const shown of ['Workspace', 'Subscription', 'Payment', 'Outreach', 'Compliance', 'Referrals']) {
+        expect(within(menu).getByRole('button', { name: shown })).toBeInTheDocument();
+    }
+});
+
+test('account-deletion tab content is still reachable by direct URL even though hidden', async () => {
+    navigationMocks.searchParams = new URLSearchParams('tab=account');
+    render(<SettingsPage />);
+    expect(await screen.findByText('Delete account request')).toBeInTheDocument();
+});
+
+test('invalid tab falls back to the default (workspace) and normalizes the URL without scrolling', async () => {
     navigationMocks.searchParams = new URLSearchParams('tab=not-real');
     render(<SettingsPage />);
 
-    expect(await screen.findByRole('heading', { name: 'Account' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Workspace' })).toBeInTheDocument();
     await waitFor(() => {
-        expect(navigationMocks.replace).toHaveBeenCalledWith('/dashboard/settings?tab=account', { scroll: false });
+        expect(navigationMocks.replace).toHaveBeenCalledWith('/dashboard/settings?tab=workspace', { scroll: false });
     });
 });
 

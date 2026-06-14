@@ -266,12 +266,20 @@ function BillingPlanContent() {
         }
         return (
             <div className={styles.topupGrid}>
-                {catalog.topups.map((pack) => (
+                {catalog.topups.map((pack) => {
+                    const bucketLabel = pack.bucket === 'coresignal_search'
+                        ? 'Search'
+                        : pack.bucket === 'fullenrich'
+                          ? 'Enrich'
+                          : null;
+                    return (
                     <div key={pack.key} className={styles.card}>
                         <div className={styles.cardHeader}>
                             <div>
-                                <div className={styles.eyebrow}>Top-up credits</div>
-                                <div className={styles.finePrint}>Non-expiring credits for burst capacity.</div>
+                                <div className={styles.eyebrow}>{bucketLabel ? `${bucketLabel} top-up` : 'Top-up credits'}</div>
+                                <div className={styles.finePrint}>
+                                    {bucketLabel ? `Refills your ${bucketLabel} credits for this cycle.` : 'Non-expiring credits for burst capacity.'}
+                                </div>
                             </div>
                             <div className={styles.priceBlock}>
                                 <div className={styles.priceValue}>{pack.credits.toLocaleString()}</div>
@@ -287,7 +295,8 @@ function BillingPlanContent() {
                             {busyKey === pack.key ? 'Opening…' : `Buy ${pack.credits.toLocaleString()}`}
                         </button>
                     </div>
-                ))}
+                    );
+                })}
             </div>
         );
     }

@@ -6,35 +6,41 @@ import { fetchProviderCredits, type ProviderCreditsResponse } from '@/lib/organi
 
 const BUCKET_LABELS: Record<string, string> = {
     coresignal_search: 'Search',
-    coresignal_collect: 'Collect',
     fullenrich: 'Enrich',
 };
-const BUCKET_ORDER = ['coresignal_search', 'coresignal_collect', 'fullenrich'];
+// Search and Enrich only — Collect is not an active product feature.
+const BUCKET_ORDER = ['coresignal_search', 'fullenrich'];
 const TOP_UPS_URL = 'https://tahoe.workonward.com/dashboard/billing/plan?tab=topups';
 const TOP_UP_PROMPT_THRESHOLD = 0.95;
 
 function getProviderCreditUsage(data: ProviderCreditsResponse | null) {
     if (!data?.enabled) {
-        return { allocated: 0, used: 0, usageRatio: 0, overThreshold: false };
+        return { allocated: 0, used: 0, usageRatio: 0, overThreshold: false, lowLabels: [] as string[], promptKey: null as string | null };
     }
 
-    const totals = BUCKET_ORDER.reduce(
-        (acc, key) => {
-            const bucket = data.buckets[key];
-            if (!bucket) return acc;
-            return {
-                allocated: acc.allocated + Math.max(0, bucket.allocated),
-                used: acc.used + Math.max(0, bucket.used),
-            };
-        },
-        { allocated: 0, used: 0 },
-    );
-
-    const usageRatio = totals.allocated > 0 ? totals.used / totals.allocated : 0;
+    let allocated = 0;
+    let used = 0;
+    const lowLabels: string[] = [];
+    const keyParts: string[] = [];
+    for (const key of BUCKET_ORDER) {
+        const bucket = data.buckets[key];
+        if (!bucket) continue;
+        allocated += Math.max(0, bucket.allocated);
+        used += Math.max(0, bucket.used);
+        keyParts.push(`${key}:${bucket.used}/${bucket.allocated}`);
+        const ratio = bucket.allocated > 0 ? bucket.used / bucket.allocated : 0;
+        // Prompt when ANY funded bucket is depleted or nearly so (per-bucket).
+        if (bucket.allocated > 0 && (bucket.remaining <= 0 || ratio >= TOP_UP_PROMPT_THRESHOLD)) {
+            lowLabels.push(BUCKET_LABELS[key] ?? key);
+        }
+    }
     return {
-        ...totals,
-        usageRatio,
-        overThreshold: totals.allocated > 0 && usageRatio >= TOP_UP_PROMPT_THRESHOLD,
+        allocated,
+        used,
+        usageRatio: allocated > 0 ? used / allocated : 0,
+        overThreshold: lowLabels.length > 0,
+        lowLabels,
+        promptKey: lowLabels.length > 0 ? keyParts.join('|') : null,
     };
 }
 
@@ -65,8 +71,7 @@ export default function ProviderCreditsPanel({ collapsed = false }: { collapsed?
     }, []);
 
     const usage = useMemo(() => getProviderCreditUsage(data), [data]);
-    const usagePercent = Math.floor(usage.usageRatio * 100);
-    const topUpPromptKey = usage.overThreshold ? `${usage.used}:${usage.allocated}` : null;
+    const topUpPromptKey = usage.promptKey;
     const topUpPromptOpen = Boolean(topUpPromptKey && topUpPromptKey !== dismissedTopUpPromptKey);
 
     if (!data || !data.enabled) {
@@ -83,7 +88,7 @@ export default function ProviderCreditsPanel({ collapsed = false }: { collapsed?
                 <Dialog.Content maxWidth="460px" aria-label="Add credits" style={{ padding: 24 }}>
                     <Dialog.Title>Add credits</Dialog.Title>
                     <Dialog.Description size="2" mb="4">
-                        You have used {usagePercent}% of your Search, Collect, and Enrich provider credits. Add top-up credits to keep sourcing without interruption.
+                        Your {usage.lowLabels.join(' and ') || 'provider'} credit{usage.lowLabels.length === 1 ? ' is' : 's are'} running low. Top up to keep sourcing without interruption.
                     </Dialog.Description>
                     <Text as="p" size="2" color="gray" mb="4">
                         {usage.used.toLocaleString()} of {usage.allocated.toLocaleString()} provider credits consumed.
