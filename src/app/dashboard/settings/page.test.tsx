@@ -5,6 +5,8 @@ import { vi } from 'vitest';
 import SettingsPage from './page';
 import {
     autocompleteAddress,
+    cancelSubscription,
+    resumeSubscription,
     createBillingPortal,
     createSubscriptionCheckout,
     fetchAddressDetails,
@@ -34,6 +36,8 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/lib/organization', () => ({
     autocompleteAddress: vi.fn(),
+    cancelSubscription: vi.fn(),
+    resumeSubscription: vi.fn(),
     createBillingPortal: vi.fn(),
     createSubscriptionCheckout: vi.fn(),
     createDataRequest: vi.fn(),
@@ -58,6 +62,8 @@ const mockedCreateSubscriptionCheckout = vi.mocked(createSubscriptionCheckout);
 const mockedFetchAddressDetails = vi.mocked(fetchAddressDetails);
 const mockedFetchBillingCatalog = vi.mocked(fetchBillingCatalog);
 const mockedFetchBillingSummary = vi.mocked(fetchBillingSummary);
+const mockedCancelSubscription = vi.mocked(cancelSubscription);
+const mockedResumeSubscription = vi.mocked(resumeSubscription);
 const mockedFetchPaymentSettings = vi.mocked(fetchPaymentSettings);
 const mockedRequestAccountDeletion = vi.mocked(requestAccountDeletion);
 const mockedUpdateWorkspaceSettings = vi.mocked(updateWorkspaceSettings);
@@ -224,6 +230,8 @@ beforeEach(() => {
     mockedFetchAddressDetails.mockReset();
     mockedFetchBillingCatalog.mockReset();
     mockedFetchBillingSummary.mockReset();
+    mockedCancelSubscription.mockReset();
+    mockedResumeSubscription.mockReset();
     mockedFetchPaymentSettings.mockReset();
     mockedRequestAccountDeletion.mockReset();
     mockedUpdateWorkspaceSettings.mockReset();
@@ -586,4 +594,59 @@ test('successful referral copy clears a stale error banner', async () => {
 
     expect(await screen.findByText('Copied.')).toBeInTheDocument();
     expect(screen.queryByText('Enter an email address to invite.')).not.toBeInTheDocument();
+});
+
+function activeSubscriptionSummary(overrides: Record<string, unknown> = {}) {
+    return {
+        workspace_id: 'ws-1',
+        billing: {
+            plan_key: 'starter',
+            interval: 'month',
+            subscription_status: 'active',
+            current_period_end: '2026-07-14T00:00:00Z',
+            cancel_at_period_end: false,
+            active_entitlements: ['tahoe-plan-starter'],
+            ...overrides,
+        },
+        available_credits: 100,
+        reserved_credits: 0,
+        monthly_included_credits: 500,
+        buckets: [],
+        usage_this_cycle: { search: 0, enrichment: 0, outreach: 0 },
+        low_credit_thresholds: [25, 10, 0],
+        low_credit_state: 'ok',
+    } as unknown as Awaited<ReturnType<typeof fetchBillingSummary>>;
+}
+
+test('cancels the subscription from the Subscription tab after confirmation', async () => {
+    navigationMocks.searchParams = new URLSearchParams('tab=subscription');
+    mockedFetchBillingSummary.mockResolvedValue(activeSubscriptionSummary());
+    mockedCancelSubscription.mockResolvedValue({
+        subscription_id: 'sub_1', cancel_at_period_end: true, current_period_end: null, subscription_status: 'active',
+    });
+
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+
+    await user.click(await screen.findByRole('button', { name: 'Cancel subscription' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Cancel subscription' });
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel subscription' }));
+
+    await waitFor(() => expect(mockedCancelSubscription).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText(/will cancel at the end of the current billing period/i)).toBeInTheDocument();
+});
+
+test('shows Resume when a cancellation is already scheduled', async () => {
+    navigationMocks.searchParams = new URLSearchParams('tab=subscription');
+    mockedFetchBillingSummary.mockResolvedValue(activeSubscriptionSummary({ cancel_at_period_end: true }));
+    mockedResumeSubscription.mockResolvedValue({
+        subscription_id: 'sub_1', cancel_at_period_end: false, current_period_end: null, subscription_status: 'active',
+    });
+
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+
+    expect(screen.queryByRole('button', { name: 'Cancel subscription' })).not.toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: 'Resume subscription' }));
+    await waitFor(() => expect(mockedResumeSubscription).toHaveBeenCalledTimes(1));
 });

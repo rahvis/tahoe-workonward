@@ -2,11 +2,13 @@
 
 import { Suspense, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Button, Switch, TahoeSelect, TextField } from '@/components/ui/tahoe-ui';
+import { Button, Dialog, Flex, Switch, TahoeSelect, TextField } from '@/components/ui/tahoe-ui';
 import {
     autocompleteAddress,
+    cancelSubscription,
     createBillingPortal,
     createSubscriptionCheckout,
+    resumeSubscription,
     createDataRequest,
     fetchAddressDetails,
     fetchBillingCatalog,
@@ -433,6 +435,7 @@ function SettingsPageContent() {
     const [billingError, setBillingError] = useState<string | null>(null);
     const [paymentError, setPaymentError] = useState<string | null>(null);
     const [billingActionKey, setBillingActionKey] = useState<string | null>(null);
+    const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [dirtySections, setDirtySections] = useState<Set<SettingsTab>>(new Set());
     const [referralEmail, setReferralEmail] = useState('');
     const [accountDeletion, setAccountDeletion] = useState({ confirmation: '', reason: '' });
@@ -691,6 +694,45 @@ function SettingsPageContent() {
         }
     }
 
+    async function refreshBillingSummary() {
+        try {
+            setBillingSummary(await fetchBillingSummary());
+        } catch {
+            // Non-fatal: the webhook will sync state shortly regardless.
+        }
+    }
+
+    async function cancelSubscriptionNow() {
+        setBillingActionKey('subscription_cancel');
+        setError(null);
+        setNotice(null);
+        try {
+            await cancelSubscription();
+            setCancelDialogOpen(false);
+            await refreshBillingSummary();
+            setNotice('Your subscription will cancel at the end of the current billing period. You keep access until then.');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unable to cancel the subscription.');
+        } finally {
+            setBillingActionKey(null);
+        }
+    }
+
+    async function resumeSubscriptionNow() {
+        setBillingActionKey('subscription_resume');
+        setError(null);
+        setNotice(null);
+        try {
+            await resumeSubscription();
+            await refreshBillingSummary();
+            setNotice('Your subscription will continue and renew as normal.');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unable to resume the subscription.');
+        } finally {
+            setBillingActionKey(null);
+        }
+    }
+
     async function startSubscriptionCheckout(planKey: 'starter' | 'growth' | 'pro' | 'enterprise', interval: 'month' | 'year') {
         const key = `${planKey}:${interval}`;
         setBillingActionKey(key);
@@ -929,11 +971,34 @@ function SettingsPageContent() {
                                                 <Button disabled={billingActionKey === 'subscription_update'} onClick={() => void openPortal('subscription_update', 'subscription')}>
                                                     {billingActionKey === 'subscription_update' ? 'Opening...' : 'Change plan in Stripe'}
                                                 </Button>
-                                                <Button variant="soft" disabled={billingActionKey === 'subscription_cancel'} onClick={() => void openPortal('subscription_cancel', 'subscription')}>
-                                                    {billingActionKey === 'subscription_cancel' ? 'Opening...' : 'Cancel subscription'}
-                                                </Button>
+                                                {billingSummary?.billing.cancel_at_period_end ? (
+                                                    <Button variant="soft" disabled={billingActionKey === 'subscription_resume'} onClick={() => void resumeSubscriptionNow()}>
+                                                        {billingActionKey === 'subscription_resume' ? 'Resuming...' : 'Resume subscription'}
+                                                    </Button>
+                                                ) : (
+                                                    <Button variant="soft" disabled={billingActionKey === 'subscription_cancel'} onClick={() => setCancelDialogOpen(true)}>
+                                                        Cancel subscription
+                                                    </Button>
+                                                )}
                                             </div>
                                         ) : null}
+
+                                        <Dialog.Root open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+                                            <Dialog.Content maxWidth="460px" aria-label="Cancel subscription" style={{ padding: 24 }}>
+                                                <Dialog.Title>Cancel subscription?</Dialog.Title>
+                                                <Dialog.Description size="2" mb="4">
+                                                    Your plan stays active until {formatDate(billingSummary?.billing.current_period_end)}, then it won&apos;t renew and your monthly credits stop. You can resume any time before then.
+                                                </Dialog.Description>
+                                                <Flex gap="3" justify="end">
+                                                    <Dialog.Close>
+                                                        <Button variant="soft" color="gray">Keep subscription</Button>
+                                                    </Dialog.Close>
+                                                    <Button color="red" disabled={billingActionKey === 'subscription_cancel'} onClick={() => void cancelSubscriptionNow()}>
+                                                        {billingActionKey === 'subscription_cancel' ? 'Cancelling...' : 'Cancel subscription'}
+                                                    </Button>
+                                                </Flex>
+                                            </Dialog.Content>
+                                        </Dialog.Root>
                                     </>
                                 )}
                             </div>

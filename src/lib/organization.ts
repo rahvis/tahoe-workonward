@@ -1210,6 +1210,48 @@ export async function fetchAddressDetails(placeId: string, sessionToken: string,
     });
 }
 
+export type LocationField = 'country' | 'state' | 'city';
+
+export interface LocationAutocompleteResponse {
+    field: LocationField;
+    suggestions: string[];
+}
+
+export async function autocompleteLocations(
+    params: { field: LocationField; query: string; countries?: string[]; states?: string[]; sessionToken?: string },
+    options?: { signal?: AbortSignal },
+) {
+    return apiRequest<LocationAutocompleteResponse>('/search/locations/autocomplete', {
+        method: 'POST',
+        body: {
+            field: params.field,
+            query: params.query,
+            countries: params.countries ?? [],
+            states: params.states ?? [],
+            session_token: params.sessionToken ?? null,
+        },
+        signal: options?.signal,
+    });
+}
+
+export type JobField = 'title' | 'department' | 'management_level';
+
+export interface JobAutocompleteResponse {
+    field: JobField;
+    suggestions: string[];
+}
+
+export async function autocompleteJobs(
+    params: { field: JobField; query: string },
+    options?: { signal?: AbortSignal },
+) {
+    return apiRequest<JobAutocompleteResponse>('/search/jobs/autocomplete', {
+        method: 'POST',
+        body: { field: params.field, query: params.query },
+        signal: options?.signal,
+    });
+}
+
 export async function updateAccountSettings(payload: Partial<AccountSettings>) {
     return apiRequest<SettingsPayload>('/settings/account', { method: 'PATCH', body: payload });
 }
@@ -1352,6 +1394,23 @@ export async function createBillingPortal(
         method: 'POST',
         body: { return_path: returnPath, flow_type: flowType },
     });
+}
+
+export interface SubscriptionCancellationResponse {
+    subscription_id: string;
+    subscription_status?: string | null;
+    cancel_at_period_end: boolean;
+    current_period_end?: number | null;
+}
+
+/** Schedule cancellation of the active subscription at the end of the paid period. */
+export async function cancelSubscription() {
+    return apiRequest<SubscriptionCancellationResponse>('/billing/subscription/cancel', { method: 'POST' });
+}
+
+/** Undo a scheduled cancellation so the subscription renews. */
+export async function resumeSubscription() {
+    return apiRequest<SubscriptionCancellationResponse>('/billing/subscription/resume', { method: 'POST' });
 }
 
 export async function estimateEnrichmentRun(payload: EnrichmentEstimateRequest) {

@@ -20,7 +20,7 @@ import {
 import type { SearchPageBootstrapPayload } from "@/lib/search-page-bootstrap";
 import SaveToListDialog from "../_components/SaveToListDialog";
 import { previewCandidateToImportPayload } from "@/lib/organization";
-import { fetchSearchAccess } from "@/lib/organization";
+import { fetchSearchAccess, autocompleteLocations, autocompleteJobs, type LocationField, type JobField } from "@/lib/organization";
 import { clearAnalyticsCache } from "../analytics/_components/analytics-cache";
 import PreviewCapBanner from "./preview-cap-banner";
 import {
@@ -720,11 +720,12 @@ function getSearchPromptForRun(query: string, model: PopupIntentModel): string {
     return "";
 }
 
-const JOB_FIELDS_WITHOUT_SUGGESTIONS = new Set([
-    "job.current_title_keywords",
-    "job.departments",
-    "job.management_levels",
-]);
+// Job fields backed by the /search/jobs/autocomplete typeahead, keyed by field key.
+const JOB_AUTOCOMPLETE_FIELDS: Record<string, JobField> = {
+    "job.current_title_keywords": "title",
+    "job.departments": "department",
+    "job.management_levels": "management_level",
+};
 
 function getFieldPlaceholder(): string {
     return "";
@@ -805,6 +806,228 @@ function TagInput({
                 </Box>
             )}
         </Box>
+    );
+}
+
+/**
+ * Generic tag input with a debounced, server-backed typeahead dropdown.
+ *
+ * The caller supplies `loadSuggestions(query, signal)`; `refreshKey` should encode
+ * any parent context the loader closes over (e.g. the selected countries for the
+ * Locations cascade) so suggestions refetch when that context changes. Free-text
+ * entries are always allowed via Enter.
+ */
+function TagAutocomplete({
+    label,
+    tags,
+    onChange,
+    loadSuggestions,
+    refreshKey = "",
+}: {
+    label: string;
+    tags: string[];
+    onChange: (next: string[]) => void;
+    loadSuggestions: (query: string, signal: AbortSignal) => Promise<string[]>;
+    refreshKey?: string;
+}) {
+    const [input, setInput] = useState("");
+    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [open, setOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [activeIndex, setActiveIndex] = useState(-1);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const abortRef = useRef<AbortController | null>(null);
+    const loadRef = useRef(loadSuggestions);
+
+    useEffect(() => {
+        loadRef.current = loadSuggestions;
+    });
+
+    useEffect(() => {
+        if (!open) return;
+        const handle = setTimeout(() => {
+            abortRef.current?.abort();
+            const controller = new AbortController();
+            abortRef.current = controller;
+            setLoading(true);
+            loadRef.current(input, controller.signal)
+                .then((next) => {
+                    setSuggestions(next);
+                    setActiveIndex(-1);
+                })
+                .catch((err) => {
+                    if ((err as { name?: string })?.name === "AbortError") return;
+                    setSuggestions([]);
+                })
+                .finally(() => setLoading(false));
+        }, 180);
+        return () => clearTimeout(handle);
+        // refreshKey stands in for any parent context the loader closes over.
+    }, [open, input, refreshKey]);
+
+    useEffect(() => {
+        if (!open) return;
+        const onDocMouseDown = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", onDocMouseDown);
+        return () => document.removeEventListener("mousedown", onDocMouseDown);
+    }, [open]);
+
+    const visibleSuggestions = suggestions.filter(
+        (suggestion) => !tags.some((tag) => tag.toLowerCase() === suggestion.toLowerCase()),
+    );
+
+    const addValue = (value: string) => {
+        const cleaned = value.trim();
+        if (!cleaned) return;
+        if (!tags.some((tag) => tag.toLowerCase() === cleaned.toLowerCase())) {
+            onChange([...tags, cleaned]);
+        }
+        setInput("");
+        setSuggestions([]);
+        setActiveIndex(-1);
+    };
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === "ArrowDown") {
+            event.preventDefault();
+            setOpen(true);
+            setActiveIndex((index) => Math.min(index + 1, visibleSuggestions.length - 1));
+        } else if (event.key === "ArrowUp") {
+            event.preventDefault();
+            setActiveIndex((index) => Math.max(index - 1, 0));
+        } else if (event.key === "Enter" || event.key === ",") {
+            event.preventDefault();
+            if (activeIndex >= 0 && activeIndex < visibleSuggestions.length) {
+                addValue(visibleSuggestions[activeIndex]);
+            } else {
+                addValue(input);
+            }
+        } else if (event.key === "Escape") {
+            setOpen(false);
+        }
+    };
+
+    return (
+        <Box className={styles.tagInputRoot}>
+            <Box className={styles.tagList}>
+                {tags.map((tag) => (
+                    <Badge key={tag} variant="soft" color="amber" className={styles.tagBadge}>
+                        <span className={styles.tagBadgeText}>{tag}</span>
+                        <Cross2Icon
+                            width={10}
+                            height={10}
+                            className={styles.tagRemoveIcon}
+                            onClick={() => onChange(tags.filter((item) => item !== tag))}
+                        />
+                    </Badge>
+                ))}
+            </Box>
+            <div className={styles.tagAutocompleteWrap} ref={containerRef}>
+                <TextField.Root
+                    aria-label={label}
+                    placeholder=""
+                    value={input}
+                    autoComplete="off"
+                    onFocus={() => setOpen(true)}
+                    onChange={(event) => {
+                        setInput(event.target.value);
+                        setOpen(true);
+                    }}
+                    onKeyDown={handleKeyDown}
+                />
+                {open && (loading || visibleSuggestions.length > 0) && (
+                    <Box className={styles.tagAutocompleteMenu} role="listbox">
+                        {visibleSuggestions.length === 0 && loading ? (
+                            <Box className={styles.tagAutocompleteEmpty}>Searching…</Box>
+                        ) : (
+                            visibleSuggestions.map((suggestion, index) => (
+                                <button
+                                    type="button"
+                                    key={suggestion}
+                                    role="option"
+                                    aria-selected={index === activeIndex}
+                                    className={`${styles.tagAutocompleteOption} ${index === activeIndex ? styles.tagAutocompleteOptionActive : ""}`}
+                                    onMouseDown={(event) => {
+                                        event.preventDefault();
+                                        addValue(suggestion);
+                                    }}
+                                    onMouseEnter={() => setActiveIndex(index)}
+                                >
+                                    {suggestion}
+                                </button>
+                            ))
+                        )}
+                    </Box>
+                )}
+            </div>
+        </Box>
+    );
+}
+
+/**
+ * Cascading location picker for the Countries / States / Cities filter fields.
+ * State suggestions are scoped by the chosen countries, city suggestions by the
+ * chosen states.
+ */
+function LocationAutocomplete({
+    level,
+    label,
+    tags,
+    countries,
+    states,
+    onChange,
+}: {
+    level: LocationField;
+    label: string;
+    tags: string[];
+    countries: string[];
+    states: string[];
+    onChange: (next: string[]) => void;
+}) {
+    return (
+        <TagAutocomplete
+            label={label}
+            tags={tags}
+            onChange={onChange}
+            refreshKey={`${level}|${countries.join("|")}|${states.join("|")}`}
+            loadSuggestions={async (query, signal) => {
+                const res = await autocompleteLocations({ field: level, query, countries, states }, { signal });
+                return res.suggestions;
+            }}
+        />
+    );
+}
+
+/**
+ * Typeahead picker for the Job filter fields (Current Titles, Departments,
+ * Management Levels), backed by /search/jobs/autocomplete.
+ */
+function JobAutocomplete({
+    field,
+    label,
+    tags,
+    onChange,
+}: {
+    field: JobField;
+    label: string;
+    tags: string[];
+    onChange: (next: string[]) => void;
+}) {
+    return (
+        <TagAutocomplete
+            label={label}
+            tags={tags}
+            onChange={onChange}
+            refreshKey={field}
+            loadSuggestions={async (query, signal) => {
+                const res = await autocompleteJobs({ field, query }, { signal });
+                return res.suggestions;
+            }}
+        />
     );
 }
 
@@ -2016,6 +2239,42 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
         const value = getNestedValue(popupModel as unknown as Record<string, unknown>, field.key);
         const placeholder = getFieldPlaceholder();
 
+        // The Locations fields use a cascading autocomplete: state suggestions are
+        // scoped by the chosen countries and city suggestions by the chosen states.
+        if (field.key.startsWith("locations.")) {
+            const level: LocationField = field.key.endsWith(".countries")
+                ? "country"
+                : field.key.endsWith(".states")
+                    ? "state"
+                    : "city";
+            return (
+                <LocationAutocomplete
+                    level={level}
+                    label={field.label}
+                    tags={Array.isArray(value) ? (value as string[]) : []}
+                    countries={popupModel.locations.countries}
+                    states={popupModel.locations.states}
+                    onChange={(next) => updatePopup((draft) => {
+                        setNestedValue(draft as unknown as Record<string, unknown>, field.key, next);
+                    })}
+                />
+            );
+        }
+
+        // Job titles / departments / management levels use server-backed typeahead.
+        if (field.key in JOB_AUTOCOMPLETE_FIELDS) {
+            return (
+                <JobAutocomplete
+                    field={JOB_AUTOCOMPLETE_FIELDS[field.key]}
+                    label={field.label}
+                    tags={Array.isArray(value) ? (value as string[]) : []}
+                    onChange={(next) => updatePopup((draft) => {
+                        setNestedValue(draft as unknown as Record<string, unknown>, field.key, next);
+                    })}
+                />
+            );
+        }
+
         if (field.control === "number") {
             return (
                 <NumberInput
@@ -2060,7 +2319,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                     label={field.label}
                     placeholder={placeholder}
                     tags={Array.isArray(value) ? (value as string[]) : []}
-                    suggestions={JOB_FIELDS_WITHOUT_SUGGESTIONS.has(field.key) ? [] : field.suggestions}
+                    suggestions={field.suggestions}
                     onChange={(next) => updatePopup((draft) => {
                         setNestedValue(draft as unknown as Record<string, unknown>, field.key, next);
                     })}
@@ -2707,33 +2966,28 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                         </Box>
                     ))}
 
-                    <Separator size="4" my="4" />
-
-                    <Box mb="4">
-                        <Text size="1" weight="bold">Ambiguities</Text>
-                        <Box mt="2">
-                            <TagInput
-                                label="Ambiguities"
-                                placeholder=""
-                                tags={popupModel.ambiguities}
-                                onChange={(next) => updatePopup((draft) => {
-                                    draft.ambiguities = next;
-                                })}
-                            />
-                        </Box>
-                    </Box>
-
+                    {/*
+                      * Ambiguities are intentionally not rendered. The model resolves
+                      * recruiter intent into concrete filters and keeps any residual
+                      * uncertainty as an internal assumption (e.g. "remote" is treated
+                      * as a preference, not a hard Coresignal location filter) rather
+                      * than asking the recruiter to resolve it. popupModel.ambiguities
+                      * still round-trips so that backend logic keeps working.
+                      */}
                     {Object.keys(popupModel.semantic_expansions).length > 0 && (
-                        <Box>
-                            <Text size="1" weight="bold">Semantic expansions</Text>
-                            <Flex gap="2" wrap="wrap" mt="2">
-                                {Object.entries(popupModel.semantic_expansions).map(([key, value]) => (
-                                    <Badge key={key} variant="soft" color="amber">
-                                        {key}: {Array.isArray(value) ? value.join(", ") : value}
-                                    </Badge>
-                                ))}
-                            </Flex>
-                        </Box>
+                        <>
+                            <Separator size="4" my="4" />
+                            <Box>
+                                <Text size="1" weight="bold">Semantic expansions</Text>
+                                <Flex gap="2" wrap="wrap" mt="2">
+                                    {Object.entries(popupModel.semantic_expansions).map(([key, value]) => (
+                                        <Badge key={key} variant="soft" color="amber">
+                                            {key}: {Array.isArray(value) ? value.join(", ") : value}
+                                        </Badge>
+                                    ))}
+                                </Flex>
+                            </Box>
+                        </>
                     )}
                 </Box>
             </Flex>

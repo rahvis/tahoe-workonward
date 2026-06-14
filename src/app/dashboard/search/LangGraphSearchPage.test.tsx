@@ -131,6 +131,15 @@ const metadataResponse = {
             ],
         },
         {
+            id: "locations",
+            title: "Locations",
+            fields: [
+                { key: "locations.countries", label: "Countries", control: "tags", help_text: "", options: [], suggestions: [], allow_custom: true },
+                { key: "locations.states", label: "States / Regions", control: "tags", help_text: "", options: [], suggestions: [], allow_custom: true },
+                { key: "locations.cities", label: "Cities", control: "tags", help_text: "", options: [], suggestions: [], allow_custom: true },
+            ],
+        },
+        {
             id: "job",
             title: "Job",
             fields: [
@@ -469,6 +478,35 @@ function setupApiMocks() {
         if (path === "/search/preview-page?query_hash=hash-1&page=2") {
             return previewPageTwoResponse;
         }
+        if (path === "/search/locations/autocomplete") {
+            const body = (init?.body ?? {}) as { field?: string; countries?: string[]; states?: string[] };
+            if (body.field === "country") {
+                return { field: "country", suggestions: ["United States", "United Kingdom"] };
+            }
+            if (body.field === "state") {
+                // Cascade: only return a US state when the US is the chosen country.
+                const suggestions = (body.countries ?? []).includes("United States") ? ["California"] : [];
+                return { field: "state", suggestions };
+            }
+            if (body.field === "city") {
+                const suggestions = (body.states ?? []).includes("California") ? ["Los Angeles"] : [];
+                return { field: "city", suggestions };
+            }
+            return { field: body.field ?? "country", suggestions: [] };
+        }
+        if (path === "/search/jobs/autocomplete") {
+            const body = (init?.body ?? {}) as { field?: string };
+            if (body.field === "title") {
+                return { field: "title", suggestions: ["Software Developers", "Software Quality Engineers"] };
+            }
+            if (body.field === "department") {
+                return { field: "department", suggestions: ["Human Resources"] };
+            }
+            if (body.field === "management_level") {
+                return { field: "management_level", suggestions: ["VP"] };
+            }
+            return { field: body.field ?? "title", suggestions: [] };
+        }
         throw new Error(`Unhandled path: ${String(path)} ${JSON.stringify(init)}`);
     });
 }
@@ -541,7 +579,9 @@ test("desktop page keeps Filters visible and opens the Tahoe popup with backend-
     expect(await screen.findByText("Min Followers")).toBeInTheDocument();
     expect(screen.getByText("Min Connections")).toBeInTheDocument();
     expect(getPopupInput("Min Followers")).toHaveAttribute("placeholder", "");
-    expect(getPopupInput("Ambiguities")).toHaveAttribute("placeholder", "");
+    // Ambiguities are no longer surfaced as an editable filter — the model
+    // self-resolves intent and keeps any residual uncertainty internal.
+    expect(screen.queryByLabelText("Ambiguities")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Job" }));
     expect(screen.queryByRole("button", { name: "Software Developers" })).not.toBeInTheDocument();
@@ -562,6 +602,71 @@ test("desktop page keeps Filters visible and opens the Tahoe popup with backend-
     expect(screen.getByRole("textbox", { name: "Proficiency 1" })).toHaveAttribute("placeholder", "");
     expect(screen.getByRole("button", { name: "English" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Native or bilingual proficiency" })).toBeInTheDocument();
+}, 10000);
+
+test("Locations panel autocompletes and enforces the country -> state -> city cascade", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Filters" }));
+    await screen.findByLabelText("Search filters");
+    await user.click(screen.getByRole("button", { name: "Locations" }));
+
+    // Country: type, pick a suggestion, see it become a tag.
+    await user.type(screen.getByRole("textbox", { name: "Countries" }), "uni");
+    await user.click(await screen.findByRole("option", { name: "United States" }));
+    expect(screen.getByText("United States")).toBeInTheDocument();
+
+    // State: suggestions must be requested with the chosen country as context.
+    await user.type(screen.getByRole("textbox", { name: "States / Regions" }), "cal");
+    await user.click(await screen.findByRole("option", { name: "California" }));
+
+    const stateCall = mockedApiRequest.mock.calls.find(
+        ([path, init]) =>
+            path === "/search/locations/autocomplete"
+            && (init?.body as { field?: string } | undefined)?.field === "state",
+    );
+    expect((stateCall?.[1]?.body as { countries: string[] }).countries).toContain("United States");
+
+    // City: suggestions cascade off the chosen state.
+    await user.type(screen.getByRole("textbox", { name: "Cities" }), "los");
+    await user.click(await screen.findByRole("option", { name: "Los Angeles" }));
+
+    const cityCall = mockedApiRequest.mock.calls.find(
+        ([path, init]) =>
+            path === "/search/locations/autocomplete"
+            && (init?.body as { field?: string } | undefined)?.field === "city",
+    );
+    expect((cityCall?.[1]?.body as { states: string[] }).states).toContain("California");
+}, 10000);
+
+test("Job panel offers server-backed typeahead for titles, departments and management levels", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Filters" }));
+    await screen.findByLabelText("Search filters");
+    await user.click(screen.getByRole("button", { name: "Job" }));
+
+    // No static suggestion chips on tab-open; they only appear as you type.
+    expect(screen.queryByRole("option", { name: "Software Developers" })).not.toBeInTheDocument();
+
+    // Current Titles typeahead.
+    await user.type(screen.getByRole("textbox", { name: "Current Titles" }), "soft");
+    await user.click(await screen.findByRole("option", { name: "Software Developers" }));
+    expect(screen.getByText("Software Developers")).toBeInTheDocument();
+
+    const titleCall = mockedApiRequest.mock.calls.find(
+        ([path, init]) =>
+            path === "/search/jobs/autocomplete"
+            && (init?.body as { field?: string } | undefined)?.field === "title",
+    );
+    expect(titleCall).toBeTruthy();
+
+    // Departments typeahead resolves an alias to the canonical label.
+    await user.type(screen.getByRole("textbox", { name: "Departments" }), "hr");
+    await user.click(await screen.findByRole("option", { name: "Human Resources" }));
+    expect(screen.getByText("Human Resources")).toBeInTheDocument();
 }, 10000);
 
 test("desktop popup closes from the close button and persists active filter count on the Filters button", async () => {
