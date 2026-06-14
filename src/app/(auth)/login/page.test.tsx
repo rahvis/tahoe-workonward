@@ -29,6 +29,21 @@ beforeEach(() => {
     mockedSetToken.mockReset();
 });
 
+test('toggles password visibility with the eye button', async () => {
+    const user = userEvent.setup();
+    render(<LoginPage />);
+
+    const passwordField = screen.getByPlaceholderText('Enter your password');
+    expect(passwordField).toHaveAttribute('type', 'password');
+
+    await user.type(passwordField, 'super-secret');
+    await user.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(passwordField).toHaveAttribute('type', 'text');
+
+    await user.click(screen.getByRole('button', { name: 'Hide password' }));
+    expect(passwordField).toHaveAttribute('type', 'password');
+});
+
 test('submits password login and redirects on success', async () => {
     const user = userEvent.setup();
     mockedApiRequest.mockResolvedValue({ access_token: 'jwt-token' });

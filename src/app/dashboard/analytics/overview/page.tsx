@@ -22,10 +22,12 @@ import {
 
 type OverviewTab = 'summary' | 'workflow' | 'forecasts';
 
+// Only Summary is surfaced in the UI. Workflow and Forecasts are intentionally
+// hidden from the tab bar; their render/data code is left intact and any
+// ?tab=workflow / ?tab=forecasts URL normalizes back to summary (same pattern
+// as previously removed tabs).
 const overviewTabs: Array<{ key: OverviewTab; label: string }> = [
     { key: 'summary', label: 'Summary' },
-    { key: 'workflow', label: 'Workflow' },
-    { key: 'forecasts', label: 'Forecasts' },
 ];
 
 const rangeOptions: AnalyticsRangeKey[] = ['7d', '30d', '90d', '365d'];
@@ -159,7 +161,7 @@ function OverviewContent() {
             <div className={styles.sectionStack}>
                 <div className={styles.heroCard}>
                     <div className={styles.kpiGrid}>
-                        {current.kpis.map((kpi) => (
+                        {current.kpis.filter((kpi) => kpi.key !== 'replies').map((kpi) => (
                             <div key={kpi.key} className={styles.kpiCard}>
                                 <div className={styles.kpiLabel}>{kpi.label}</div>
                                 <div className={styles.kpiValue}>{kpi.display_value}</div>

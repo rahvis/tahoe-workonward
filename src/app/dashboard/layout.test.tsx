@@ -171,6 +171,8 @@ test('dashboard nav includes the analytics section', async () => {
     expect(analyticsButton).toBeInTheDocument();
     await user.click(analyticsButton);
     expect(await screen.findByRole('link', { name: /overview/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /campaign performance/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /credit spend/i })).toBeInTheDocument();
+    // Funnel, Campaign Performance, and Credit Spend are removed from the side panel menu.
+    expect(screen.queryByRole('link', { name: /funnel/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /campaign performance/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /credit spend/i })).not.toBeInTheDocument();
 });

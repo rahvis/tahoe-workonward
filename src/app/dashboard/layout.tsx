@@ -69,9 +69,6 @@ const sectionConfig = {
         icon: <BarChartIcon width="18" height="18" />,
         subnav: [
             { href: '/dashboard/analytics/overview', label: 'Overview' },
-            { href: '/dashboard/analytics/funnel', label: 'Funnel' },
-            { href: '/dashboard/analytics/campaigns', label: 'Campaign Performance' },
-            { href: '/dashboard/analytics/spend', label: 'Credit Spend' },
         ],
     },
     settings: {

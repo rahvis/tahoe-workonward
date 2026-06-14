@@ -3,9 +3,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiRequest, setToken } from '@/lib/api';
-import { EnvelopeClosedIcon, LockClosedIcon, ExclamationTriangleIcon } from '@/components/ui/icons';
+import { EnvelopeClosedIcon, ExclamationTriangleIcon } from '@/components/ui/icons';
 import GoogleAuthSection from '@/components/auth/GoogleAuthSection';
 import AuthShell from '@/components/auth/AuthShell';
+import PasswordInput from '@/components/auth/PasswordInput';
 import styles from '../auth.module.css';
 
 export default function LoginPage() {
@@ -82,18 +83,13 @@ export default function LoginPage() {
 
                     <div className={styles.field}>
                         <label htmlFor="login-password" className="tahoe-label">Password</label>
-                        <div className={styles.inputShell}>
-                            <span className={styles.inputIcon}><LockClosedIcon /></span>
-                            <input
-                                id="login-password"
-                                className={styles.input}
-                                placeholder="Enter your password"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
-                        </div>
+                        <PasswordInput
+                            id="login-password"
+                            value={password}
+                            onChange={setPassword}
+                            placeholder="Enter your password"
+                            autoComplete="current-password"
+                        />
                     </div>
 
                     <button className="tahoe-button" type="submit" disabled={loading}>

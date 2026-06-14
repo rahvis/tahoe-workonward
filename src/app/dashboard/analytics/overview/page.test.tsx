@@ -114,9 +114,7 @@ beforeEach(() => {
     mockedFetchAnalyticsPredictions.mockResolvedValue(predictionsResponse());
 });
 
-test('defaults to 7D and does not load forecasts until the forecasts tab opens', async () => {
-    const user = userEvent.setup();
-
+test('defaults to 7D, hides workflow/forecasts tabs, and never loads forecasts', async () => {
     render(<AnalyticsOverviewPage />);
 
     expect(await screen.findByText('Credits spent')).toBeInTheDocument();
@@ -124,30 +122,31 @@ test('defaults to 7D and does not load forecasts until the forecasts tab opens',
     expect(screen.getByRole('tab', { name: 'Summary' }).closest('nav')).toContainElement(
         screen.getByRole('button', { name: '7D' }),
     );
-    expect(screen.queryByRole('tab', { name: 'Credits' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('tab', { name: 'Health' })).not.toBeInTheDocument();
+    // Workflow and Forecasts tabs are removed from the UI.
+    expect(screen.queryByRole('tab', { name: 'Workflow' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Forecasts' })).not.toBeInTheDocument();
+    // With no forecasts tab, the predictions endpoint is never called.
     expect(mockedFetchAnalyticsPredictions).not.toHaveBeenCalled();
 
     await waitFor(() => {
         expect(mockedFetchAnalyticsOverview).toHaveBeenCalledWith({ range: '7d' }, expect.any(Object));
     });
-
-    await user.click(screen.getByRole('tab', { name: 'Forecasts' }));
-
-    expect(await screen.findByText('15.4 days')).toBeInTheDocument();
-    expect(mockedFetchAnalyticsPredictions).toHaveBeenCalledWith({ range: '7d' }, expect.any(Object));
 });
 
-test('maps provider source labels to user-facing Search copy', async () => {
-    const user = userEvent.setup();
+test('hides the Replies KPI from the summary view', async () => {
+    mockedFetchAnalyticsOverview.mockResolvedValue(
+        overviewResponse({
+            kpis: [
+                { key: 'replies', label: 'Replies', value: 7, display_value: '7', delta_pct: null, trend: [1, 2], detail: 'Replies received' },
+                { key: 'credits_spent', label: 'Credits spent', value: 42, display_value: '42', delta_pct: 8.2, trend: [10, 12, 20], detail: 'Actual credits consumed' },
+            ],
+        }),
+    );
 
     render(<AnalyticsOverviewPage />);
 
-    await screen.findByText('Credits spent');
-    await user.click(screen.getByRole('tab', { name: 'Workflow' }));
-
-    expect(screen.getByText('Search')).toBeInTheDocument();
-    expect(screen.queryByText('Coresignal')).not.toBeInTheDocument();
+    expect(await screen.findByText('Credits spent')).toBeInTheDocument();
+    expect(screen.queryByText('Replies')).not.toBeInTheDocument();
 });
 
 test('renders a recruiter-visible error state when overview loading fails', async () => {
@@ -171,56 +170,20 @@ test('keeps cached data visible while revalidating the same range', async () => 
     await waitFor(() => expect(navigationMocks.replace).toHaveBeenCalled());
 });
 
-test('normalizes removed overview tabs back to summary', async () => {
-    navigationMocks.searchParams = new URLSearchParams('range=30d&tab=credits');
+test('normalizes a hidden overview tab (forecasts) back to summary', async () => {
+    navigationMocks.searchParams = new URLSearchParams('range=30d&tab=forecasts');
 
     render(<AnalyticsOverviewPage />);
 
     expect(await screen.findByText('Credits spent')).toBeInTheDocument();
-    expect(screen.queryByRole('tab', { name: 'Credits' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Forecasts' })).not.toBeInTheDocument();
     await waitFor(() => {
         expect(navigationMocks.replace).toHaveBeenCalledWith(
             '/dashboard/analytics/overview?range=30d&tab=summary',
             { scroll: false },
         );
     });
+    // Hidden tab must not trigger the forecasts fetch.
+    expect(mockedFetchAnalyticsPredictions).not.toHaveBeenCalled();
 });
 
-test('does not show stale forecasts after changing range', async () => {
-    const user = userEvent.setup();
-    let resolveNextForecast: ((value: AnalyticsPredictionsResponse) => void) | undefined;
-    mockedFetchAnalyticsPredictions
-        .mockResolvedValueOnce(predictionsResponse())
-        .mockReturnValueOnce(new Promise((resolve) => {
-            resolveNextForecast = resolve;
-        }));
-
-    render(<AnalyticsOverviewPage />);
-
-    await screen.findByText('Credits spent');
-    await user.click(screen.getByRole('tab', { name: 'Forecasts' }));
-
-    expect(await screen.findByText('15.4 days')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: '30D' }));
-
-    expect(await screen.findByRole('heading', { name: 'Loading forecasts' })).toBeInTheDocument();
-    expect(screen.queryByText('15.4 days')).not.toBeInTheDocument();
-
-    resolveNextForecast?.(predictionsResponse({
-        range: '30d',
-        predictions: [
-            {
-                key: 'credit_runway_days',
-                label: 'Credit runway',
-                display_value: '30 days',
-                value: 30,
-                insufficient_data: false,
-                method_label: 'Trailing credit-burn estimate',
-                explanation: 'Uses recent credit consumption to estimate how long current credits will last.',
-            },
-        ],
-    }));
-
-    expect(await screen.findByText('30 days')).toBeInTheDocument();
-});

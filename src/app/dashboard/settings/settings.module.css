@@ -172,7 +172,10 @@
 }
 
 .layout {
-    flex: 1 1 auto;
+    /* Size to content so tall tabs (e.g. Compliance) scroll inside
+       .contentRegion instead of being clamped to the viewport and clipped
+       by .page (overflow: hidden). */
+    flex: 0 0 auto;
     min-height: 0;
     display: flex;
     width: 100%;
@@ -180,7 +183,7 @@
 }
 
 .sectionStack {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-height: 0;
     display: grid;
     align-content: start;

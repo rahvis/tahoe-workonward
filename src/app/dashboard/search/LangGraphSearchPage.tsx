@@ -1413,10 +1413,6 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
         dispatch({ type: "patch", payload: { mobileFiltersOpen: false } });
     }, []);
 
-    const closeDesktopDialog = useCallback(() => {
-        dispatch({ type: "patch", payload: { desktopFiltersOpen: false } });
-    }, []);
-
     const openFilterSurface = useCallback(() => {
         if (isDesktopViewport()) {
             dispatch({
@@ -1885,23 +1881,6 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
 
     async function handlePopupFindCandidates() {
         await runFindCandidates({ closeDesktopOnSuccess: true, launchedFromPopup: true });
-    }
-
-    /** Re-fire /search/parse with the current prompt and replace filter-editor
-     * filters with the response. Does NOT execute. Resets popupDirty=false. */
-    async function handleMatchPrompt() {
-        const trimmedQuery = state.query.trim();
-        if (!trimmedQuery) return;
-        try {
-            await parseQuery(trimmedQuery);
-        } catch (err: unknown) {
-            dispatch({
-                type: "patch",
-                payload: {
-                    error: err instanceof Error ? err.message : "Unable to parse search.",
-                },
-            });
-        }
     }
 
     /** Clear all recruiter filters. Does NOT execute. Resets popupDirty=false. */
@@ -2544,29 +2523,9 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                                 Reset filters
                             </Button>
                             <Flex gap="2" wrap="wrap" justify="end">
-                                <Button
-                                    size="2"
-                                    variant="soft"
-                                    disabled={isJdMode ? !canGenerateSearchPlan || isBusy : !state.query.trim() || isBusy}
-                                    onClick={() => {
-                                        if (isJdMode) {
-                                            void handleGenerateSearchPlan();
-                                            return;
-                                        }
-                                        void handleMatchPrompt();
-                                    }}
-                                    title={isJdMode ? "Replace filters with what the JD maps to" : "Replace filters with what the prompt parses to"}
-                                >
-                                    {isJdMode ? "Match JD again" : "Match prompt"}
-                                </Button>
                                 <Button size="2" disabled={findButtonDisabled} onClick={() => void handlePopupFindCandidates()}>
                                     {popupSearchPending ? <Spinner /> : "Find candidates"}
                                 </Button>
-                                <Dialog.Close asChild>
-                                    <Button size="2" disabled={popupSearchPending} onClick={closeDesktopDialog}>
-                                        Done
-                                    </Button>
-                                </Dialog.Close>
                             </Flex>
                         </Flex>
                         {popupSearchPending ? (

@@ -559,7 +559,7 @@ test("desktop page keeps Filters visible and opens the Tahoe popup with backend-
     expect(screen.getByRole("button", { name: "Native or bilingual proficiency" })).toBeInTheDocument();
 }, 10000);
 
-test("desktop popup closes from Done and persists active filter count on the Filters button", async () => {
+test("desktop popup closes from the close button and persists active filter count on the Filters button", async () => {
     const user = userEvent.setup();
     render(<LangGraphSearchPage />);
 
@@ -567,7 +567,7 @@ test("desktop popup closes from Done and persists active filter count on the Fil
     await user.click(screen.getByRole("button", { name: "Job" }));
     await user.type(getPopupInput("Departments"), "Platform{enter}");
 
-    await user.click(screen.getByRole("button", { name: "Done" }));
+    await user.click(screen.getByRole("button", { name: "Close filters" }));
 
     await waitFor(() => {
         expect(screen.queryByLabelText("Search filters")).not.toBeInTheDocument();
@@ -1150,7 +1150,7 @@ test("popup edits before Find candidates win over the parse response (popupDirty
     const followersInput = getPopupInput("Min Followers");
     await user.type(followersInput, "500");
 
-    await user.click(screen.getByRole("button", { name: "Done" }));
+    await user.click(screen.getByRole("button", { name: "Close filters" }));
     // Two-step: the main button re-parses and reopens the review popup with the
     // recruiter's edits preserved; confirming in the popup executes.
     await user.click(screen.getByRole("button", { name: "Find candidates" }));
@@ -1275,7 +1275,7 @@ test("reopening the desktop popup preserves recruiter filter edits", async () =>
     await user.click(await screen.findByRole("button", { name: "Filters" }));
     await user.click(screen.getByRole("button", { name: "Job" }));
     await user.type(getPopupInput("Departments"), "Platform{enter}");
-    await user.click(screen.getByRole("button", { name: "Done" }));
+    await user.click(screen.getByRole("button", { name: "Close filters" }));
 
     await user.click(screen.getByRole("button", { name: "Filters (1)" }));
     expect(await screen.findByText("Platform")).toBeInTheDocument();
