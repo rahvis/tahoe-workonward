@@ -82,7 +82,10 @@ export default function LoginPage() {
                     </div>
 
                     <div className={styles.field}>
-                        <label htmlFor="login-password" className="tahoe-label">Password</label>
+                        <div className={styles.labelRow}>
+                            <label htmlFor="login-password" className="tahoe-label">Password</label>
+                            <Link href="/forgot-password" className={styles.authLink}>Forgot password?</Link>
+                        </div>
                         <PasswordInput
                             id="login-password"
                             value={password}

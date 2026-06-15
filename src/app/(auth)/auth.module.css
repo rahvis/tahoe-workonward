@@ -19,6 +19,17 @@
     gap: 8px;
 }
 
+.labelRow {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.labelRow .authLink {
+    font-size: 13px;
+}
+
 .inputShell {
     display: flex;
     align-items: center;
