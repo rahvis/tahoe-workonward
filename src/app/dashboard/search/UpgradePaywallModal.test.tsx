@@ -49,7 +49,7 @@ test("shows the subscribe paywall with self-serve plan tiers and routes to billi
     expect(screen.queryByText("Enterprise")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /view plans & subscribe/i }));
-    expect(pushMock).toHaveBeenCalledWith("/dashboard/billing/plan");
+    expect(pushMock).toHaveBeenCalledWith("/dashboard/billing/plan?tab=plans");
 });
 
 test("shows the top-up copy for a subscribed recruiter out of credits", async () => {

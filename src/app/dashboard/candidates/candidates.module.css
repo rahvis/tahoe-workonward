@@ -86,7 +86,10 @@
 .listActions :global(.tui-button),
 .listActions :global(.tahoe-button),
 .listActions :global(.tahoe-button-secondary) {
-    min-height: var(--search-bar-control-height);
+    /* Match the Credits chip (.tahoe-chip) height (36px) in this action row. */
+    min-height: 36px;
+    padding-top: 0;
+    padding-bottom: 0;
     font-family: var(--tahoe-font-body);
 }
 

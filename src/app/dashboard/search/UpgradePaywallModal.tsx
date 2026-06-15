@@ -98,7 +98,7 @@ export default function UpgradePaywallModal({ open, reason, onClose }: UpgradePa
                         onClick={() => router.push(
                             reason === "insufficient_credits"
                                 ? "/dashboard/billing/plan?tab=topups"
-                                : "/dashboard/billing/plan",
+                                : "/dashboard/billing/plan?tab=plans",
                         )}
                     >
                         {subscribeCopy.cta}
