@@ -190,11 +190,6 @@ function BillingPlanContent() {
                         <div className={styles.metricMeta}>Spendable now</div>
                     </div>
                     <div className={styles.metricCard}>
-                        <div className={styles.metricLabel}>Reserved credits</div>
-                        <div className={styles.metricValue}>{summary.reserved_credits.toLocaleString()}</div>
-                        <div className={styles.metricMeta}>Held for active runs and campaigns</div>
-                    </div>
-                    <div className={styles.metricCard}>
                         <div className={styles.metricLabel}>Included monthly</div>
                         <div className={styles.metricValue}>{summary.monthly_included_credits.toLocaleString()}</div>
                         <div className={styles.metricMeta}>Search, enrichment, and outreach</div>

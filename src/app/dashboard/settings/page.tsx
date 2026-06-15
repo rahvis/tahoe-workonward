@@ -960,11 +960,6 @@ function SettingsPageContent() {
                                                 <strong>{(billingSummary?.monthly_included_credits || 0).toLocaleString()}</strong>
                                                 <span className={styles.muted}>For search, enrichment, and outreach</span>
                                             </div>
-                                            <div className={styles.metricBox}>
-                                                <span className={styles.label}>Available credits</span>
-                                                <strong>{(billingSummary?.available_credits || 0).toLocaleString()}</strong>
-                                                <span className={styles.muted}>{(billingSummary?.reserved_credits || 0).toLocaleString()} reserved</span>
-                                            </div>
                                         </div>
                                         {hasActiveSubscription ? (
                                             <div className={styles.actions}>
