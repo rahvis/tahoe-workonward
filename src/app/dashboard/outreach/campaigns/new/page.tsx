@@ -7,9 +7,6 @@ import { Button, TahoeSelect, TextField } from '@/components/ui/tahoe-ui';
 import {
     composeCampaignMessage,
     createCampaign,
-    createList,
-    createProject,
-    fetchBillingSummary,
     fetchList,
     fetchListCandidates,
     fetchLists,
@@ -160,23 +157,14 @@ function NewCampaignContent() {
     });
     const [listSearchInput, setListSearchInput] = useState('');
     const [projectFilter, setProjectFilter] = useState('');
-    const [selectedProjectId, setSelectedProjectId] = useState('');
-    const [newProjectName, setNewProjectName] = useState('');
-    const [newListName, setNewListName] = useState('');
-    const [createListOpen, setCreateListOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [listsLoading, setListsLoading] = useState(false);
     const [audienceLoading, setAudienceLoading] = useState(Boolean(initialListId));
-    const [creatingList, setCreatingList] = useState(false);
     const [generating, setGenerating] = useState(false);
     const [launching, setLaunching] = useState(false);
     const [launchSuccessId, setLaunchSuccessId] = useState('');
-    const [aiVariables, setAiVariables] = useState<string[]>([]);
-    const [aiNotes, setAiNotes] = useState<string[]>([]);
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
-    const [availableCredits, setAvailableCredits] = useState<number | null>(null);
-    const [lowCreditState, setLowCreditState] = useState<'healthy' | 'low' | 'critical' | 'empty'>('healthy');
     const [nameTouched, setNameTouched] = useState(false);
     const audienceRequestRef = useRef(0);
     const listCacheRef = useRef(new Map<string, { list: ListSummary; candidates: ListCandidateRow[] }>());
@@ -229,9 +217,8 @@ function NewCampaignContent() {
         async function loadSetup() {
             setLoading(true);
             try {
-                const [mailboxItems, billing, settingsPayload, listItems, projectItems] = await Promise.all([
+                const [mailboxItems, settingsPayload, listItems, projectItems] = await Promise.all([
                     fetchMailboxes(),
-                    fetchBillingSummary(),
                     fetchSettings(),
                     fetchLists(),
                     fetchProjects({ archived: false }),
@@ -240,8 +227,6 @@ function NewCampaignContent() {
                 setMailboxes(mailboxItems);
                 setLists(listItems);
                 setProjects(projectItems);
-                setAvailableCredits(billing.available_credits);
-                setLowCreditState(billing.low_credit_state);
                 const firstHealthy = mailboxItems.find((mailbox) => mailbox.status === 'healthy');
                 if (firstHealthy) setMailboxId((current) => current || firstHealthy.id);
                 setSchedule((current) => ({
@@ -341,7 +326,6 @@ function NewCampaignContent() {
 
     const eligibleCount = useMemo(() => candidates.filter((candidate) => firstEmail(candidate)).length, [candidates]);
     const suppressedCount = Math.max(0, candidates.length - eligibleCount);
-    const estimatedCreditCost = eligibleCount * steps.length;
     const selectedMailbox = mailboxes.find((mailbox) => mailbox.id === mailboxId) ?? null;
     const activeIndex = BUILDER_STEPS.findIndex((step) => step.key === activeStep);
     const activeLabel = BUILDER_STEPS[activeIndex]?.label || 'Audience';
@@ -358,7 +342,6 @@ function NewCampaignContent() {
         if (!selectedListId) return 'Pick a list to send from.';
         if (!mailboxId) return 'Connect a healthy mailbox in Schedule.';
         if (eligibleCount === 0) return 'No candidates in this list have an email yet.';
-        if (availableCredits != null && estimatedCreditCost > availableCredits) return 'Available credits are lower than the estimated send cost.';
         if (steps.some((step) => !step.subject.trim() || !step.body_text.trim())) return 'Every email step needs a subject and body.';
         if (steps.some((step) => step.delay_days < 0 || (step.daily_cap != null && step.daily_cap < 1))) return 'Fix invalid step delay or cap values.';
         if (schedule.daily_campaign_cap < 1 || schedule.min_spacing_minutes < 1 || schedule.max_spacing_minutes < schedule.min_spacing_minutes) {
@@ -369,8 +352,42 @@ function NewCampaignContent() {
             return 'Fill the required signature fields.';
         }
         return null;
-    }, [selectedListId, mailboxId, eligibleCount, estimatedCreditCost, availableCredits, steps, schedule, signature]);
+    }, [selectedListId, mailboxId, eligibleCount, steps, schedule, signature]);
     const launchReady = launchBlockedReason === null;
+    const stepBlockedReason = useMemo<Record<BuilderStep, string | null>>(() => {
+        const messageInvalid = steps.some((step) => !step.subject.trim() || !step.body_text.trim());
+        const stepValuesInvalid = steps.some((step) => step.delay_days < 0 || (step.daily_cap != null && step.daily_cap < 1));
+        const scheduleInvalid = schedule.daily_campaign_cap < 1 || schedule.min_spacing_minutes < 1 || schedule.max_spacing_minutes < schedule.min_spacing_minutes;
+        const windowInvalid = schedule.window_end_local <= schedule.window_start_local;
+        const signatureIncomplete = !signature.sender_name.trim() || !signature.sender_email.trim() || !signature.sender_phone.trim() || !signature.sender_address.trim();
+        return {
+            audience: !selectedListId
+                ? 'Pick a list to send from.'
+                : audienceLoading
+                    ? 'Loading candidates…'
+                    : eligibleCount === 0
+                        ? 'No candidates in this list have an email yet.'
+                        : null,
+            'ai-message': messageInvalid ? 'Add a subject and body for every email.' : null,
+            sequence: messageInvalid
+                ? 'Add a subject and body for every email.'
+                : stepValuesInvalid
+                    ? 'Fix invalid step delay or cap values.'
+                    : null,
+            signature: signatureIncomplete ? 'Fill the required signature fields.' : null,
+            schedule: !mailboxId
+                ? 'Connect a healthy mailbox.'
+                : scheduleInvalid
+                    ? 'Fix schedule caps and spacing.'
+                    : windowInvalid
+                        ? 'Send window end must be after the start time.'
+                        : null,
+            review: launchBlockedReason,
+        };
+    }, [selectedListId, audienceLoading, eligibleCount, steps, schedule, signature, mailboxId, launchBlockedReason]);
+    const currentStepBlockedReason = stepBlockedReason[activeStep];
+    const firstBlockedIndex = BUILDER_STEPS.findIndex((step) => stepBlockedReason[step.key] != null);
+    const maxReachableIndex = firstBlockedIndex === -1 ? BUILDER_STEPS.length - 1 : firstBlockedIndex;
 
     function updateSchedule(patch: Partial<CampaignSchedule>) {
         setSchedule((current) => ({ ...current, ...patch }));
@@ -384,36 +401,6 @@ function NewCampaignContent() {
 
     function updateStep(index: number, patch: Partial<OutreachStep>) {
         setSteps((current) => current.map((step, stepIndex) => (stepIndex === index ? { ...step, ...patch } : step)));
-    }
-
-    async function handleCreateAudienceList() {
-        if (!newListName.trim()) {
-            setError('Enter a list name before creating an audience list.');
-            return;
-        }
-        setCreatingList(true);
-        setError('');
-        try {
-            let projectId = selectedProjectId;
-            if (newProjectName.trim()) {
-                const createdProject = await createProject({ name: newProjectName.trim() });
-                setProjects((current) => [createdProject, ...current]);
-                projectId = createdProject.id;
-                setSelectedProjectId(projectId);
-            }
-            if (!projectId) throw new Error('Choose an existing project or enter a new project name.');
-            const createdList = await createList(projectId, { name: newListName.trim() });
-            setLists((current) => [createdList, ...current.filter((item) => item.id !== createdList.id)]);
-            setNewListName('');
-            setNewProjectName('');
-            setCreateListOpen(false);
-            setNotice('List created. Add candidates from Search before launching.');
-            selectList(createdList.id);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unable to create audience list.');
-        } finally {
-            setCreatingList(false);
-        }
     }
 
     async function handleGenerate() {
@@ -453,8 +440,6 @@ function NewCampaignContent() {
                 })),
             ]);
             setSelectedStepIndex(0);
-            setAiVariables(response.variables_used);
-            setAiNotes(response.compliance_notes);
             setNotice('');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to generate outreach.');
@@ -549,36 +534,7 @@ function NewCampaignContent() {
                             {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
                         </TahoeSelect>
                     </label>
-                    <Button size="3" onClick={() => setCreateListOpen((current) => !current)}>Create list</Button>
                 </div>
-                {createListOpen ? (
-                    <div className={styles.builderInlinePanel}>
-                        <label className={styles.compactField}>
-                            <span>Project</span>
-                            <TahoeSelect size="3" value={selectedProjectId} onChange={(event) => {
-                                setSelectedProjectId(event.target.value);
-                                if (event.target.value) setNewProjectName('');
-                            }}>
-                                <option value="">Choose a project</option>
-                                {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
-                            </TahoeSelect>
-                        </label>
-                        <label className={styles.compactField}>
-                            <span>New project</span>
-                            <TextField.Root size="3" value={newProjectName} placeholder="Series-B backend" onChange={(event) => {
-                                setNewProjectName(event.target.value);
-                                if (event.target.value.trim()) setSelectedProjectId('');
-                            }} />
-                        </label>
-                        <label className={styles.compactField}>
-                            <span>List name</span>
-                            <TextField.Root size="3" value={newListName} placeholder="Outreach Round 1" onChange={(event) => setNewListName(event.target.value)} />
-                        </label>
-                        <Button size="3" variant="soft" onClick={() => void handleCreateAudienceList()} disabled={creatingList || !newListName.trim()}>
-                            {creatingList ? 'Creating...' : 'Create and use'}
-                        </Button>
-                    </div>
-                ) : null}
                 <div className={styles.builderTableShell}>
                     <div className={styles.tableScroll}>
                         <table className={`${styles.table} ${styles.compactTable}`}>
@@ -674,10 +630,6 @@ function NewCampaignContent() {
                                 <p>{step.body_text}</p>
                             </div>
                         ))}
-                        <div className={styles.pills}>
-                            {aiVariables.length ? aiVariables.map((variable) => <span key={variable} className={styles.pill}>{variable}</span>) : <span className={styles.pill}>Variables supported</span>}
-                            {aiNotes.slice(0, 2).map((note) => <span key={note} className={styles.pill}>{note}</span>)}
-                        </div>
                     </div>
                 </div>
             </section>
@@ -865,7 +817,7 @@ function NewCampaignContent() {
             { label: 'Sequence', value: `${steps.length} email${steps.length === 1 ? '' : 's'}`, ok: steps.every((step) => step.subject.trim() && step.body_text.trim()) },
             { label: 'Sender', value: selectedMailbox ? `${selectedMailbox.email} · ${selectedMailbox.status}` : 'No mailbox', ok: Boolean(mailboxId) },
             { label: 'Schedule', value: `${schedule.window_start_local}-${schedule.window_end_local} · max ${schedule.daily_campaign_cap}/day`, ok: schedule.weekdays.length > 0 },
-            { label: 'Credits', value: `${estimatedCreditCost} held · ${availableCredits ?? '--'} available`, ok: availableCredits == null || estimatedCreditCost <= availableCredits },
+            { label: 'Sending', value: 'Delivered from your connected mailbox — no send credits charged', ok: true },
         ];
         return (
             <section className={styles.builderPanel} role="tabpanel" aria-label="Review">
@@ -878,7 +830,6 @@ function NewCampaignContent() {
                         </div>
                     ))}
                 </div>
-                {lowCreditState !== 'healthy' ? <div className={styles.builderNotice}>Credit runway is tight. Tahoe holds estimated send credits at launch and settles after completion or stop.</div> : null}
                 {launchBlockedReason ? <p className={styles.muted} role="status">{launchBlockedReason}</p> : null}
             </section>
         );
@@ -897,7 +848,7 @@ function NewCampaignContent() {
         <section className={styles.builderWorkspace}>
             <div className={styles.builderTopbar}>
                 <nav className={styles.builderTabs} aria-label="Campaign builder steps" role="tablist">
-                    {BUILDER_STEPS.map((step) => (
+                    {BUILDER_STEPS.map((step, index) => (
                         <button
                             key={step.key}
                             type="button"
@@ -905,6 +856,7 @@ function NewCampaignContent() {
                             aria-selected={activeStep === step.key}
                             className={activeStep === step.key ? styles.builderTabActive : styles.builderTab}
                             onClick={() => switchStep(step.key)}
+                            disabled={index > maxReachableIndex}
                         >
                             {step.label}
                         </button>
@@ -924,13 +876,13 @@ function NewCampaignContent() {
             </div>
             <div className={styles.stepFooter}>
                 <Button size="3" variant="soft" onClick={() => goRelative(-1)} disabled={activeIndex <= 0}>Back</Button>
-                <span className={styles.muted}>{launchBlockedReason || `${eligibleCount} eligible · ${steps.length} email${steps.length === 1 ? '' : 's'}`}</span>
+                <span className={styles.muted}>{currentStepBlockedReason || `${eligibleCount} eligible · ${steps.length} email${steps.length === 1 ? '' : 's'}`}</span>
                 {activeStep === 'review' ? (
                     <Button size="3" onClick={() => void handleLaunch()} disabled={!launchReady || launching}>
                         {launching ? 'Launching...' : 'Launch campaign'}
                     </Button>
                 ) : (
-                    <Button size="3" onClick={() => goRelative(1)}>Next</Button>
+                    <Button size="3" onClick={() => goRelative(1)} disabled={Boolean(currentStepBlockedReason)}>Next</Button>
                 )}
             </div>
             {launchSuccessId ? (

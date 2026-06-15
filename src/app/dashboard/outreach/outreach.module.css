@@ -176,6 +176,12 @@
     background: #fff;
 }
 
+.aiPromptPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
 .builderTextarea,
 .builderTextareaLarge {
     width: 100%;
@@ -507,9 +513,15 @@
     background: transparent;
 }
 
-.builderTab:hover {
+.builderTab:hover:not(:disabled) {
     color: var(--tahoe-color-text-primary);
     background: #fbf7ef;
+}
+
+.builderTab:disabled {
+    color: var(--tahoe-color-text-disabled, #b8b3aa);
+    cursor: not-allowed;
+    opacity: 0.55;
 }
 
 .builderTabActive {

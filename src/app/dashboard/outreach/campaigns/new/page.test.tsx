@@ -5,8 +5,6 @@ import NewCampaignPage from './page';
 import {
     composeCampaignMessage,
     createCampaign,
-    createList,
-    createProject,
     fetchBillingSummary,
     fetchList,
     fetchListCandidates,
@@ -49,8 +47,6 @@ const mockedFetchListCandidates = vi.mocked(fetchListCandidates);
 const mockedFetchLists = vi.mocked(fetchLists);
 const mockedFetchProjects = vi.mocked(fetchProjects);
 const mockedFetchSettings = vi.mocked(fetchSettings);
-const mockedCreateProject = vi.mocked(createProject);
-const mockedCreateList = vi.mocked(createList);
 const mockedComposeCampaignMessage = vi.mocked(composeCampaignMessage);
 const mockedCreateCampaign = vi.mocked(createCampaign);
 const mockedLaunchCampaign = vi.mocked(launchCampaign);
@@ -212,21 +208,6 @@ beforeEach(() => {
         data_requests: [],
         audit_events: [],
     });
-    mockedCreateProject.mockResolvedValue({
-        id: 'project-2',
-        workspace_id: 'workspace-1',
-        name: 'New search',
-        archived: false,
-        list_count: 0,
-    });
-    mockedCreateList.mockResolvedValue({
-        id: 'list-3',
-        workspace_id: 'workspace-1',
-        project_id: 'project-2',
-        project_name: 'New search',
-        name: 'New audience',
-        candidate_count: 0,
-    });
     mockedComposeCampaignMessage.mockResolvedValue({
         subject: 'Hi {{first_name}}',
         body_text: 'Saw your work at {{company_name}}.',
@@ -286,34 +267,31 @@ test('builder can select an existing list when no list id is provided', async ()
     );
 });
 
-test('inline list creation selects the new empty list and keeps launch blocked', async () => {
+test('audience step has no create list button', async () => {
     currentSearchParams = '';
-    mockedFetchLists.mockResolvedValue([]);
-    mockedFetchList.mockImplementation(async (listId: string) => (listId === 'list-3' ? {
-        id: 'list-3',
-        workspace_id: 'workspace-1',
-        project_id: 'project-2',
-        project_name: 'New search',
-        name: 'New audience',
-        candidate_count: 0,
-    } : listOne));
-    mockedFetchListCandidates.mockResolvedValue({ items: [], next_cursor: null, total: 0, page: 1, per_page: 100, total_pages: 1 });
+    render(<NewCampaignPage />);
+
+    await screen.findByRole('button', { name: /product designers/i });
+    expect(screen.queryByRole('button', { name: /create list/i })).not.toBeInTheDocument();
+});
+
+test('next stays disabled until a list with eligible candidates is selected', async () => {
+    currentSearchParams = '';
     const user = userEvent.setup();
     render(<NewCampaignPage />);
 
-    await screen.findByRole('button', { name: /create list/i });
-    await user.click(screen.getByRole('button', { name: /create list/i }));
-    await user.type(screen.getByLabelText(/new project/i), 'New search');
-    await user.type(screen.getByLabelText(/list name/i), 'New audience');
-    await user.click(screen.getByRole('button', { name: /create and use/i }));
+    await screen.findByRole('button', { name: /product designers/i });
+    // No list selected yet: Next is disabled and later tabs are locked.
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
+    expect(screen.getByRole('tab', { name: 'AI Message' })).toBeDisabled();
+    expect(screen.getByRole('tab', { name: 'Review' })).toBeDisabled();
 
-    await waitFor(() => expect(mockedCreateProject).toHaveBeenCalledWith({ name: 'New search' }));
-    expect(mockedCreateList).toHaveBeenCalledWith('project-2', { name: 'New audience' });
-    expect(await screen.findByText(/this list is empty/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /product designers/i }));
+    await waitFor(() => expect(mockedFetchListCandidates).toHaveBeenCalledWith('list-2', { limit: 100 }));
 
-    await user.click(screen.getByRole('tab', { name: 'Review' }));
-    expect(screen.getByRole('status')).toHaveTextContent(/no candidates in this list have an email/i);
-    expect(screen.getByRole('button', { name: /launch campaign/i })).toBeDisabled();
+    // List with an eligible candidate selected: Next and the next tab unlock.
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Next' })).not.toBeDisabled());
+    expect(screen.getByRole('tab', { name: 'AI Message' })).not.toBeDisabled();
 });
 
 test('ai generate fills the first step and launch uses selected list plus campaign-only signature', async () => {
