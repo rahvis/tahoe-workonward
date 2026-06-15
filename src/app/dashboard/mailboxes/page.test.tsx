@@ -78,10 +78,18 @@ beforeEach(() => {
 test('mailboxes empty state shows compact send-only messaging and connect CTA', async () => {
     render(<MailboxesPage />);
 
-    expect(await screen.findByText(/gmail mailbox connected: mailbox@example.com/i)).toBeInTheDocument();
-    expect(screen.getByText(/connect gmail with send-only permission/i)).toBeInTheDocument();
+    expect(await screen.findByText(/connect gmail with send-only permission/i)).toBeInTheDocument();
     const connectButtons = screen.getAllByRole('button', { name: 'Connect Gmail' });
     expect(connectButtons[0]).toHaveClass('tui-button--size-3');
+});
+
+test('no "mailbox connected" banner is shown even with connected callback params', async () => {
+    mockedFetchMailboxes.mockResolvedValueOnce([mailboxFactory(1)]);
+
+    render(<MailboxesPage />);
+
+    expect(await screen.findByText('mailbox1@example.com')).toBeInTheDocument();
+    expect(screen.queryByText(/gmail mailbox connected/i)).not.toBeInTheDocument();
 });
 
 test('connect gmail requests the backend URL and redirects the browser', async () => {

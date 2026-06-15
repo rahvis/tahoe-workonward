@@ -137,6 +137,7 @@ function MailboxManageDialog({
         setLocalError('');
         try {
             await disconnectMailbox(activeMailbox.id);
+            onOpenChange(false);
             await onRefresh();
         } catch (error) {
             setLocalError(error instanceof Error ? error.message : 'Unable to disconnect this mailbox.');
@@ -363,8 +364,6 @@ function MailboxesPageContent() {
         }
     }
 
-    const callbackStatus = searchParams.get('status');
-    const callbackMailbox = searchParams.get('mailbox');
     const callbackError = searchParams.get('error');
     const rowStart = mailboxes.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
     const rowEnd = Math.min(mailboxes.length, page * PAGE_SIZE);
@@ -379,11 +378,6 @@ function MailboxesPageContent() {
                 </div>
             </header>
 
-            {callbackStatus === 'connected' ? (
-                <div className={styles.banner}>
-                    Gmail mailbox connected{callbackMailbox ? `: ${callbackMailbox}` : ''}.
-                </div>
-            ) : null}
             {callbackError ? (
                 <div className={`${styles.banner} ${styles.bannerError}`}>
                     {callbackError}
