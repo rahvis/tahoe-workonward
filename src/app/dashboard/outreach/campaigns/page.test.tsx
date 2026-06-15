@@ -1,14 +1,18 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import CampaignsPage from './page';
-import { fetchCampaigns, type CampaignSummary } from '@/lib/organization';
+import { deleteCampaign, fetchCampaigns, updateCampaign, type CampaignSummary } from '@/lib/organization';
 
 vi.mock('@/lib/organization', () => ({
     fetchCampaigns: vi.fn(),
+    updateCampaign: vi.fn(),
+    deleteCampaign: vi.fn(),
 }));
 
 const mockedFetchCampaigns = vi.mocked(fetchCampaigns);
+const mockedUpdateCampaign = vi.mocked(updateCampaign);
+const mockedDeleteCampaign = vi.mocked(deleteCampaign);
 
 function campaign(index: number, overrides: Partial<CampaignSummary> = {}): CampaignSummary {
     return {
@@ -36,11 +40,15 @@ function campaign(index: number, overrides: Partial<CampaignSummary> = {}): Camp
 
 beforeEach(() => {
     mockedFetchCampaigns.mockReset();
+    mockedUpdateCampaign.mockReset();
+    mockedDeleteCampaign.mockReset();
     mockedFetchCampaigns.mockResolvedValue([
         campaign(1, { name: 'Backend outreach', replied_count: 3, sent_count: 12 }),
         campaign(2, { name: 'Growth PM follow-up', status: 'paused' }),
         ...Array.from({ length: 23 }, (_, index) => campaign(index + 3)),
     ]);
+    mockedUpdateCampaign.mockImplementation(async (id, payload) => campaign(1, { id, name: String((payload as { name?: string }).name || 'Backend outreach') }));
+    mockedDeleteCampaign.mockResolvedValue({ campaign_id: 'campaign-1', deleted: true });
 });
 
 test('renders campaigns as a compact paginated workspace', async () => {
@@ -48,8 +56,11 @@ test('renders campaigns as a compact paginated workspace', async () => {
     render(<CampaignsPage />);
 
     expect(await screen.findByRole('columnheader', { name: 'Campaign' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Reply rate' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Suppressed' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Bounced' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Actions' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Reply rate' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Replies' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Suppressed' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Create campaign' })).toHaveAttribute(
         'href',
         '/dashboard/outreach/campaigns/new',
@@ -92,4 +103,36 @@ test('shows a load error without the empty campaign copy', async () => {
     expect(screen.getByText('Campaigns did not load.')).toBeInTheDocument();
     expect(screen.queryByText('No campaigns yet. Create one from an enriched list.')).not.toBeInTheDocument();
     expect(mockedFetchCampaigns.mock.calls[0]?.[0]).toHaveProperty('signal');
+});
+
+test('renames a campaign through the rename modal', async () => {
+    mockedFetchCampaigns.mockReset();
+    mockedFetchCampaigns.mockResolvedValue([campaign(1, { name: 'Backend outreach' })]);
+    const user = userEvent.setup();
+    render(<CampaignsPage />);
+
+    await screen.findByText('Backend outreach');
+    await user.click(screen.getByRole('button', { name: 'Rename' }));
+
+    const nameInput = screen.getByLabelText('Campaign name');
+    await user.clear(nameInput);
+    await user.type(nameInput, 'Renamed outreach');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(mockedUpdateCampaign).toHaveBeenCalledWith('campaign-1', { name: 'Renamed outreach' }));
+    expect(await screen.findByText('Renamed outreach')).toBeInTheDocument();
+});
+
+test('deletes a campaign after confirmation', async () => {
+    mockedFetchCampaigns.mockReset();
+    mockedFetchCampaigns.mockResolvedValue([campaign(1, { name: 'Backend outreach' })]);
+    const user = userEvent.setup();
+    render(<CampaignsPage />);
+
+    await screen.findByText('Backend outreach');
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    await user.click(screen.getByRole('button', { name: 'Delete campaign' }));
+
+    await waitFor(() => expect(mockedDeleteCampaign).toHaveBeenCalledWith('campaign-1'));
+    expect(screen.queryByText('Backend outreach')).not.toBeInTheDocument();
 });

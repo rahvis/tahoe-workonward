@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button } from '@/components/ui/tahoe-ui';
+import { Button, TahoeSelect } from '@/components/ui/tahoe-ui';
 import {
     fetchCampaign,
     markEnrollmentBounced,
@@ -37,20 +37,12 @@ const detailTabs: Array<{ key: DetailTab; label: string }> = [
     { key: 'delivery', label: 'Delivery' },
 ];
 
-function gmailSearchLink(email?: string | null) {
-    return email ? `https://mail.google.com/mail/u/0/#search/${encodeURIComponent(email)}` : 'https://mail.google.com/mail/u/0/';
-}
-
 function formatDateTime(value?: string | null) {
     if (!value) return 'None';
     const date = new Date(value);
     return Number.isNaN(date.getTime())
         ? value
         : date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-}
-
-function replyRate(campaign: CampaignDetail) {
-    return campaign.sent_count > 0 ? (campaign.replied_count / campaign.sent_count) * 100 : 0;
 }
 
 function stepPreview(text: string) {
@@ -139,6 +131,10 @@ export default function CampaignDetailPage() {
     const filteredEnrollments = useMemo(() => {
         const query = search.trim().toLowerCase();
         return (campaign?.enrollments ?? []).filter((enrollment) => {
+            // Only candidates with an enriched email were actually targeted by the
+            // campaign (emails were only sent to them). Candidates without an email
+            // are suppressed at launch — hide them from the audience view.
+            if (!enrollment.candidate_email) return false;
             if (statusFilter !== 'all' && enrollment.status !== statusFilter) return false;
             if (!query) return true;
             return [
@@ -183,7 +179,7 @@ export default function CampaignDetailPage() {
                     {campaign ? <span className={styles.compactSubtext}>{campaign.list_name || 'List'} · {campaign.mailbox_email || 'No mailbox'}</span> : null}
                 </div>
                 <div className={styles.toolbarActions}>
-                    <Link href="/dashboard/outreach/campaigns" className={styles.tableAction}>Back</Link>
+                    <Link href="/dashboard/outreach/campaigns" className="tui-button tui-button--soft tui-button--size-3">Back</Link>
                     {canResume ? (
                         <Button size="3" onClick={() => void runAction('resume', () => resumeCampaign(campaignId))} disabled={Boolean(busy)}>Resume</Button>
                     ) : (
@@ -216,9 +212,7 @@ export default function CampaignDetailPage() {
                         <div className={styles.metricCell}><span>Audience</span><strong>{campaign.audience_count.toLocaleString()}</strong></div>
                         <div className={styles.metricCell}><span>Eligible</span><strong>{campaign.eligible_count.toLocaleString()}</strong></div>
                         <div className={styles.metricCell}><span>Sent</span><strong>{campaign.sent_count.toLocaleString()}</strong></div>
-                        <div className={styles.metricCell}><span>Reply rate</span><strong>{replyRate(campaign).toFixed(1)}%</strong></div>
                         <div className={styles.metricCell}><span>Bounced</span><strong>{campaign.bounced_count.toLocaleString()}</strong></div>
-                        <div className={styles.metricCell}><span>Suppressed</span><strong>{campaign.suppressed_count.toLocaleString()}</strong></div>
                     </section>
 
                     <nav className={styles.workspaceTabs} aria-label="Campaign detail sections" role="tablist">
@@ -246,8 +240,9 @@ export default function CampaignDetailPage() {
                                     aria-label="Search audience"
                                     onChange={(event) => setSearch(event.target.value)}
                                 />
-                                <select
-                                    className={styles.toolbarSelect}
+                                <TahoeSelect
+                                    size="3"
+                                    className={styles.toolbarSelectControl}
                                     value={statusFilter}
                                     aria-label="Filter audience by status"
                                     onChange={(event) => setStatusFilter(event.target.value as EnrollmentStatusFilter)}
@@ -255,7 +250,7 @@ export default function CampaignDetailPage() {
                                     {enrollmentStatusOptions.map((option) => (
                                         <option key={option.value} value={option.value}>{option.label}</option>
                                     ))}
-                                </select>
+                                </TahoeSelect>
                             </div>
                             <div className={styles.tableScroll}>
                                 <table className={`${styles.table} ${styles.workspaceTable}`}>
@@ -266,13 +261,12 @@ export default function CampaignDetailPage() {
                                             <th>Status</th>
                                             <th>Step</th>
                                             <th>Next send</th>
-                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody aria-busy={busy ? true : undefined}>
                                         {visibleEnrollments.length === 0 ? (
                                             <tr>
-                                                <td colSpan={6} className={styles.tableMessage}>No audience rows match this view.</td>
+                                                <td colSpan={5} className={styles.tableMessage}>No audience rows match this view.</td>
                                             </tr>
                                         ) : null}
                                         {visibleEnrollments.map((enrollment) => (
@@ -291,29 +285,6 @@ export default function CampaignDetailPage() {
                                                 <td><span className={styles.statusPill}>{enrollment.status}</span></td>
                                                 <td>{enrollment.current_step_order}</td>
                                                 <td>{formatDateTime(enrollment.next_send_at)}</td>
-                                                <td>
-                                                    <div className={styles.inlineActions}>
-                                                        <a
-                                                            href={gmailSearchLink(enrollment.candidate_email)}
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className={styles.tableAction}
-                                                            onClick={(event) => event.stopPropagation()}
-                                                        >
-                                                            Gmail
-                                                        </a>
-                                                        <button
-                                                            type="button"
-                                                            className={styles.textAction}
-                                                            onClick={(event) => {
-                                                                event.stopPropagation();
-                                                                setSelectedEnrollmentId(enrollment.id);
-                                                            }}
-                                                        >
-                                                            Details
-                                                        </button>
-                                                    </div>
-                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -424,7 +395,6 @@ export default function CampaignDetailPage() {
                                     ) : null}
                                 </div>
                                 <div className={styles.drawerActions}>
-                                    <a href={gmailSearchLink(selectedEnrollment.candidate_email)} target="_blank" rel="noreferrer" className={styles.primaryAction}>Open Gmail</a>
                                     <button
                                         type="button"
                                         className={styles.secondaryAction}

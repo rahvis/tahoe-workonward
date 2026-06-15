@@ -136,29 +136,38 @@ test('renders campaign metrics and paginates audience rows', async () => {
     render(<CampaignDetailPage />);
 
     expect(await screen.findByText('Candidate 1')).toBeInTheDocument();
-    expect(screen.getByText('50.0%')).toBeInTheDocument();
-    expect(screen.getByText('Rows 1-20 of 25 enrollments')).toBeInTheDocument();
-    expect(screen.queryByText('Candidate 21')).not.toBeInTheDocument();
+    const metrics = screen.getByLabelText('Campaign metrics');
+    expect(within(metrics).getByText('Sent')).toBeInTheDocument();
+    expect(within(metrics).queryByText('Reply rate')).not.toBeInTheDocument();
+    expect(within(metrics).queryByText('Suppressed')).not.toBeInTheDocument();
+    expect(screen.queryByText('50.0%')).not.toBeInTheDocument();
+    // The no-email (suppressed) candidate is excluded from the audience table, so
+    // 24 of the 25 enrollments are shown.
+    expect(screen.getByText('Rows 1-20 of 24 enrollments')).toBeInTheDocument();
+    expect(screen.queryByText('Candidate 2')).not.toBeInTheDocument();
+    expect(screen.queryByText('Candidate 22')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Next' }));
 
-    expect(screen.getByText('Rows 21-25 of 25 enrollments')).toBeInTheDocument();
-    expect(screen.getByText('Candidate 21')).toBeInTheDocument();
+    expect(screen.getByText('Rows 21-24 of 24 enrollments')).toBeInTheDocument();
+    expect(screen.getByText('Candidate 22')).toBeInTheDocument();
 });
 
-test('filters audience by status and search', async () => {
+test('hides candidates without an enriched email from the audience table', async () => {
     const user = userEvent.setup();
     render(<CampaignDetailPage />);
 
     await screen.findByText('Candidate 1');
-    await user.selectOptions(screen.getByLabelText('Filter audience by status'), 'suppressed');
+    // Candidate 2 has no email (suppressed at launch) and must never appear.
+    expect(screen.queryByText('Candidate 2')).not.toBeInTheDocument();
+    expect(screen.queryByText('No email')).not.toBeInTheDocument();
 
-    expect(screen.getByText('Candidate 2')).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Search audience'), 'Candidate 3');
+    expect(screen.getByText('Candidate 3')).toBeInTheDocument();
     expect(screen.queryByText('Candidate 1')).not.toBeInTheDocument();
-    expect(screen.getByText('Rows 1-1 of 1 enrollments')).toBeInTheDocument();
 
+    await user.clear(screen.getByLabelText('Search audience'));
     await user.type(screen.getByLabelText('Search audience'), 'missing');
-
     expect(screen.getByText('No audience rows match this view.')).toBeInTheDocument();
 });
 
@@ -169,10 +178,7 @@ test('opens recipient drawer and runs manual reply or bounce actions', async () 
     await user.click(await screen.findByText('Candidate 1'));
     const drawer = await screen.findByLabelText('Recipient detail');
     expect(within(drawer).getByText('candidate-1@example.com')).toBeInTheDocument();
-    expect(within(drawer).getByRole('link', { name: 'Open Gmail' })).toHaveAttribute(
-        'href',
-        'https://mail.google.com/mail/u/0/#search/candidate-1%40example.com',
-    );
+    expect(within(drawer).queryByRole('link', { name: 'Open Gmail' })).not.toBeInTheDocument();
 
     await user.click(within(drawer).getByRole('button', { name: 'Mark replied' }));
 
@@ -180,17 +186,13 @@ test('opens recipient drawer and runs manual reply or bounce actions', async () 
         expect(mockedMarkEnrollmentReplied).toHaveBeenCalledWith('campaign-1', 'enrollment-1');
     });
 
-    await user.click(screen.getByText('Candidate 2'));
+    await user.click(screen.getByText('Candidate 3'));
     const updatedDrawer = screen.getByLabelText('Recipient detail');
-    expect(within(updatedDrawer).getByRole('link', { name: 'Open Gmail' })).toHaveAttribute(
-        'href',
-        'https://mail.google.com/mail/u/0/',
-    );
 
     await user.click(within(updatedDrawer).getByRole('button', { name: 'Mark bounced' }));
 
     await waitFor(() => {
-        expect(mockedMarkEnrollmentBounced).toHaveBeenCalledWith('campaign-1', 'enrollment-2');
+        expect(mockedMarkEnrollmentBounced).toHaveBeenCalledWith('campaign-1', 'enrollment-3');
     });
 });
 

@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { fetchCampaigns, type CampaignSummary } from '@/lib/organization';
-import { TahoeSelect } from '@/components/ui/tahoe-ui';
+import { deleteCampaign, fetchCampaigns, updateCampaign, type CampaignSummary } from '@/lib/organization';
+import { TahoeSelect, TextField } from '@/components/ui/tahoe-ui';
 import styles from '../outreach.module.css';
 
 const PAGE_SIZE = 20;
@@ -16,7 +16,7 @@ const statusOptions: Array<{ value: CampaignSummary['status'] | 'all'; label: st
     { value: 'completed', label: 'Completed' },
 ];
 
-type SortMode = 'updated_desc' | 'launched_desc' | 'name_asc' | 'reply_rate_desc' | 'sent_desc';
+type SortMode = 'updated_desc' | 'launched_desc' | 'name_asc' | 'sent_desc';
 
 function formatDate(value?: string | null) {
     if (!value) return 'Not launched';
@@ -24,10 +24,6 @@ function formatDate(value?: string | null) {
     return Number.isNaN(date.getTime())
         ? value
         : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-
-function replyRate(campaign: CampaignSummary) {
-    return campaign.sent_count > 0 ? (campaign.replied_count / campaign.sent_count) * 100 : 0;
 }
 
 export default function CampaignsPage() {
@@ -38,6 +34,12 @@ export default function CampaignsPage() {
     const [status, setStatus] = useState<CampaignSummary['status'] | 'all'>('all');
     const [sort, setSort] = useState<SortMode>('updated_desc');
     const [page, setPage] = useState(1);
+    const [renameTarget, setRenameTarget] = useState<CampaignSummary | null>(null);
+    const [renameName, setRenameName] = useState('');
+    const [savingRename, setSavingRename] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<CampaignSummary | null>(null);
+    const [deleting, setDeleting] = useState(false);
+    const [modalError, setModalError] = useState('');
 
     useEffect(() => {
         const controller = new AbortController();
@@ -79,7 +81,6 @@ export default function CampaignsPage() {
 
         return [...next].sort((left, right) => {
             if (sort === 'name_asc') return left.name.localeCompare(right.name);
-            if (sort === 'reply_rate_desc') return replyRate(right) - replyRate(left);
             if (sort === 'sent_desc') return right.sent_count - left.sent_count;
             const leftDate = sort === 'launched_desc' ? left.launched_at : left.updated_at ?? left.created_at;
             const rightDate = sort === 'launched_desc' ? right.launched_at : right.updated_at ?? right.created_at;
@@ -92,6 +93,48 @@ export default function CampaignsPage() {
     const visibleCampaigns = filteredCampaigns.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
     const rangeStart = filteredCampaigns.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1;
     const rangeEnd = Math.min(filteredCampaigns.length, safePage * PAGE_SIZE);
+
+    function openRename(campaign: CampaignSummary) {
+        setRenameTarget(campaign);
+        setRenameName(campaign.name);
+        setModalError('');
+    }
+
+    async function handleRename() {
+        const name = renameName.trim();
+        if (!renameTarget || !name || savingRename) return;
+        setSavingRename(true);
+        setModalError('');
+        try {
+            const updated = await updateCampaign(renameTarget.id, { name });
+            setCampaigns((current) => current.map((item) => (item.id === renameTarget.id ? { ...item, name: updated.name } : item)));
+            setRenameTarget(null);
+        } catch (err) {
+            setModalError(err instanceof Error ? err.message : 'Unable to rename campaign.');
+        } finally {
+            setSavingRename(false);
+        }
+    }
+
+    function openDelete(campaign: CampaignSummary) {
+        setDeleteTarget(campaign);
+        setModalError('');
+    }
+
+    async function handleDelete() {
+        if (!deleteTarget || deleting) return;
+        setDeleting(true);
+        setModalError('');
+        try {
+            await deleteCampaign(deleteTarget.id);
+            setCampaigns((current) => current.filter((item) => item.id !== deleteTarget.id));
+            setDeleteTarget(null);
+        } catch (err) {
+            setModalError(err instanceof Error ? err.message : 'Unable to delete campaign.');
+        } finally {
+            setDeleting(false);
+        }
+    }
 
     return (
         <section className={styles.workspacePage}>
@@ -125,7 +168,6 @@ export default function CampaignsPage() {
                         <option value="updated_desc">Updated</option>
                         <option value="launched_desc">Launched</option>
                         <option value="name_asc">Name</option>
-                        <option value="reply_rate_desc">Reply rate</option>
                         <option value="sent_desc">Sent</option>
                     </TahoeSelect>
                 </div>
@@ -149,35 +191,32 @@ export default function CampaignsPage() {
                                 <th>Status</th>
                                 <th>Audience</th>
                                 <th>Sent</th>
-                                <th>Replies</th>
-                                <th>Reply rate</th>
                                 <th>Bounced</th>
-                                <th>Suppressed</th>
                                 <th>Launched</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr><td colSpan={10} className={styles.tableMessage}>Loading campaigns...</td></tr>
+                                <tr><td colSpan={7} className={styles.tableMessage}>Loading campaigns...</td></tr>
                             ) : null}
                             {!loading && error ? (
                                 <tr>
-                                    <td colSpan={10} className={styles.tableMessage}>
+                                    <td colSpan={7} className={styles.tableMessage}>
                                         Campaigns did not load.
                                     </td>
                                 </tr>
                             ) : null}
                             {!loading && !error && campaigns.length === 0 ? (
                                 <tr>
-                                    <td colSpan={10} className={styles.tableMessage}>
+                                    <td colSpan={7} className={styles.tableMessage}>
                                         No campaigns yet. Create one from an enriched list.
                                     </td>
                                 </tr>
                             ) : null}
                             {!loading && !error && campaigns.length > 0 && visibleCampaigns.length === 0 ? (
                                 <tr>
-                                    <td colSpan={10} className={styles.tableMessage}>
+                                    <td colSpan={7} className={styles.tableMessage}>
                                         No campaigns match this view.
                                     </td>
                                 </tr>
@@ -195,15 +234,20 @@ export default function CampaignsPage() {
                                     <td><span className={styles.statusPill}>{campaign.status}</span></td>
                                     <td>{campaign.audience_count.toLocaleString()}</td>
                                     <td>{campaign.sent_count.toLocaleString()}</td>
-                                    <td>{campaign.replied_count.toLocaleString()}</td>
-                                    <td>{replyRate(campaign).toFixed(1)}%</td>
                                     <td>{campaign.bounced_count.toLocaleString()}</td>
-                                    <td>{campaign.suppressed_count.toLocaleString()}</td>
                                     <td>{formatDate(campaign.launched_at)}</td>
                                     <td>
-                                        <Link href={`/dashboard/outreach/campaigns/${campaign.id}`} className={styles.tableAction}>
-                                            Open
-                                        </Link>
+                                        <div className={styles.inlineActions}>
+                                            <Link href={`/dashboard/outreach/campaigns/${campaign.id}`} className={styles.tableAction}>
+                                                Open
+                                            </Link>
+                                            <button type="button" className={styles.textAction} onClick={() => openRename(campaign)}>
+                                                Rename
+                                            </button>
+                                            <button type="button" className={styles.textAction} onClick={() => openDelete(campaign)}>
+                                                Delete
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -237,6 +281,47 @@ export default function CampaignsPage() {
                     </div>
                 </footer>
             </div>
+
+            {renameTarget ? (
+                <div className={styles.modalBackdrop} role="presentation">
+                    <div className={styles.confirmDialog} role="dialog" aria-modal="true" aria-labelledby="rename-campaign-title">
+                        <h2 id="rename-campaign-title">Rename campaign</h2>
+                        <TextField.Root
+                            size="3"
+                            value={renameName}
+                            aria-label="Campaign name"
+                            onChange={(event) => setRenameName(event.target.value)}
+                        />
+                        {modalError ? <div className={`${styles.banner} ${styles.bannerError}`}>{modalError}</div> : null}
+                        <div className={styles.confirmActions}>
+                            <button type="button" className={styles.secondaryAction} disabled={savingRename} onClick={() => setRenameTarget(null)}>
+                                Cancel
+                            </button>
+                            <button type="button" className={styles.primaryAction} disabled={savingRename || !renameName.trim()} onClick={() => void handleRename()}>
+                                {savingRename ? 'Saving...' : 'Save'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+
+            {deleteTarget ? (
+                <div className={styles.modalBackdrop} role="presentation">
+                    <div className={styles.confirmDialog} role="dialog" aria-modal="true" aria-labelledby="delete-campaign-title">
+                        <h2 id="delete-campaign-title">Delete campaign?</h2>
+                        <p>This permanently removes “{deleteTarget.name}” and its audience. Queued sends will be cancelled.</p>
+                        {modalError ? <div className={`${styles.banner} ${styles.bannerError}`}>{modalError}</div> : null}
+                        <div className={styles.confirmActions}>
+                            <button type="button" className={styles.secondaryAction} disabled={deleting} onClick={() => setDeleteTarget(null)}>
+                                Cancel
+                            </button>
+                            <button type="button" className={styles.dangerAction} disabled={deleting} onClick={() => void handleDelete()}>
+                                {deleting ? 'Deleting...' : 'Delete campaign'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
         </section>
     );
 }

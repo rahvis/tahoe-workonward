@@ -1046,6 +1046,10 @@ export async function updateCampaign(campaignId: string, payload: Record<string,
     return apiRequest<CampaignSummary>(`/campaigns/${campaignId}`, { method: 'PATCH', body: payload });
 }
 
+export async function deleteCampaign(campaignId: string) {
+    return apiRequest<{ campaign_id: string; deleted: boolean }>(`/campaigns/${campaignId}`, { method: 'DELETE' });
+}
+
 export async function composeCampaignMessage(payload: {
     list_id: string;
     role_context: string;
