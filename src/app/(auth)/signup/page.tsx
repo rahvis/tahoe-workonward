@@ -19,14 +19,12 @@ export default function SignupPage() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const [needsVerification, setNeedsVerification] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setSuccess('');
-        setNeedsVerification(false);
 
         if (!firstName.trim() || !lastName.trim() || !email.trim() || !password || !confirmPassword) {
             setError('Please fill in all fields.');
@@ -59,7 +57,6 @@ export default function SignupPage() {
                     confirm_password: confirmPassword,
                 },
             });
-            setNeedsVerification(!response.is_verified);
             setSuccess(
                 response.is_verified
                     ? 'Account created successfully! You can now sign in.'
@@ -100,18 +97,7 @@ export default function SignupPage() {
                 {success && (
                     <div className="tahoe-banner tahoe-banner-success" role="status">
                         <CheckCircledIcon />
-                        <span>
-                            {success}
-                            <span className={styles.bannerLinks}>
-                                {needsVerification && (
-                                    <>
-                                        <Link href={`/resend-verification?email=${encodeURIComponent(email.trim().toLowerCase())}`} className={styles.authLink}>Resend email</Link>
-                                        {' · '}
-                                    </>
-                                )}
-                                <Link href="/login" className={styles.authLink}>Go to sign in</Link>
-                            </span>
-                        </span>
+                        <span>{success}</span>
                     </div>
                 )}
 
