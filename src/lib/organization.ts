@@ -1252,6 +1252,60 @@ export async function autocompleteJobs(
     });
 }
 
+export type CompanyField = 'company_name' | 'hq_country' | 'industry';
+
+export interface CompanyAutocompleteResponse {
+    field: CompanyField;
+    suggestions: string[];
+}
+
+export async function autocompleteCompany(
+    params: { field: CompanyField; query: string },
+    options?: { signal?: AbortSignal },
+) {
+    return apiRequest<CompanyAutocompleteResponse>('/search/company/autocomplete', {
+        method: 'POST',
+        body: { field: params.field, query: params.query },
+        signal: options?.signal,
+    });
+}
+
+export type EducationField = 'institution' | 'degree';
+
+export interface EducationAutocompleteResponse {
+    field: EducationField;
+    suggestions: string[];
+}
+
+export async function autocompleteEducation(
+    params: { field: EducationField; query: string },
+    options?: { signal?: AbortSignal },
+) {
+    return apiRequest<EducationAutocompleteResponse>('/search/education/autocomplete', {
+        method: 'POST',
+        body: { field: params.field, query: params.query },
+        signal: options?.signal,
+    });
+}
+
+export type CertificationField = 'title' | 'issuer';
+
+export interface CertificationAutocompleteResponse {
+    field: CertificationField;
+    suggestions: string[];
+}
+
+export async function autocompleteCertifications(
+    params: { field: CertificationField; query: string },
+    options?: { signal?: AbortSignal },
+) {
+    return apiRequest<CertificationAutocompleteResponse>('/search/certifications/autocomplete', {
+        method: 'POST',
+        body: { field: params.field, query: params.query },
+        signal: options?.signal,
+    });
+}
+
 export async function updateAccountSettings(payload: Partial<AccountSettings>) {
     return apiRequest<SettingsPayload>('/settings/account', { method: 'PATCH', body: payload });
 }

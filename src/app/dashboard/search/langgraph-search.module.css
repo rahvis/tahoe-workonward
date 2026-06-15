@@ -1174,10 +1174,27 @@
 }
 
 .languageRow {
-    padding: 12px;
-    border-radius: var(--tahoe-radius-md);
-    border: 1px solid var(--tahoe-color-border-subtle);
-    background: white;
+    width: 100%;
+}
+
+.languageRowName {
+    flex: 1;
+    min-width: 0;
+}
+
+.languageRowProficiency {
+    flex: none;
+    width: 230px;
+    min-height: 38px !important;
+    font-size: 14px !important;
+}
+
+.languageRowRemove {
+    flex: none;
+}
+
+.addLanguageButton {
+    align-self: flex-start;
 }
 
 .nativeSelect {

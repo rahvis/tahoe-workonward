@@ -162,6 +162,24 @@ const metadataResponse = {
             ],
         },
         {
+            id: "education",
+            title: "Education",
+            fields: [
+                { key: "education.institution_names", label: "Institutions", control: "tags", help_text: "", options: [], suggestions: [], allow_custom: true },
+                { key: "education.degree_keywords", label: "Degree Keywords", control: "tags", help_text: "", options: [], suggestions: [], allow_custom: true },
+                { key: "education.graduation_year_min", label: "Graduation Year (Min)", control: "number", help_text: "", options: [], suggestions: [], allow_custom: false },
+                { key: "education.graduation_year_max", label: "Graduation Year (Max)", control: "number", help_text: "", options: [], suggestions: [], allow_custom: false },
+            ],
+        },
+        {
+            id: "certifications",
+            title: "Certifications",
+            fields: [
+                { key: "certifications.title_keywords", label: "Certification Titles", control: "tags", help_text: "", options: [], suggestions: [], allow_custom: true },
+                { key: "certifications.issuers", label: "Issuers", control: "tags", help_text: "", options: [], suggestions: [], allow_custom: true },
+            ],
+        },
+        {
             id: "languages",
             title: "Languages",
             fields: [
@@ -507,6 +525,39 @@ function setupApiMocks() {
             }
             return { field: body.field ?? "title", suggestions: [] };
         }
+        if (path === "/search/company/autocomplete") {
+            const body = (init?.body ?? {}) as { field?: string };
+            if (body.field === "company_name") {
+                return { field: "company_name", suggestions: ["Google", "Goldman Sachs"] };
+            }
+            if (body.field === "hq_country") {
+                return { field: "hq_country", suggestions: ["United States", "United Kingdom"] };
+            }
+            if (body.field === "industry") {
+                return { field: "industry", suggestions: ["Software Development"] };
+            }
+            return { field: body.field ?? "industry", suggestions: [] };
+        }
+        if (path === "/search/education/autocomplete") {
+            const body = (init?.body ?? {}) as { field?: string };
+            if (body.field === "institution") {
+                return { field: "institution", suggestions: ["Harvard University", "Harvey Mudd College"] };
+            }
+            if (body.field === "degree") {
+                return { field: "degree", suggestions: ["Master's degree", "Master of Science (MS)"] };
+            }
+            return { field: body.field ?? "institution", suggestions: [] };
+        }
+        if (path === "/search/certifications/autocomplete") {
+            const body = (init?.body ?? {}) as { field?: string };
+            if (body.field === "title") {
+                return { field: "title", suggestions: ["Project Management Professional (PMP)"] };
+            }
+            if (body.field === "issuer") {
+                return { field: "issuer", suggestions: ["Project Management Institute (PMI)"] };
+            }
+            return { field: body.field ?? "title", suggestions: [] };
+        }
         throw new Error(`Unhandled path: ${String(path)} ${JSON.stringify(init)}`);
     });
 }
@@ -594,14 +645,21 @@ test("desktop page keeps Filters visible and opens the Tahoe popup with backend-
     await user.click(screen.getByRole("button", { name: "Company" }));
     expect(screen.getByText("B2B Company")).toBeInTheDocument();
     expect(screen.queryByText("Public Company")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "11-50 employees" })).toBeInTheDocument();
+    // Company-size labels drop "employees" for display (value stays "11-50 employees").
+    expect(screen.getByRole("button", { name: "11-50" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "11-50 employees" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Languages" }));
     await user.click(screen.getByRole("button", { name: /Add language/i }));
-    expect(screen.getByRole("textbox", { name: "Language 1" })).toHaveAttribute("placeholder", "");
-    expect(screen.getByRole("textbox", { name: "Proficiency 1" })).toHaveAttribute("placeholder", "");
-    expect(screen.getByRole("button", { name: "English" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Native or bilingual proficiency" })).toBeInTheDocument();
+    const languageInput = screen.getByRole("textbox", { name: "Language 1" });
+    expect(languageInput).toHaveAttribute("placeholder", "");
+    // Proficiency is a simple dropdown (no button grid) with the LinkedIn levels.
+    const proficiency = screen.getByRole("combobox", { name: "Proficiency 1" });
+    expect(within(proficiency).getByRole("option", { name: "Native or bilingual proficiency" })).toBeInTheDocument();
+    // Language is a typeahead: matches appear only as you type.
+    expect(screen.queryByRole("option", { name: "English" })).not.toBeInTheDocument();
+    await user.type(languageInput, "eng");
+    expect(await screen.findByRole("option", { name: "English" })).toBeInTheDocument();
 }, 10000);
 
 test("Locations panel autocompletes and enforces the country -> state -> city cascade", async () => {
@@ -667,6 +725,113 @@ test("Job panel offers server-backed typeahead for titles, departments and manag
     await user.type(screen.getByRole("textbox", { name: "Departments" }), "hr");
     await user.click(await screen.findByRole("option", { name: "Human Resources" }));
     expect(screen.getByText("Human Resources")).toBeInTheDocument();
+}, 10000);
+
+test("Company panel offers server-backed typeahead for HQ countries and industries", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Filters" }));
+    await screen.findByLabelText("Search filters");
+    await user.click(screen.getByRole("button", { name: "Company" }));
+
+    // Company name typeahead (Current Companies).
+    await user.type(screen.getByRole("textbox", { name: "Current Companies" }), "goog");
+    await user.click(await screen.findByRole("option", { name: "Google" }));
+    expect(screen.getByText("Google")).toBeInTheDocument();
+
+    const nameCall = mockedApiRequest.mock.calls.find(
+        ([path, init]) =>
+            path === "/search/company/autocomplete"
+            && (init?.body as { field?: string } | undefined)?.field === "company_name",
+    );
+    expect(nameCall).toBeTruthy();
+
+    // HQ Countries typeahead.
+    await user.type(screen.getByRole("textbox", { name: "Company HQ Countries" }), "uni");
+    await user.click(await screen.findByRole("option", { name: "United States" }));
+    expect(screen.getByText("United States")).toBeInTheDocument();
+
+    const hqCall = mockedApiRequest.mock.calls.find(
+        ([path, init]) =>
+            path === "/search/company/autocomplete"
+            && (init?.body as { field?: string } | undefined)?.field === "hq_country",
+    );
+    expect(hqCall).toBeTruthy();
+
+    // Industries typeahead.
+    await user.type(screen.getByRole("textbox", { name: "Industries" }), "soft");
+    await user.click(await screen.findByRole("option", { name: "Software Development" }));
+    expect(screen.getByText("Software Development")).toBeInTheDocument();
+}, 10000);
+
+test("Education panel offers server-backed typeahead for institutions and degrees", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Filters" }));
+    await screen.findByLabelText("Search filters");
+    await user.click(screen.getByRole("button", { name: "Education" }));
+
+    // Institutions typeahead (US colleges/universities).
+    await user.type(screen.getByRole("textbox", { name: "Institutions" }), "harv");
+    await user.click(await screen.findByRole("option", { name: "Harvard University" }));
+    expect(screen.getByText("Harvard University")).toBeInTheDocument();
+
+    const instCall = mockedApiRequest.mock.calls.find(
+        ([path, init]) =>
+            path === "/search/education/autocomplete"
+            && (init?.body as { field?: string } | undefined)?.field === "institution",
+    );
+    expect(instCall).toBeTruthy();
+
+    // Degree Keywords typeahead.
+    await user.type(screen.getByRole("textbox", { name: "Degree Keywords" }), "mas");
+    await user.click(await screen.findByRole("option", { name: "Master's degree" }));
+    expect(screen.getByText("Master's degree")).toBeInTheDocument();
+}, 10000);
+
+test("Certifications panel resolves abbreviations to canonical titles and issuers", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Filters" }));
+    await screen.findByLabelText("Search filters");
+    await user.click(screen.getByRole("button", { name: "Certifications" }));
+
+    // Typing the abbreviation "pmp" resolves to the canonical certification title.
+    await user.type(screen.getByRole("textbox", { name: "Certification Titles" }), "pmp");
+    await user.click(await screen.findByRole("option", { name: "Project Management Professional (PMP)" }));
+    expect(screen.getByText("Project Management Professional (PMP)")).toBeInTheDocument();
+
+    // Issuers typeahead.
+    await user.type(screen.getByRole("textbox", { name: "Issuers" }), "pmi");
+    await user.click(await screen.findByRole("option", { name: "Project Management Institute (PMI)" }));
+    expect(screen.getByText("Project Management Institute (PMI)")).toBeInTheDocument();
+}, 10000);
+
+test("Languages panel: pick a language via typeahead and set proficiency via dropdown", async () => {
+    const user = userEvent.setup();
+    render(<LangGraphSearchPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Filters" }));
+    await user.click(screen.getByRole("button", { name: "Languages" }));
+    await user.click(screen.getByRole("button", { name: /Add language/i }));
+
+    // Pick a language from the typeahead.
+    const languageInput = screen.getByRole("textbox", { name: "Language 1" });
+    await user.type(languageInput, "kor");
+    await user.click(await screen.findByRole("option", { name: "Korean" }));
+    expect(languageInput).toHaveValue("Korean");
+
+    // Pick a proficiency from the dropdown.
+    const proficiency = screen.getByRole("combobox", { name: "Proficiency 1" });
+    await user.selectOptions(proficiency, "Professional working proficiency");
+    expect(proficiency).toHaveValue("Professional working proficiency");
+
+    // Remove the row.
+    await user.click(screen.getByRole("button", { name: "Remove language 1" }));
+    expect(screen.queryByRole("textbox", { name: "Language 1" })).not.toBeInTheDocument();
 }, 10000);
 
 test("desktop popup closes from the close button and persists active filter count on the Filters button", async () => {

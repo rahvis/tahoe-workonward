@@ -20,7 +20,7 @@ import {
 import type { SearchPageBootstrapPayload } from "@/lib/search-page-bootstrap";
 import SaveToListDialog from "../_components/SaveToListDialog";
 import { previewCandidateToImportPayload } from "@/lib/organization";
-import { fetchSearchAccess, autocompleteLocations, autocompleteJobs, type LocationField, type JobField } from "@/lib/organization";
+import { fetchSearchAccess, autocompleteLocations, autocompleteJobs, autocompleteCompany, autocompleteEducation, autocompleteCertifications, type LocationField, type JobField, type CompanyField, type EducationField, type CertificationField } from "@/lib/organization";
 import { clearAnalyticsCache } from "../analytics/_components/analytics-cache";
 import PreviewCapBanner from "./preview-cap-banner";
 import {
@@ -33,6 +33,7 @@ import {
     Heading,
     Separator,
     Spinner,
+    TahoeSelect,
     Text,
     TextField,
 } from "@/components/ui/tahoe-ui";
@@ -727,8 +728,39 @@ const JOB_AUTOCOMPLETE_FIELDS: Record<string, JobField> = {
     "job.management_levels": "management_level",
 };
 
+// Company fields backed by the /search/company/autocomplete typeahead (HQ countries
+// and industries), keyed by field key. Both the primary and optional variants map
+// to the same source.
+const COMPANY_AUTOCOMPLETE_FIELDS: Record<string, CompanyField> = {
+    "company.current_company_names": "company_name",
+    "company.past_company_names": "company_name",
+    "company.optional_company_names": "company_name",
+    "company.company_hq_countries": "hq_country",
+    "company.optional_company_hq_countries": "hq_country",
+    "company.industries": "industry",
+    "company.optional_industries": "industry",
+};
+
+// Education fields backed by the /search/education/autocomplete typeahead.
+const EDUCATION_AUTOCOMPLETE_FIELDS: Record<string, EducationField> = {
+    "education.institution_names": "institution",
+    "education.degree_keywords": "degree",
+};
+
+// Certification fields backed by the /search/certifications/autocomplete typeahead.
+const CERTIFICATION_AUTOCOMPLETE_FIELDS: Record<string, CertificationField> = {
+    "certifications.title_keywords": "title",
+    "certifications.issuers": "issuer",
+};
+
 function getFieldPlaceholder(): string {
     return "";
+}
+
+// Company-size buckets are stored in Coresignal's "N employees" format but shown
+// compactly (e.g. "1-10 employees" -> "1-10"). Display only — the value is unchanged.
+function formatCompanySizeLabel(value: string): string {
+    return value.replace(/\s*employees?$/i, "").trim();
 }
 
 function TagInput({
@@ -737,14 +769,18 @@ function TagInput({
     tags,
     suggestions,
     onChange,
+    formatLabel,
 }: {
     label: string;
     placeholder: string;
     tags: string[];
     suggestions?: string[];
     onChange: (next: string[]) => void;
+    // Display-only transform for chips/suggestions; the stored value is unchanged.
+    formatLabel?: (value: string) => string;
 }) {
     const [input, setInput] = useState("");
+    const display = formatLabel ?? ((value: string) => value);
 
     const visibleSuggestions = (suggestions ?? [])
         .filter((suggestion) => !tags.some((tag) => tag.toLowerCase() === suggestion.toLowerCase()))
@@ -766,7 +802,7 @@ function TagInput({
             <Box className={styles.tagList}>
                 {tags.map((tag) => (
                     <Badge key={tag} variant="soft" color="amber" className={styles.tagBadge}>
-                        <span className={styles.tagBadgeText}>{tag}</span>
+                        <span className={styles.tagBadgeText}>{display(tag)}</span>
                         <Cross2Icon
                             width={10}
                             height={10}
@@ -800,7 +836,7 @@ function TagInput({
                             className={styles.suggestionButton}
                             onClick={() => onChange([...tags, suggestion])}
                         >
-                            {suggestion}
+                            {display(suggestion)}
                         </Button>
                     ))}
                 </Box>
@@ -1028,6 +1064,199 @@ function JobAutocomplete({
                 return res.suggestions;
             }}
         />
+    );
+}
+
+/**
+ * Typeahead picker for the Company filter fields that have a controlled source:
+ * HQ Countries (ISO country names) and Industries (LinkedIn/Coresignal taxonomy).
+ */
+function CompanyAutocomplete({
+    field,
+    label,
+    tags,
+    onChange,
+}: {
+    field: CompanyField;
+    label: string;
+    tags: string[];
+    onChange: (next: string[]) => void;
+}) {
+    return (
+        <TagAutocomplete
+            label={label}
+            tags={tags}
+            onChange={onChange}
+            refreshKey={field}
+            loadSuggestions={async (query, signal) => {
+                const res = await autocompleteCompany({ field, query }, { signal });
+                return res.suggestions;
+            }}
+        />
+    );
+}
+
+/**
+ * Typeahead picker for the Education filter fields: Institutions (all US colleges
+ * & universities) and Degree Keywords (degree levels + fields of study).
+ */
+function EducationAutocomplete({
+    field,
+    label,
+    tags,
+    onChange,
+}: {
+    field: EducationField;
+    label: string;
+    tags: string[];
+    onChange: (next: string[]) => void;
+}) {
+    return (
+        <TagAutocomplete
+            label={label}
+            tags={tags}
+            onChange={onChange}
+            refreshKey={field}
+            loadSuggestions={async (query, signal) => {
+                const res = await autocompleteEducation({ field, query }, { signal });
+                return res.suggestions;
+            }}
+        />
+    );
+}
+
+/**
+ * Typeahead picker for the Certifications filter fields: Certification Titles and
+ * Issuers (abbreviations like "PMP" / "OSHA 30" resolve to the canonical name).
+ */
+function CertificationAutocomplete({
+    field,
+    label,
+    tags,
+    onChange,
+}: {
+    field: CertificationField;
+    label: string;
+    tags: string[];
+    onChange: (next: string[]) => void;
+}) {
+    return (
+        <TagAutocomplete
+            label={label}
+            tags={tags}
+            onChange={onChange}
+            refreshKey={field}
+            loadSuggestions={async (query, signal) => {
+                const res = await autocompleteCertifications({ field, query }, { signal });
+                return res.suggestions;
+            }}
+        />
+    );
+}
+
+/**
+ * Single-value typeahead (one selected value, not a tag list) filtered client-side
+ * over a provided list. Used for the per-row language picker. Free-text is allowed.
+ */
+function SingleAutocomplete({
+    label,
+    value,
+    suggestions,
+    onChange,
+}: {
+    label: string;
+    value: string;
+    suggestions: string[];
+    onChange: (next: string) => void;
+}) {
+    const [input, setInput] = useState(value);
+    const [open, setOpen] = useState(false);
+    const [activeIndex, setActiveIndex] = useState(-1);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        setInput(value);
+    }, [value]);
+
+    useEffect(() => {
+        if (!open) return;
+        const onDocMouseDown = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", onDocMouseDown);
+        return () => document.removeEventListener("mousedown", onDocMouseDown);
+    }, [open]);
+
+    const needle = input.trim().toLowerCase();
+    const prefix = suggestions.filter((s) => s.toLowerCase().startsWith(needle));
+    const contains = needle
+        ? suggestions.filter((s) => !s.toLowerCase().startsWith(needle) && s.toLowerCase().includes(needle))
+        : [];
+    const visible = [...prefix, ...contains].slice(0, 8);
+
+    const commit = (next: string) => {
+        onChange(next);
+        setInput(next);
+        setOpen(false);
+        setActiveIndex(-1);
+    };
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === "ArrowDown") {
+            event.preventDefault();
+            setOpen(true);
+            setActiveIndex((index) => Math.min(index + 1, visible.length - 1));
+        } else if (event.key === "ArrowUp") {
+            event.preventDefault();
+            setActiveIndex((index) => Math.max(index - 1, 0));
+        } else if (event.key === "Enter") {
+            event.preventDefault();
+            commit(activeIndex >= 0 && activeIndex < visible.length ? visible[activeIndex] : input.trim());
+        } else if (event.key === "Escape") {
+            setOpen(false);
+        }
+    };
+
+    return (
+        <div className={styles.tagAutocompleteWrap} ref={containerRef}>
+            <TextField.Root
+                aria-label={label}
+                placeholder=""
+                value={input}
+                autoComplete="off"
+                onFocus={() => setOpen(true)}
+                onChange={(event) => {
+                    setInput(event.target.value);
+                    setOpen(true);
+                }}
+                onBlur={() => {
+                    if (input.trim() !== value) onChange(input.trim());
+                }}
+                onKeyDown={handleKeyDown}
+            />
+            {open && visible.length > 0 && (
+                <Box className={styles.tagAutocompleteMenu} role="listbox">
+                    {visible.map((suggestion, index) => (
+                        <button
+                            type="button"
+                            key={suggestion}
+                            role="option"
+                            aria-selected={index === activeIndex}
+                            className={`${styles.tagAutocompleteOption} ${index === activeIndex ? styles.tagAutocompleteOptionActive : ""}`}
+                            onMouseDown={(event) => {
+                                event.preventDefault();
+                                commit(suggestion);
+                            }}
+                            onMouseEnter={() => setActiveIndex(index)}
+                        >
+                            {suggestion}
+                        </button>
+                    ))}
+                </Box>
+            )}
+        </div>
     );
 }
 
@@ -2275,6 +2504,48 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
             );
         }
 
+        // Company HQ countries / industries use server-backed typeahead.
+        if (field.key in COMPANY_AUTOCOMPLETE_FIELDS) {
+            return (
+                <CompanyAutocomplete
+                    field={COMPANY_AUTOCOMPLETE_FIELDS[field.key]}
+                    label={field.label}
+                    tags={Array.isArray(value) ? (value as string[]) : []}
+                    onChange={(next) => updatePopup((draft) => {
+                        setNestedValue(draft as unknown as Record<string, unknown>, field.key, next);
+                    })}
+                />
+            );
+        }
+
+        // Education institutions / degrees use server-backed typeahead.
+        if (field.key in EDUCATION_AUTOCOMPLETE_FIELDS) {
+            return (
+                <EducationAutocomplete
+                    field={EDUCATION_AUTOCOMPLETE_FIELDS[field.key]}
+                    label={field.label}
+                    tags={Array.isArray(value) ? (value as string[]) : []}
+                    onChange={(next) => updatePopup((draft) => {
+                        setNestedValue(draft as unknown as Record<string, unknown>, field.key, next);
+                    })}
+                />
+            );
+        }
+
+        // Certification titles / issuers use server-backed typeahead (with aliases).
+        if (field.key in CERTIFICATION_AUTOCOMPLETE_FIELDS) {
+            return (
+                <CertificationAutocomplete
+                    field={CERTIFICATION_AUTOCOMPLETE_FIELDS[field.key]}
+                    label={field.label}
+                    tags={Array.isArray(value) ? (value as string[]) : []}
+                    onChange={(next) => updatePopup((draft) => {
+                        setNestedValue(draft as unknown as Record<string, unknown>, field.key, next);
+                    })}
+                />
+            );
+        }
+
         if (field.control === "number") {
             return (
                 <NumberInput
@@ -2320,6 +2591,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                     placeholder={placeholder}
                     tags={Array.isArray(value) ? (value as string[]) : []}
                     suggestions={field.suggestions}
+                    formatLabel={field.key.endsWith("company_size_ranges") ? formatCompanySizeLabel : undefined}
                     onChange={(next) => updatePopup((draft) => {
                         setNestedValue(draft as unknown as Record<string, unknown>, field.key, next);
                     })}
@@ -2359,87 +2631,49 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
         if (field.control === "language_rows") {
             const languages = popupModel.languages;
             return (
-                <Flex direction="column" gap="3">
+                <Flex direction="column" gap="2">
                     {languages.map((entry, index) => (
-                        <Box key={`${entry.language}-${index}`} className={styles.languageRow}>
-                            <Flex gap="3" align="center">
-                                <Box style={{ flex: 1 }}>
-                                    <TextField.Root
-                                        aria-label={`Language ${index + 1}`}
-                                        placeholder=""
-                                        value={entry.language}
-                                        onChange={(event) => updatePopup((draft) => {
-                                            draft.languages[index].language = event.target.value;
-                                        })}
-                                    />
-                                    {field.suggestions.length > 0 && (
-                                        <Box className={styles.optionGrid} mt="2">
-                                            {field.suggestions
-                                                .filter((suggestion) => !entry.language || suggestion.toLowerCase().includes(entry.language.toLowerCase()))
-                                                .slice(0, 6)
-                                                .map((suggestion) => (
-                                                    <Button
-                                                        key={`${suggestion}-${index}-language`}
-                                                        size="1"
-                                                        variant="soft"
-                                                        className={styles.suggestionButton}
-                                                        onClick={() => updatePopup((draft) => {
-                                                            draft.languages[index].language = suggestion;
-                                                        })}
-                                                    >
-                                                        {suggestion}
-                                                    </Button>
-                                                ))}
-                                        </Box>
-                                    )}
-                                </Box>
-                                <Box style={{ flex: 1 }}>
-                                    <TextField.Root
-                                        aria-label={`Proficiency ${index + 1}`}
-                                        placeholder=""
-                                        value={entry.proficiency ?? ""}
-                                        onChange={(event) => updatePopup((draft) => {
-                                            draft.languages[index].proficiency = event.target.value
-                                                ? event.target.value as LanguageProficiency
-                                                : null;
-                                        })}
-                                    />
-                                    {field.options.length > 0 && (
-                                        <Box className={styles.optionGrid} mt="2">
-                                            {field.options
-                                                .filter((option) => !entry.proficiency || option.toLowerCase().includes(entry.proficiency.toLowerCase()))
-                                                .slice(0, 5)
-                                                .map((option) => (
-                                                    <Button
-                                                        key={`${option}-${index}-proficiency`}
-                                                        size="1"
-                                                        variant="soft"
-                                                        className={styles.optionButton}
-                                                        onClick={() => updatePopup((draft) => {
-                                                            draft.languages[index].proficiency = option as LanguageProficiency;
-                                                        })}
-                                                    >
-                                                        {option}
-                                                    </Button>
-                                                ))}
-                                        </Box>
-                                    )}
-                                </Box>
-                                <Button
-                                    size="1"
-                                    variant="ghost"
-                                    onClick={() => updatePopup((draft) => {
-                                        draft.languages = draft.languages.filter((_, languageIndex) => languageIndex !== index);
+                        <Flex key={`lang-${index}`} className={styles.languageRow} gap="2" align="center">
+                            <Box className={styles.languageRowName}>
+                                <SingleAutocomplete
+                                    label={`Language ${index + 1}`}
+                                    value={entry.language}
+                                    suggestions={field.suggestions}
+                                    onChange={(next) => updatePopup((draft) => {
+                                        draft.languages[index].language = next;
                                     })}
-                                >
-                                    <Cross2Icon />
-                                </Button>
-                            </Flex>
-                        </Box>
+                                />
+                            </Box>
+                            <TahoeSelect
+                                aria-label={`Proficiency ${index + 1}`}
+                                className={styles.languageRowProficiency}
+                                value={entry.proficiency ?? ""}
+                                onChange={(event) => updatePopup((draft) => {
+                                    draft.languages[index].proficiency = (event.target.value || null) as LanguageProficiency | null;
+                                })}
+                            >
+                                <option value="">Any proficiency</option>
+                                {field.options.map((option) => (
+                                    <option key={option} value={option}>{option}</option>
+                                ))}
+                            </TahoeSelect>
+                            <Button
+                                size="1"
+                                variant="ghost"
+                                aria-label={`Remove language ${index + 1}`}
+                                className={styles.languageRowRemove}
+                                onClick={() => updatePopup((draft) => {
+                                    draft.languages = draft.languages.filter((_, languageIndex) => languageIndex !== index);
+                                })}
+                            >
+                                <Cross2Icon />
+                            </Button>
+                        </Flex>
                     ))}
                     <Button
                         size="2"
                         variant="soft"
+                        className={styles.addLanguageButton}
                         onClick={() => updatePopup((draft) => {
                             draft.languages.push({ language: "", proficiency: null });
                         })}

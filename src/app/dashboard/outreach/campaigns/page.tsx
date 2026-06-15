@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { fetchCampaigns, type CampaignSummary } from '@/lib/organization';
+import { TahoeSelect } from '@/components/ui/tahoe-ui';
 import styles from '../outreach.module.css';
 
 const PAGE_SIZE = 20;
@@ -103,8 +104,9 @@ export default function CampaignsPage() {
                         aria-label="Search campaigns"
                         onChange={(event) => setSearch(event.target.value)}
                     />
-                    <select
-                        className={styles.toolbarSelect}
+                    <TahoeSelect
+                        size="3"
+                        className={styles.toolbarSelectControl}
                         value={status}
                         aria-label="Filter by status"
                         onChange={(event) => setStatus(event.target.value as CampaignSummary['status'] | 'all')}
@@ -112,9 +114,10 @@ export default function CampaignsPage() {
                         {statusOptions.map((option) => (
                             <option key={option.value} value={option.value}>{option.label}</option>
                         ))}
-                    </select>
-                    <select
-                        className={styles.toolbarSelect}
+                    </TahoeSelect>
+                    <TahoeSelect
+                        size="3"
+                        className={styles.toolbarSelectControl}
                         value={sort}
                         aria-label="Sort campaigns"
                         onChange={(event) => setSort(event.target.value as SortMode)}
@@ -124,7 +127,7 @@ export default function CampaignsPage() {
                         <option value="name_asc">Name</option>
                         <option value="reply_rate_desc">Reply rate</option>
                         <option value="sent_desc">Sent</option>
-                    </select>
+                    </TahoeSelect>
                 </div>
                 <Link href="/dashboard/outreach/campaigns/new" className={styles.primaryAction}>
                     Create campaign
