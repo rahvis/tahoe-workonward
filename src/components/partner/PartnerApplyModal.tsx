@@ -160,7 +160,7 @@ export default function PartnerApplyModal({ open, onOpenChange }: PartnerApplyMo
                             Application received
                         </Dialog.Title>
                         <p className={styles.modalSuccessBody}>
-                            Thanks — we just emailed you a confirmation. Our partnerships team
+                            Thanks, we just emailed you a confirmation. Our partnerships team
                             reviews every application within 2-3 business days and will follow up
                             with next steps and your unique partner link.
                         </p>
@@ -253,7 +253,7 @@ export default function PartnerApplyModal({ open, onOpenChange }: PartnerApplyMo
                                     maxLength={400}
                                 />
                                 <span className={styles.modalHint}>
-                                    URL or @handle — newsletter, podcast, YouTube, LinkedIn, X.
+                                    URL or @handle, newsletter, podcast, YouTube, LinkedIn, X.
                                 </span>
                             </div>
 

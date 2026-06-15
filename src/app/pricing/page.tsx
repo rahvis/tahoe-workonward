@@ -67,13 +67,12 @@ export default function PricingPage() {
                     <div className={styles.pricingGrid}>
                         <div className={styles.pricingCopy}>
                             <span className={styles.sectionEyebrow}>Pricing</span>
-                            <h1>AI recruiting software without enterprise-contract drag.</h1>
+                            <h1>Recruiter-grade tools without the enterprise contract.</h1>
                             <p>
-                                Tahoe starts at $49 per month. Recruiters get plain-English search, candidate lists,
-                                visible credit movement, enrichment readiness, outreach sequencing, and analytics in
-                                one workflow.
+                                Tahoe starts at $49 per month. You get search in your own words, candidate lists, clear
+                                credit costs, contact enrichment, outreach, and analytics in one workflow.
                             </p>
-                            <Link href="/signup" className={styles.primaryAction}>Start free trial</Link>
+                            <Link href="/signup" className={styles.primaryAction}>Start for free</Link>
                         </div>
                         <div className={styles.pricingCard}>
                             <div className={styles.pricingFeaturedRow}>
@@ -88,7 +87,7 @@ export default function PricingPage() {
                                 </div>
                             </div>
                             {[
-                                'Plain-English AI candidate search',
+                                'Search candidates in your own words',
                                 'Candidate lists and recruiting projects',
                                 'Contact enrichment readiness workflows',
                                 'Native outreach sequencing',
@@ -98,6 +97,27 @@ export default function PricingPage() {
                                 <div key={item} className={styles.detailLine}>{item}</div>
                             ))}
                         </div>
+                    </div>
+                </div>
+            </section>
+            <section className={styles.section}>
+                <div className={styles.container}>
+                    <div className={styles.sectionHead}>
+                        <span className={styles.sectionEyebrow}>Pricing FAQ</span>
+                        <h2>Questions about credits and billing</h2>
+                    </div>
+                    <div className={styles.featureGrid}>
+                        {[
+                            ['What is a credit?', 'Credits cover the work Tahoe does for you. Search credits run your candidate searches, and enrich credits find verified emails and phone numbers. You always see the cost before you spend.'],
+                            ['Do unused credits roll over?', 'Each plan includes a fresh monthly allowance. Unused credits do not roll over, so you start every month with your full balance.'],
+                            ['Do I pay extra to send outreach?', 'No. Outreach sends from your own inbox, so there is no separate sending charge.'],
+                            ['Can I start without a credit card?', 'Yes. Start for free with Google or email, run your first search, and add a card only when you are ready.'],
+                        ].map(([question, answer]) => (
+                            <article key={question} className={styles.featureCard}>
+                                <h3>{question}</h3>
+                                <p>{answer}</p>
+                            </article>
+                        ))}
                     </div>
                 </div>
             </section>

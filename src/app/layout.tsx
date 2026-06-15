@@ -41,14 +41,14 @@ export const metadata: Metadata = {
     template: "%s | Tahoe AI",
   },
   description:
-    "Tahoe AI is recruiting software for plain-English candidate sourcing, contact enrichment, outreach sequencing, mailbox controls, and recruiting analytics.",
+    "Tahoe AI is recruiting software for natural-language candidate sourcing, contact enrichment, outreach sequencing, mailbox controls, and recruiting analytics.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
     title: "Tahoe AI | AI Recruiting Search and Outreach",
     description:
-      "Plain-English AI sourcing, candidate lists, enrichment, outreach, and analytics for modern recruiting teams.",
+      "Natural-language AI sourcing, candidate lists, enrichment, outreach, and analytics for modern recruiting teams.",
     url: "/",
     siteName: "Tahoe AI",
     type: "website",

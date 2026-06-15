@@ -21,7 +21,7 @@ export default function BrandMark({
         <span className={styles.wordmark}>
           tahoe<span className={styles.dot}>.</span>ai
         </span>
-        {subtitle && <span className={styles.meta}>recruiter operating system</span>}
+        {subtitle && <span className={styles.meta}>AI recruiting platform</span>}
       </div>
     </div>
   );

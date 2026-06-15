@@ -50,17 +50,17 @@ export default function FeaturesPage() {
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
                         <span className={styles.sectionEyebrow}>Features</span>
-                        <h1>AI recruiting features built around real workflow state.</h1>
+                        <h1>Every step from finding a candidate to getting a reply.</h1>
                         <p>
-                            Tahoe is designed for recruiters who need candidate search, data readiness, outreach,
-                            sender health, and analytics to stay connected after the first result page.
+                            Search, build shortlists, enrich contacts, send outreach, keep your sender healthy, and see
+                            what is working. It all stays connected after the first result page.
                         </p>
                     </div>
                     <div className={styles.featureGrid}>
                         {features.map(([title, body], index) => (
                             <article key={title} className={styles.featureCard}>
                                 <div className={styles.featureCardTop}>
-                                    <span className={styles.featureTag}>— 0{index + 1}</span>
+                                    <span className={styles.featureTag}>0{index + 1}</span>
                                 </div>
                                 <h2>{title}</h2>
                                 <p>{body}</p>
@@ -68,7 +68,7 @@ export default function FeaturesPage() {
                         ))}
                     </div>
                     <div className={styles.heroActions}>
-                        <Link href="/signup" className={styles.primaryAction}>Start free trial</Link>
+                        <Link href="/signup" className={styles.primaryAction}>Start for free</Link>
                         <Link href="/pricing" className={styles.ghostAction}>View pricing</Link>
                     </div>
                 </div>

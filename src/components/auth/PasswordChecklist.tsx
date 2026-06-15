@@ -49,7 +49,7 @@ export default function PasswordChecklist({
                 ))}
             </ul>
             <p className={styles.checklistNote}>
-                Avoid common or breached passwords — these are rejected at sign-up.
+                Avoid common or breached passwords, these are rejected at sign-up.
             </p>
         </div>
     );

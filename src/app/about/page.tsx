@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     },
     openGraph: {
         title: 'About | Tahoe AI',
-        description: 'Learn about Tahoe AI, the recruiter operating system powered by WorkOnward.',
+        description: 'Learn about Tahoe AI, the AI recruiting platform powered by WorkOnward.',
         url: '/about',
         siteName: 'Tahoe AI',
         type: 'website',
@@ -43,7 +43,7 @@ export default function AboutPage() {
                         <span className={styles.sectionEyebrow}>About</span>
                         <h1>Tahoe AI is powered by WorkOnward.</h1>
                         <p>
-                            Tahoe exists to make recruiting workflows more inspectable: plain-English sourcing,
+                            Tahoe exists to make recruiting workflows more inspectable: search in your own words,
                             candidate lists, contact enrichment, native outreach, visible credits, and analytics that
                             point back to real work.
                         </p>

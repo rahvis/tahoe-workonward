@@ -15,7 +15,7 @@ const REV_SHARE_MONTHS = 12;
 const BENEFITS = [
     {
         title: '30% recurring revenue share',
-        body: 'Earn 30% of every paid Tahoe subscription you refer for a full 12 months — paid out monthly.',
+        body: 'Earn 30% of every paid Tahoe subscription you refer for a full 12 months, paid out monthly.',
         icon: (
             <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
@@ -24,7 +24,7 @@ const BENEFITS = [
     },
     {
         title: 'No earnings cap',
-        body: 'Bring 5 customers or 5,000 — your share scales with the workspaces you send. No tiers, no resets.',
+        body: 'Bring 5 customers or 5,000. Your share scales with the workspaces you send. No tiers, no resets.',
         icon: (
             <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M3 17 9 11l4 4 8-8M14 7h7v7" />
@@ -60,7 +60,7 @@ const HOW_STEPS = [
     },
     {
         title: 'Get your link + assets',
-        body: 'On approval you get a tracked partner link, a private dashboard, and our co-marketing kit — ready to drop into a video, post, or newsletter.',
+        body: 'On approval you get a tracked partner link, a private dashboard, and our co-marketing kit, ready to drop into a video, post, or newsletter.',
     },
     {
         title: 'Earn 30% for 12 months',
@@ -85,7 +85,7 @@ const HERO_PARTNER_ROWS = [
 const FAQS = [
     {
         question: `How does the ${REV_SHARE_PERCENT}% revenue share work?`,
-        answer: `For every paid Tahoe subscription you refer, you earn ${REV_SHARE_PERCENT}% of what that customer pays Tahoe for ${REV_SHARE_MONTHS} months — paid out monthly via Stripe. Annual plans count toward all 12 months on day one.`,
+        answer: `For every paid Tahoe subscription you refer, you earn ${REV_SHARE_PERCENT}% of what that customer pays Tahoe for ${REV_SHARE_MONTHS} months, paid out monthly via Stripe. Annual plans count toward all 12 months on day one.`,
     },
     {
         question: 'When and how do I get paid?',
@@ -97,7 +97,7 @@ const FAQS = [
     },
     {
         question: 'Can I run paid ads?',
-        answer: 'Yes — on your own channels. We do ask that you avoid bidding on Tahoe-branded keywords or impersonating Tahoe in ads. Full guidelines are shared after approval.',
+        answer: 'Yes, on your own channels. We do ask that you avoid bidding on Tahoe-branded keywords or impersonating Tahoe in ads. Full guidelines are shared after approval.',
     },
     {
         question: 'What counts as a qualified referral?',
@@ -315,7 +315,7 @@ export default function PartnerPage() {
                         <div className={styles.headerActions}>
                             <Link href="/login" className={styles.textAction}>Sign in</Link>
                             <Link href="/signup" className={styles.secondaryAction}>
-                                Start free trial <ArrowUpRightIcon />
+                                Start for free <ArrowUpRightIcon />
                             </Link>
                             <button
                                 type="button"
@@ -337,7 +337,7 @@ export default function PartnerPage() {
                             <Link href="/#customers" onClick={() => setMobileNavOpen(false)}>Customers</Link>
                             <div className={styles.mobileAuthActions}>
                                 <Link href="/login" className={styles.textAction}>Sign in</Link>
-                                <Link href="/signup" className={styles.secondaryAction}>Start free trial</Link>
+                                <Link href="/signup" className={styles.secondaryAction}>Start for free</Link>
                             </div>
                         </div>
                     )}
@@ -399,9 +399,9 @@ export default function PartnerPage() {
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
                         <span className={styles.sectionEyebrow}>Why partner with Tahoe</span>
-                        <h2>Built for partners who actually ship — not just collect codes.</h2>
+                        <h2>Built for partners who actually ship, not just collect codes.</h2>
                         <p>
-                            Tahoe is a recruiter operating system that customers stay on for years. That makes recurring
+                            Tahoe is a AI recruiting platform that customers stay on for years. That makes recurring
                             economics genuinely good for the people who introduce us, not a one-time bounty.
                         </p>
                     </div>
@@ -445,7 +445,7 @@ export default function PartnerPage() {
                         <span className={styles.sectionEyebrow}>Partner dashboard</span>
                         <h2>Live earnings, attribution, and payout state in one calm surface.</h2>
                         <p>
-                            Approved partners get a private dashboard built on the same operating system Tahoe ships to
+                            Approved partners get a private dashboard built on the same platform Tahoe ships to
                             recruiters. Track every referral, see your next Stripe payout, and grab assets in one place.
                         </p>
                     </div>
@@ -616,8 +616,8 @@ export default function PartnerPage() {
                         <div className={styles.footerBrand}>
                             <PartnerLogo />
                             <p>
-                                Tahoe is the honest recruiter operating system: search in plain English, enrich cleanly,
-                                send from your inbox, and keep the workflow operationally calm.
+                                Tahoe is the AI recruiting platform that sources, enriches, and sends outreach in one place.
+                                You just describe who you are looking for.
                             </p>
                         </div>
 

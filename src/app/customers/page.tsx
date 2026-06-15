@@ -60,7 +60,7 @@ export default function CustomersPage() {
                         ))}
                     </div>
                     <div className={styles.heroActions}>
-                        <Link href="/signup" className={styles.primaryAction}>Start free trial</Link>
+                        <Link href="/signup" className={styles.primaryAction}>Start for free</Link>
                         <Link href="/contact" className={styles.ghostAction}>Contact Tahoe</Link>
                     </div>
                 </div>

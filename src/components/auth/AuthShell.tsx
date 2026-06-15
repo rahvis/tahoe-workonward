@@ -34,13 +34,13 @@ export default function AuthShell({
                             Search, organize, enrich, and launch from one calm surface.
                         </h1>
                         <p className={styles.heroBody}>
-                            Tahoe keeps the recruiter flow direct: plain-English search, focused lists,
+                            Tahoe keeps the recruiter flow direct: search in your own words, focused lists,
                             native outreach, and product-grade operational visibility.
                         </p>
                     </div>
 
                     <ul className={styles.featureList}>
-                        <li><span className={styles.bullet} aria-hidden="true" />Plain-English candidate search</li>
+                        <li><span className={styles.bullet} aria-hidden="true" />Search candidates in your own words</li>
                         <li><span className={styles.bullet} aria-hidden="true" />Send from your own inbox</li>
                         <li><span className={styles.bullet} aria-hidden="true" />Credits and actions stay explicit</li>
                     </ul>

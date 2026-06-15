@@ -89,7 +89,7 @@ export function PublicSiteHeader({ placement = 'blog' }: { placement?: string } 
                             Sign in
                         </Link>
                         <Link href="/signup" className={styles.secondaryAction} onClick={() => trackAuthCta('start_free_trial', `${placement}_header_desktop`)}>
-                            Start free trial <ArrowUpRightIcon />
+                            Start for free <ArrowUpRightIcon />
                         </Link>
                         <button
                             type="button"
@@ -115,7 +115,7 @@ export function PublicSiteHeader({ placement = 'blog' }: { placement?: string } 
                         <Link href="/blogs" onClick={() => { trackBlogNav(`${placement}_header_mobile`); setMobileNavOpen(false); }}>Blog</Link>
                         <div className={styles.mobileAuthActions}>
                             <Link href="/login" className={styles.textAction} onClick={() => trackAuthCta('sign_in', `${placement}_header_mobile`)}>Sign in</Link>
-                            <Link href="/signup" className={styles.secondaryAction} onClick={() => trackAuthCta('start_free_trial', `${placement}_header_mobile`)}>Start free trial</Link>
+                            <Link href="/signup" className={styles.secondaryAction} onClick={() => trackAuthCta('start_free_trial', `${placement}_header_mobile`)}>Start for free</Link>
                         </div>
                     </div>
                 )}
@@ -132,8 +132,8 @@ export function PublicSiteFooter({ placement = 'blog' }: { placement?: string } 
                     <div className={styles.footerBrand}>
                         <Logo />
                         <p>
-                            Tahoe is the honest recruiter operating system: search in plain English, enrich cleanly,
-                            send from your inbox, and keep the workflow operationally calm.
+                            Tahoe is the AI recruiting platform that sources, enriches, and sends outreach in one place.
+                            You just describe who you are looking for.
                         </p>
                     </div>
 

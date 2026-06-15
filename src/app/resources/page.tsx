@@ -91,7 +91,7 @@ export default function ResourcesPage() {
                     </div>
                     <h1>Guides to get more out of Tahoe.</h1>
                     <p>
-                        Practical playbooks and tips for sourcing, search, enrichment, and outreach — written so you can
+                        Practical playbooks and tips for sourcing, search, enrichment, and outreach, written so you can
                         put them to work in your next search.
                     </p>
                 </div>

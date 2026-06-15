@@ -13,7 +13,7 @@ test('renders Tahoe landing content with auth CTAs pointing to dedicated routes'
 
     expect(
         screen.getByRole('heading', {
-            name: /search 800m profiles in plain english, then move straight into outreach/i,
+            name: /the way you'd describe the role, then reach out the same day/i,
         }),
     ).toBeInTheDocument();
 
@@ -21,7 +21,10 @@ test('renders Tahoe landing content with auth CTAs pointing to dedicated routes'
         screen.getAllByRole('link', { name: /^sign in$/i }).every((link) => link.getAttribute('href') === '/login'),
     ).toBe(true);
     expect(
-        screen.getAllByRole('link', { name: /start free trial/i }).every((link) => link.getAttribute('href') === '/signup'),
+        screen.getAllByRole('link', { name: /start for free/i }).every((link) => link.getAttribute('href') === '/signup'),
+    ).toBe(true);
+    expect(
+        screen.getAllByRole('link', { name: /book a demo/i }).every((link) => link.getAttribute('href') === '/contact'),
     ).toBe(true);
     expect(
         screen.getAllByRole('link', { name: /^blog$/i }).every((link) => link.getAttribute('href') === '/blogs'),

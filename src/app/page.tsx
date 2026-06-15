@@ -36,38 +36,38 @@ const HERO_RESULTS = [
     { name: 'Sofia Marchetti', role: 'Backend · Solarisbank', location: 'Berlin', match: 88 },
 ];
 
-const TRUSTED_BY = ['Ramp', 'Linear', 'Vercel', 'Notion', 'Figma', 'Stripe'];
+const PROOF_POINTS = ['800M+ profiles', 'Verified emails and phones', 'Send from your own inbox', 'No credit card to start'];
 
 const FEATURES = [
     {
         tag: '01',
-        title: 'Plain-English search',
-        body: 'Describe the hire, not the query syntax. Tahoe translates intent into structured recruiter-grade filters.',
+        title: 'Search in your own words',
+        body: "Describe the hire the way you'd say it out loud. No Boolean, no filter syntax. Tahoe turns it into a recruiter-grade search.",
     },
     {
         tag: '02',
-        title: 'Preview-first sourcing',
-        body: 'Searches stay fast and truthful, with interactive previews that show what recruiters can actually act on now.',
+        title: 'See results you can act on',
+        body: 'Fast, honest previews show exactly who you can reach right now, with no inflated match counts.',
     },
     {
         tag: '03',
-        title: 'Intelligent List Building',
-        body: 'Save the right people into focused lists, then move from sourcing to outreach without losing context.',
+        title: 'Build shortlists that keep their context',
+        body: 'Save the right people into focused lists and move from sourcing to outreach without losing your place.',
     },
     {
         tag: '04',
-        title: 'Contact enrichment',
-        body: 'Work email, personal email, and mobile phone enrichment are priced clearly before the click.',
+        title: 'Verified contact details, priced up front',
+        body: 'Work email, personal email, and mobile. You see the cost before you spend a credit.',
     },
     {
         tag: '05',
-        title: 'Native outreach',
-        body: "Recruiters send from their own inboxes, so Tahoe fits the workflow they already trust instead of replacing it.",
+        title: 'Send from your own inbox',
+        body: 'Outreach goes out from the inbox candidates already trust, so Tahoe fits your workflow instead of replacing it.',
     },
     {
         tag: '06',
-        title: 'Operational analytics',
-        body: 'Track searches, lists, enrichments, sends, replies, and credit usage in one quiet operating surface.',
+        title: "See what's working",
+        body: 'Searches, lists, enrichments, sends, replies, and credit usage, all in one clear view.',
     },
 ];
 
@@ -82,25 +82,25 @@ type ScreenTab = (typeof SCREEN_TABS)[number]['id'];
 
 const TESTIMONIALS = [
     {
-        stat: '$22k',
-        label: 'saved per year',
-        quote: 'We replaced two legacy recruiter seats with Tahoe and found three qualified engineers in the first week.',
-        name: 'Sarah Chen',
-        role: 'Head of Talent · Linear',
+        stat: '800M+',
+        label: 'profiles to search',
+        quote: "Describe who you're looking for in your own words and get a shortlist you can actually work, not a wall of filters.",
+        name: 'Find the right people',
+        role: 'Search to shortlist in minutes',
     },
     {
-        stat: '4×',
-        label: 'faster sourcing',
-        quote: 'Plain-English search is the unlock. I paste the role brief in and get a shortlist I can actually work.',
-        name: 'Marcus Williams',
-        role: 'Recruiting Lead · Ramp',
+        stat: '1 inbox',
+        label: 'your own',
+        quote: 'Outreach sends from the mailbox your candidates already trust, so your workflow stays exactly where it is.',
+        name: 'Reach out with confidence',
+        role: 'Send from your own mailbox',
     },
     {
-        stat: '19%',
-        label: 'reply rate',
-        quote: 'The outreach and enrichment workflow feels operationally boring in the best way. It just works.',
-        name: 'Priya Patel',
-        role: 'Talent Partner · Notion',
+        stat: '$0',
+        label: 'to start',
+        quote: 'See enrichment and credit costs before you spend, and start free with no credit card.',
+        name: 'Know your costs',
+        role: 'Clear pricing, no surprises',
     },
 ];
 
@@ -156,7 +156,7 @@ const homeJsonLd = {
             operatingSystem: 'Web',
             url: SITE_URL,
             description:
-                'AI recruiting software for plain-English candidate sourcing, candidate lists, contact enrichment, native outreach sequencing, mailbox controls, and recruiting analytics.',
+                'AI recruiting software for natural-language candidate sourcing, candidate lists, contact enrichment, native outreach sequencing, mailbox controls, and recruiting analytics.',
             publisher: {
                 '@id': `${SITE_URL}/#organization`,
             },
@@ -637,21 +637,22 @@ export default function LandingPage() {
                         <div className={styles.heroCopy}>
                             <div className={styles.eyebrow}>
                                 <span className={styles.eyebrowDot} />
-                                <span>Recruiter operating system · vNext</span>
+                                <span>AI recruiting platform</span>
                             </div>
                             <h1 className={styles.heroTitle}>
-                                Search <span>800M profiles</span> in plain English, then move straight into outreach.
+                                Search <span>800M+ profiles</span> the way you&apos;d describe the role, then reach out the same day.
                             </h1>
                             <p className={styles.heroBody}>
-                                Tahoe gives recruiting teams one place to find candidates, organize lists, enrich contact
-                                data, launch native sequences, and watch replies without buying a noisy legacy stack.
+                                Describe the role like you&apos;d explain it to a colleague. No Boolean, no filters. Tahoe
+                                searches 800M+ profiles, builds your shortlist, finds verified emails and phone numbers, and
+                                sends outreach from your own inbox. One place, for a fraction of what legacy tools cost.
                             </p>
                             <div className={styles.heroActions}>
                                 <Link href="/signup" className={styles.primaryAction} onClick={() => trackAuthCta('start_free_trial', 'hero')}>
-                                    Start free trial <ArrowIcon />
+                                    Start for free <ArrowIcon />
                                 </Link>
-                                <Link href="/login" className={styles.ghostAction} onClick={() => trackAuthCta('sign_in', 'hero')}>
-                                    Sign in <ArrowUpRightIcon />
+                                <Link href="/contact" className={styles.ghostAction} onClick={() => trackAuthCta('book_demo', 'hero')}>
+                                    Book a demo <ArrowUpRightIcon />
                                 </Link>
                                 <Image
                                     src="/loading_animations_transparent_all/fade_transparent.gif"
@@ -745,10 +746,10 @@ export default function LandingPage() {
 
             <section className={styles.trustStrip}>
                 <div className={styles.container}>
-                    <div className={styles.trustIntro}>Trusted by recruiting teams at</div>
+                    <div className={styles.trustIntro}>Built for in-house recruiters and lean talent teams</div>
                     <div className={styles.trustLogos}>
-                        {TRUSTED_BY.map((brand) => (
-                            <span key={brand}>{brand}</span>
+                        {PROOF_POINTS.map((point) => (
+                            <span key={point}>{point}</span>
                         ))}
                     </div>
                 </div>
@@ -758,10 +759,10 @@ export default function LandingPage() {
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
                         <span className={styles.sectionEyebrow}>Product</span>
-                        <h2>Everything a recruiter needs, without the seven-figure stack.</h2>
+                        <h2>Everything you need to source and reach candidates, all in one place.</h2>
                         <p>
-                            Tahoe keeps the interface calm while the workflow gets deeper: find people, organize work,
-                            enrich contacts, send outreach, and track outcomes from one system.
+                            Find people, build lists, enrich contacts, send outreach, and see what is working. No more
+                            stitching five tools together.
                         </p>
                     </div>
 
@@ -769,7 +770,7 @@ export default function LandingPage() {
                         {FEATURES.map((feature) => (
                             <article key={feature.tag} className={styles.featureCard}>
                                 <div className={styles.featureCardTop}>
-                                    <span className={styles.featureTag}>— {feature.tag}</span>
+                                    <span className={styles.featureTag}>{feature.tag}</span>
                                     <PlusIcon />
                                 </div>
                                 <h3>{feature.title}</h3>
@@ -784,10 +785,10 @@ export default function LandingPage() {
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
                         <span className={styles.sectionEyebrow}>Features</span>
-                        <h2>The recruiter operating system, shown the way the product actually works.</h2>
+                        <h2>See exactly how Tahoe works.</h2>
                         <p>
-                            These are Tahoe-styled previews of the search, list, enrichment, campaign, mailbox, billing,
-                            and analytics workflows defined in the PRD.
+                            Real previews of the search, list, enrichment, campaign, mailbox, billing, and analytics
+                            workflows.
                         </p>
                     </div>
 
@@ -810,13 +811,12 @@ export default function LandingPage() {
                         <div>
                             <strong>Preview the Tahoe experience.</strong>
                             <p>
-                                Get a glimpse into the operationally calm workflow. These panels preview the UI without touching
-                                live dashboard state, APIs, auth, or recruiter data.
+                                A guided look at the product. Start free to run it with your own searches.
                             </p>
                         </div>
                         <div className={styles.screenIntroMeta}>
                             <span><SparkIcon /> Search, organize, enrich, launch, and measure</span>
-                            <span><CheckIcon /> Presentational only — no backend behavior changes</span>
+                            <span><CheckIcon /> No setup required. Start free in minutes.</span>
                         </div>
                     </div>
 
@@ -833,8 +833,8 @@ export default function LandingPage() {
                                 Same search category. Same recruiter workflow. <span>A fraction of the cost.</span>
                             </h2>
                             <p>
-                                Tahoe is built for teams that want recruiter-grade capability without enterprise-contract
-                                drag. Credits are visible, pricing is legible, and the system does not hide spend until the invoice arrives.
+                                Recruiter-grade sourcing and outreach without the enterprise contract. Credits and pricing
+                                are visible up front, with no surprise invoice at the end of the month.
                             </p>
                             <Link href="/signup" className={styles.primaryAction} onClick={() => trackAuthCta('start_free_trial', 'pricing')}>
                                 See full pricing <ArrowIcon />
@@ -880,8 +880,8 @@ export default function LandingPage() {
             <section id="customers" className={styles.section}>
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
-                        <span className={styles.sectionEyebrow}>Customers</span>
-                        <h2>Loved by recruiters who care more about hires than software theater.</h2>
+                        <span className={styles.sectionEyebrow}>Why Tahoe</span>
+                        <h2>Built for the way recruiters actually work.</h2>
                     </div>
 
                     <div className={styles.testimonialGrid}>
@@ -906,26 +906,26 @@ export default function LandingPage() {
                 <div className={styles.container}>
                     <div className={styles.finalCtaCard}>
                         <div>
-                            <h2>Stop paying for a 2009 product.</h2>
+                            <h2>Run your first search in two minutes.</h2>
                             <p>
-                                Continue with Google or email, run your first search, and see what Tahoe surfaces before lunch.
+                                Continue with Google or email, run your first search, and see your shortlist before lunch.
                             </p>
                             <div className={styles.heroActions}>
                                 <Link href="/signup" className={styles.accentAction} onClick={() => trackAuthCta('start_free_trial', 'final_cta')}>
-                                    Start free trial <ArrowIcon />
+                                    Start for free <ArrowIcon />
                                 </Link>
-                                <Link href="/login" className={styles.inverseGhostAction} onClick={() => trackAuthCta('sign_in', 'final_cta')}>
-                                    Sign in <ArrowUpRightIcon />
+                                <Link href="/contact" className={styles.inverseGhostAction} onClick={() => trackAuthCta('book_demo', 'final_cta')}>
+                                    Book a demo <ArrowUpRightIcon />
                                 </Link>
                             </div>
                         </div>
 
                         <div className={styles.ctaChecklist}>
                             {[
-                                'Google sign-in and email auth stay intact',
+                                'Sign in with Google or email',
                                 'No credit card required to get started',
-                                'Native outreach from your own inbox',
-                                'Credits, enrichment, and reply flow shown up front',
+                                'Send outreach from your own inbox',
+                                'Credits and enrichment costs shown up front',
                             ].map((item) => (
                                 <div key={item}>
                                     <CheckIcon />

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     },
     openGraph: {
         title: 'Product | Tahoe AI',
-        description: 'A connected AI recruiting operating system for sourcing, enrichment, outreach, and analytics.',
+        description: 'One connected AI recruiting platform for sourcing, enrichment, outreach, and analytics.',
         url: '/product',
         siteName: 'Tahoe AI',
         type: 'website',
@@ -48,7 +48,7 @@ const productJsonLd = [
 ];
 
 const workflow = [
-    ['Plain-English search', 'Describe the hire in recruiter language and preserve the role intent, filters, exclusions, and source context.'],
+    ['Search in your own words', 'Describe the hire in plain language and preserve the role intent, filters, exclusions, and source context.'],
     ['Candidate lists', 'Move selected profiles into operational lists with ownership, project, enrichment state, and next actions.'],
     ['Contact enrichment', 'Estimate work email, phone, and verification costs before provider-backed enrichment runs.'],
     ['Native outreach', 'Launch sequences from connected mailboxes with visible caps, send windows, stop rules, and reply state.'],
@@ -67,17 +67,17 @@ export default function ProductPage() {
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
                         <span className={styles.sectionEyebrow}>Product</span>
-                        <h1>Tahoe AI is the connected recruiting operating system.</h1>
+                        <h1>One connected workflow, from search to sent.</h1>
                         <p>
-                            Search in plain English, save candidates into lists, enrich contact data, send from real
-                            mailboxes, and measure recruiting movement without stitching together a fragile tool stack.
+                            Describe who you are looking for, build shortlists, find verified contact details, send from
+                            your own inbox, and measure it all, without stitching together a fragile tool stack.
                         </p>
                     </div>
                     <div className={styles.featureGrid}>
                         {workflow.map(([title, body], index) => (
                             <article key={title} className={styles.featureCard}>
                                 <div className={styles.featureCardTop}>
-                                    <span className={styles.featureTag}>— 0{index + 1}</span>
+                                    <span className={styles.featureTag}>0{index + 1}</span>
                                 </div>
                                 <h2>{title}</h2>
                                 <p>{body}</p>
@@ -85,7 +85,7 @@ export default function ProductPage() {
                         ))}
                     </div>
                     <div className={styles.heroActions}>
-                        <Link href="/signup" className={styles.primaryAction}>Start free trial</Link>
+                        <Link href="/signup" className={styles.primaryAction}>Start for free</Link>
                         <Link href="/features" className={styles.ghostAction}>Explore features</Link>
                     </div>
                 </div>

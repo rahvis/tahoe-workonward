@@ -84,7 +84,7 @@ export default function ContactPage() {
                     </div>
                     <div className={styles.heroActions}>
                         <Link href="/partner" className={styles.primaryAction}>Partner program</Link>
-                        <Link href="/signup" className={styles.ghostAction}>Start free trial</Link>
+                        <Link href="/signup" className={styles.ghostAction}>Start for free</Link>
                     </div>
                 </div>
             </section>
