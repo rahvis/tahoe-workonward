@@ -79,6 +79,29 @@ const sectionConfig = {
     subnav: Array<{ href: string; label: string }>;
 }>;
 
+function pathMatches(pathname: string | null, href: string): boolean {
+    if (!pathname) return false;
+    return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+// A subnav item is active when the path is inside its route. The section-root item
+// (whose href equals the section href, e.g. "All Projects") stays active for any
+// page under the section that a more specific sibling does not own — so project
+// detail pages keep "All Projects" highlighted while "/projects/lists" hands off
+// to "Lists".
+function isSubnavItemActive(
+    pathname: string | null,
+    subHref: string,
+    sectionHref: string,
+    siblingHrefs: string[],
+): boolean {
+    if (subHref === sectionHref) {
+        if (!pathMatches(pathname, sectionHref)) return false;
+        return !siblingHrefs.some((href) => href !== sectionHref && pathMatches(pathname, href));
+    }
+    return pathMatches(pathname, subHref);
+}
+
 function inferActiveSection(pathname: string | null): PrimarySection {
     if (!pathname) return 'search';
     if (pathname.startsWith('/dashboard/projects')) return 'projects';
@@ -162,7 +185,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                             if (collapsed) {
                                 return (
-                                    <Link key={item.key} href={item.href} className={styles.navItem} title={item.label}>
+                                    <Link
+                                        key={item.key}
+                                        href={item.href}
+                                        className={styles.navItem}
+                                        title={item.label}
+                                        aria-current={isActive ? 'page' : undefined}
+                                    >
                                         <span className={`${styles.navButton} ${isActive ? styles.navButtonActive : ''}`}>
                                             <span className={styles.navIcon}>{item.icon}</span>
                                         </span>
@@ -176,6 +205,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                         key={item.key}
                                         href={item.href}
                                         className={`${styles.navButton} ${isActive ? styles.navButtonActive : ''}`}
+                                        aria-current={isActive ? 'page' : undefined}
                                     >
                                         <span className={styles.navIcon}>{item.icon}</span>
                                         <span className={styles.navLabel}>{item.label}</span>
@@ -201,19 +231,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                     {isExpanded ? (
                                         <div id={`subnav-${item.key}`} className={styles.sidebarSubnav}>
                                             {item.subnav.map((sub) => {
-                                                const isSubActive =
-                                                    pathname === sub.href ||
-                                                    (sub.href !== sectionConfig[item.key].href &&
-                                                        pathname?.startsWith(sub.href + '/'));
-                                                const isSectionRoot = sub.href === sectionConfig[item.key].href;
-                                                const isSectionRootActive =
-                                                    isSectionRoot && (pathname === sub.href || pathname === sub.href + '/');
-                                                const active = isSubActive || isSectionRootActive;
+                                                const active = isSubnavItemActive(
+                                                    pathname,
+                                                    sub.href,
+                                                    sectionConfig[item.key].href,
+                                                    item.subnav.map((entry) => entry.href),
+                                                );
                                                 return (
                                                     <Link
                                                         key={sub.href}
                                                         href={sub.href}
                                                         className={`${styles.sidebarSubnavItem} ${active ? styles.sidebarSubnavItemActive : ''}`}
+                                                        aria-current={active ? 'page' : undefined}
                                                     >
                                                         {sub.label}
                                                     </Link>
@@ -250,7 +279,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {primaryNav.map((item) => {
                     const isActive = item.key === activeSection;
                     return (
-                        <Link key={item.key} href={item.href} className={styles.navItem}>
+                        <Link key={item.key} href={item.href} className={styles.navItem} aria-current={isActive ? 'page' : undefined}>
                             <span className={isActive ? styles.bottomNavActive : styles.bottomNavItem}>
                                 {item.icon}
                                 <span>{item.label}</span>

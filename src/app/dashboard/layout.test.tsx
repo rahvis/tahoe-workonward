@@ -10,10 +10,11 @@ import {
 } from '@/lib/api';
 
 const pushMock = vi.fn();
+let currentPathname = '/dashboard/search';
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: pushMock, replace: vi.fn(), prefetch: vi.fn() }),
-    usePathname: () => '/dashboard/search',
+    usePathname: () => currentPathname,
     useSearchParams: () => new URLSearchParams(),
 }));
 
@@ -30,6 +31,7 @@ const mockedIsLoggedIn = vi.mocked(isLoggedIn);
 const mockedRemoveToken = vi.mocked(removeToken);
 
 beforeEach(() => {
+    currentPathname = '/dashboard/search';
     pushMock.mockReset();
     mockedApiRequest.mockReset();
     mockedDisableGoogleAutoSelect.mockReset();
@@ -84,6 +86,34 @@ test('logout clears auth state, disables Google auto select, and redirects to th
             value: originalLocation,
         });
     }
+});
+
+test('keeps the section-root subnav item highlighted on nested detail pages', async () => {
+    currentPathname = '/dashboard/projects/project-123';
+    render(
+        <DashboardLayout>
+            <div>Dashboard Content</div>
+        </DashboardLayout>,
+    );
+
+    await screen.findByText('Dashboard Content');
+    // "All Projects" owns project detail pages; "Lists" should not steal the highlight.
+    expect(getLinkByHref('/dashboard/projects')).toHaveAttribute('aria-current', 'page');
+    expect(getLinkByHref('/dashboard/projects/lists')).not.toHaveAttribute('aria-current');
+});
+
+test('marks the active primary nav item with aria-current for assistive tech', async () => {
+    currentPathname = '/dashboard/mailboxes';
+    render(
+        <DashboardLayout>
+            <div>Dashboard Content</div>
+        </DashboardLayout>,
+    );
+
+    await screen.findByText('Dashboard Content');
+    const sidebar = screen.getByRole('navigation', { name: /primary dashboard navigation/i });
+    expect(within(sidebar).getByRole('link', { name: /mailboxes/i })).toHaveAttribute('aria-current', 'page');
+    expect(within(sidebar).getByRole('link', { name: /billing/i })).not.toHaveAttribute('aria-current');
 });
 
 test('dashboard nav links mailboxes directly without nested mailbox subnav', async () => {
