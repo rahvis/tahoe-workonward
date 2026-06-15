@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Inter, Montserrat } from 'next/font/google';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
 import { trackLandingEvent } from '@/lib/public-analytics';
 import styles from './page.module.css';
@@ -36,7 +36,36 @@ const HERO_RESULTS = [
     { name: 'Sofia Marchetti', role: 'Backend · Solarisbank', location: 'Berlin', match: 88 },
 ];
 
-const PROOF_POINTS = ['800M+ profiles', 'Verified emails and phones', 'Send from your own inbox', 'No credit card to start'];
+const PROOF_TABS = [
+    {
+        label: '800M+ profiles',
+        headline: "Search the world's talent.",
+        body: 'One search in plain words across 800M+ profiles.',
+        cta: { label: 'Start for free', href: '/signup' },
+        visual: 'search' as const,
+    },
+    {
+        label: 'Verified emails and phones',
+        headline: 'Reach people for real.',
+        body: 'Work email, personal email, and mobile, verified before you spend a credit.',
+        cta: { label: 'See pricing', href: '/pricing' },
+        visual: 'contact' as const,
+    },
+    {
+        label: 'Send from your own inbox',
+        headline: 'Outreach that lands.',
+        body: 'Sequences send from your connected Gmail, so replies come back to you.',
+        cta: { label: 'Explore features', href: '/features' },
+        visual: 'inbox' as const,
+    },
+    {
+        label: 'No credit card to start',
+        headline: 'Start free in minutes.',
+        body: 'Run your first search today. Add a card only when you are ready.',
+        cta: { label: 'Start for free', href: '/signup' },
+        visual: 'start' as const,
+    },
+];
 
 const FEATURES = [
     {
@@ -531,6 +560,144 @@ function BillingAndAnalyticsScreen() {
     );
 }
 
+function ProofVisual({ type }: { type: (typeof PROOF_TABS)[number]['visual'] }) {
+    if (type === 'contact') {
+        return (
+            <div className={styles.proofCardMock}>
+                <div className={styles.proofContactHead}>
+                    <span className={styles.proofAvatar}>AO</span>
+                    <div className={styles.proofContactName}>
+                        <strong>Aisha Okonkwo</strong>
+                        <span>Senior Backend · N26</span>
+                    </div>
+                </div>
+                {[['Work email', 'aisha@n26.com'], ['Personal', 'aisha@gmail.com'], ['Mobile', '+49 30 901 2345']].map(([label, value]) => (
+                    <div key={label} className={styles.proofContactRow}>
+                        <span>{label}</span>
+                        <strong>{value}</strong>
+                        <CheckIcon />
+                    </div>
+                ))}
+                <div className={styles.proofCardFoot}>Cost shown before you enrich</div>
+            </div>
+        );
+    }
+    if (type === 'inbox') {
+        return (
+            <div className={styles.proofCardMock}>
+                <div className={styles.proofMailHead}>To aisha@n26.com</div>
+                <div className={styles.proofMailSubject}>Backend role, at your pace</div>
+                <p className={styles.proofMailBody}>Hi Aisha, your work at N26 stood out. Open to a quick chat this week?</p>
+                <div className={styles.proofCardFoot}>Sent from you@gmail.com</div>
+            </div>
+        );
+    }
+    if (type === 'start') {
+        return (
+            <div className={styles.proofCardMock}>
+                <strong className={styles.proofStartTitle}>You are ready to search.</strong>
+                <div className={styles.proofContactRow}><span>Search credits</span><strong>300 / 300</strong></div>
+                <div className={styles.proofContactRow}><span>Enrich credits</span><strong>200 / 200</strong></div>
+                <div className={styles.proofCardFoot}>No credit card required</div>
+            </div>
+        );
+    }
+    const rows: Array<[string, number]> = [['Marcus Chen', 96], ['Aisha Okonkwo', 94], ['Lukas Berger', 91]];
+    return (
+        <div className={styles.proofCardMock}>
+            <div className={styles.proofSearchField}><SearchIcon /><span>backend engineers in Berlin</span></div>
+            {rows.map(([name, score]) => (
+                <div key={name} className={styles.proofResultRow}>
+                    <span className={styles.proofResultName}>{name}</span>
+                    <span className={styles.proofResultScore}>{score}</span>
+                </div>
+            ))}
+            <div className={styles.proofCardFoot}>4 of 14,217 matches · 0.8s</div>
+        </div>
+    );
+}
+
+function ProofShowcase() {
+    const [active, setActive] = useState(0);
+    const [paused, setPaused] = useState(false);
+    const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+    const activeTab = PROOF_TABS[active];
+
+    function goTo(index: number, focus = false) {
+        const next = (index + PROOF_TABS.length) % PROOF_TABS.length;
+        setActive(next);
+        if (focus) tabRefs.current[next]?.focus();
+    }
+
+    return (
+        <section className={styles.proofSection} aria-label="Why Tahoe">
+            <div className={styles.container}>
+                <p className={styles.proofEyebrow}>Built for in-house recruiters and lean talent teams</p>
+                <div
+                    className={styles.proofShowcase}
+                    data-paused={paused ? 'true' : 'false'}
+                    onMouseEnter={() => setPaused(true)}
+                    onMouseLeave={() => setPaused(false)}
+                    onFocusCapture={() => setPaused(true)}
+                    onBlurCapture={() => setPaused(false)}
+                >
+                    <div
+                        className={styles.proofTabs}
+                        role="tablist"
+                        aria-label="Tahoe highlights"
+                        onKeyDown={(event) => {
+                            if (event.key === 'ArrowRight') { event.preventDefault(); goTo(active + 1, true); }
+                            else if (event.key === 'ArrowLeft') { event.preventDefault(); goTo(active - 1, true); }
+                            else if (event.key === 'Home') { event.preventDefault(); goTo(0, true); }
+                            else if (event.key === 'End') { event.preventDefault(); goTo(PROOF_TABS.length - 1, true); }
+                        }}
+                    >
+                        {PROOF_TABS.map((tab, index) => {
+                            const isActive = index === active;
+                            return (
+                                <button
+                                    key={tab.label}
+                                    ref={(el) => { tabRefs.current[index] = el; }}
+                                    type="button"
+                                    role="tab"
+                                    id={`proof-tab-${index}`}
+                                    aria-selected={isActive}
+                                    aria-controls="proof-panel"
+                                    tabIndex={isActive ? 0 : -1}
+                                    className={isActive ? styles.proofTabActive : styles.proofTab}
+                                    onClick={() => goTo(index)}
+                                >
+                                    <span className={styles.proofTabLabel}>{tab.label}</span>
+                                    {isActive ? (
+                                        <span className={styles.proofTabTrack}>
+                                            <span className={styles.proofTabFill} onAnimationEnd={() => goTo(active + 1)} />
+                                        </span>
+                                    ) : null}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <div className={styles.proofStage} id="proof-panel" role="tabpanel" aria-labelledby={`proof-tab-${active}`}>
+                        <div key={active} className={styles.proofPanel}>
+                            <div className={styles.proofCopy}>
+                                <h3 className={styles.proofHeadline}>{activeTab.headline}</h3>
+                                <p className={styles.proofBody}>{activeTab.body}</p>
+                                <Link href={activeTab.cta.href} className={styles.proofCta}>
+                                    {activeTab.cta.label} <ArrowIcon />
+                                </Link>
+                            </div>
+                            <div className={styles.proofVisual} aria-hidden="true">
+                                <ProofVisual type={activeTab.visual} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+}
+
 export default function LandingPage() {
     const [activeTab, setActiveTab] = useState<ScreenTab>('search');
     const [queryIndex, setQueryIndex] = useState(0);
@@ -635,10 +802,6 @@ export default function LandingPage() {
                 <div className={styles.container}>
                     <div className={styles.heroGrid}>
                         <div className={styles.heroCopy}>
-                            <div className={styles.eyebrow}>
-                                <span className={styles.eyebrowDot} />
-                                <span>AI recruiting platform</span>
-                            </div>
                             <h1 className={styles.heroTitle}>
                                 Search <span>800M+ profiles</span> in your own words.
                             </h1>
@@ -743,16 +906,7 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            <section className={styles.trustStrip}>
-                <div className={styles.container}>
-                    <div className={styles.trustIntro}>Built for in-house recruiters and lean talent teams</div>
-                    <div className={styles.trustLogos}>
-                        {PROOF_POINTS.map((point) => (
-                            <span key={point}>{point}</span>
-                        ))}
-                    </div>
-                </div>
-            </section>
+            <ProofShowcase />
 
             <section id="product" className={styles.section}>
                 <div className={styles.container}>

@@ -42,6 +42,20 @@ test('renders Tahoe landing content with auth CTAs pointing to dedicated routes'
     expect(screen.queryByTestId('google-signup-button')).not.toBeInTheDocument();
 });
 
+test('proof showcase renders interactive tabs and swaps the panel on click', async () => {
+    const user = userEvent.setup();
+    render(<LandingPage />);
+
+    expect(screen.getByRole('tab', { name: /800m\+ profiles/i })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText(/search the world's talent/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: /verified emails and phones/i }));
+
+    expect(screen.getByRole('tab', { name: /verified emails and phones/i })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText(/reach people for real/i)).toBeInTheDocument();
+    expect(screen.queryByText(/search the world's talent/i)).not.toBeInTheDocument();
+});
+
 test('renders Blog in the mobile navigation', () => {
     render(<LandingPage />);
 
