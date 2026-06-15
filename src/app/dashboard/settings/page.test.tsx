@@ -461,16 +461,16 @@ test('payment tab renders safe card summary and opens Stripe portal flow', async
     });
 });
 
-test('settings menu hides Account, Integrations, Notifications, and Security tabs', async () => {
+test('settings menu hides Account, Outreach, Compliance, Integrations, Notifications, and Security tabs', async () => {
     render(<SettingsPage />);
 
     const menu = await screen.findByRole('navigation', { name: /settings sections/i });
     // Removed from the menu.
-    for (const hidden of ['Account', 'Integrations', 'Notifications', 'Security']) {
+    for (const hidden of ['Account', 'Outreach', 'Compliance', 'Integrations', 'Notifications', 'Security']) {
         expect(within(menu).queryByRole('button', { name: hidden })).not.toBeInTheDocument();
     }
     // Still present.
-    for (const shown of ['Workspace', 'Subscription', 'Payment', 'Outreach', 'Compliance', 'Referrals']) {
+    for (const shown of ['Workspace', 'Subscription', 'Payment', 'Referrals']) {
         expect(within(menu).getByRole('button', { name: shown })).toBeInTheDocument();
     }
 });

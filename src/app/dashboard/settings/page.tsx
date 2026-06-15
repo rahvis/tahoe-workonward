@@ -65,7 +65,7 @@ const tabs: Array<{ key: SettingsTab; label: string }> = [
 // Tabs hidden from the settings menu. Their content/routes stay intact and remain
 // reachable by direct URL (e.g. ?tab=account for the account-deletion flow); only
 // the menu buttons are removed.
-const HIDDEN_TABS: ReadonlySet<SettingsTab> = new Set(['account', 'integrations', 'notifications', 'security']);
+const HIDDEN_TABS: ReadonlySet<SettingsTab> = new Set(['account', 'outreach', 'compliance', 'integrations', 'notifications', 'security']);
 const DEFAULT_TAB: SettingsTab = 'workspace';
 const visibleTabs = tabs.filter((tab) => !HIDDEN_TABS.has(tab.key));
 

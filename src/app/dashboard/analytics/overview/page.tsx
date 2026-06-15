@@ -12,7 +12,6 @@ import {
 } from '@/lib/organization';
 import { readAnalyticsCache, writeAnalyticsCache } from '../_components/analytics-cache';
 import {
-    ActivityHeatStrip,
     AnalyticsTabs,
     BarList,
     RangeTabs,
@@ -172,10 +171,6 @@ function OverviewContent() {
                             </div>
                         ))}
                     </div>
-                </div>
-                <div className={styles.card}>
-                    <h2 className={styles.cardTitle}>Recruiter activity</h2>
-                    <ActivityHeatStrip points={current.activity_trend} />
                 </div>
             </div>
         );

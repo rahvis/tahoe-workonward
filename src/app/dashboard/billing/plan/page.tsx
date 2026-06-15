@@ -1,7 +1,6 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import styles from '../billing.module.css';
 import {
@@ -339,9 +338,6 @@ function BillingPlanContent() {
         <section className={styles.page}>
             <div className={styles.header}>
                 <div className={styles.buttonRow}>
-                    <Link href="/dashboard/billing/ledger" className="tahoe-button-secondary">
-                        View ledger
-                    </Link>
                     <button className="tahoe-button" type="button" onClick={() => void handleManageStripe()} disabled={busyKey === 'portal'}>
                         {busyKey === 'portal' ? 'Opening…' : 'Manage in Stripe'}
                     </button>
