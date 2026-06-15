@@ -640,12 +640,11 @@ export default function LandingPage() {
                                 <span>AI recruiting platform</span>
                             </div>
                             <h1 className={styles.heroTitle}>
-                                Search <span>800M+ profiles</span> the way you&apos;d describe the role, then reach out the same day.
+                                Search <span>800M+ profiles</span> in your own words.
                             </h1>
                             <p className={styles.heroBody}>
-                                Describe the role like you&apos;d explain it to a colleague. No Boolean, no filters. Tahoe
-                                searches 800M+ profiles, builds your shortlist, finds verified emails and phone numbers, and
-                                sends outreach from your own inbox. One place, for a fraction of what legacy tools cost.
+                                Describe who you&apos;re looking for. Tahoe builds your shortlist, finds verified emails and
+                                phone numbers, and sends outreach from your own inbox.
                             </p>
                             <div className={styles.heroActions}>
                                 <Link href="/signup" className={styles.primaryAction} onClick={() => trackAuthCta('start_free_trial', 'hero')}>

@@ -1,10 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { Cross1Icon, HamburgerMenuIcon } from '@/components/ui/icons';
-import CookieSettingsButton from '@/components/consent/CookieSettingsButton';
 import PartnerApplyModal from '@/components/partner/PartnerApplyModal';
+import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
 import { trackLandingEvent } from '@/lib/public-analytics';
 import styles from './partner.module.css';
 
@@ -125,14 +123,6 @@ function ArrowIcon() {
     );
 }
 
-function ArrowUpRightIcon() {
-    return (
-        <svg viewBox="0 0 20 20" aria-hidden="true" className={styles.inlineIcon}>
-            <path d="M6 14 14 6m0 0H7m7 0v7" />
-        </svg>
-    );
-}
-
 function ChevronDownIcon() {
     return (
         <svg viewBox="0 0 20 20" aria-hidden="true" className={styles.faqChevron}>
@@ -146,23 +136,6 @@ function CheckIcon() {
         <svg viewBox="0 0 24 24" aria-hidden="true" className={styles.ctaCheckIcon}>
             <path d="m5 13 4 4L19 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-    );
-}
-
-function PartnerLogo({ compact = false }: { compact?: boolean }) {
-    return (
-        <Link href="/" className={styles.logo} aria-label="Tahoe home">
-            <svg viewBox="0 0 160 90" aria-hidden="true" className={styles.logoMark}>
-                <path d="M0 90 L40 0 L80 90 Z" fill="none" stroke="var(--color-accent)" strokeWidth="10" strokeLinejoin="round" />
-                <path d="M80 90 L120 0 L160 90 Z" fill="none" stroke="var(--color-text-primary)" strokeWidth="10" strokeLinejoin="round" />
-            </svg>
-            <span className={styles.logoTextWrap}>
-                <span className={styles.logoWordmark}>
-                    tahoe<span className={styles.logoDot}>.</span>ai
-                </span>
-                {!compact && <span className={styles.logoMeta}>powered by WorkOnward</span>}
-            </span>
-        </Link>
     );
 }
 
@@ -285,7 +258,6 @@ function formatUsd(value: number): string {
 
 export default function PartnerPage() {
     const [applyOpen, setApplyOpen] = useState(false);
-    const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [referrals, setReferrals] = useState(25);
     const [planPrice, setPlanPrice] = useState(99);
 
@@ -300,49 +272,7 @@ export default function PartnerPage() {
 
     return (
         <main className={styles.page}>
-            <header className={styles.header}>
-                <div className={styles.container}>
-                    <div className={styles.headerInner}>
-                        <PartnerLogo />
-
-                        <nav className={styles.desktopNav} aria-label="Primary">
-                            <Link href="/#product">Product</Link>
-                            <Link href="/#screens">Features</Link>
-                            <Link href="/#pricing">Pricing</Link>
-                            <Link href="/#customers">Customers</Link>
-                        </nav>
-
-                        <div className={styles.headerActions}>
-                            <Link href="/login" className={styles.textAction}>Sign in</Link>
-                            <Link href="/signup" className={styles.secondaryAction}>
-                                Start for free <ArrowUpRightIcon />
-                            </Link>
-                            <button
-                                type="button"
-                                className={styles.mobileToggle}
-                                aria-expanded={mobileNavOpen}
-                                aria-label="Toggle navigation"
-                                onClick={() => setMobileNavOpen((open) => !open)}
-                            >
-                                {mobileNavOpen ? <Cross1Icon /> : <HamburgerMenuIcon />}
-                            </button>
-                        </div>
-                    </div>
-
-                    {mobileNavOpen && (
-                        <div className={styles.mobileNav} aria-label="Mobile navigation">
-                            <Link href="/#product" onClick={() => setMobileNavOpen(false)}>Product</Link>
-                            <Link href="/#screens" onClick={() => setMobileNavOpen(false)}>Features</Link>
-                            <Link href="/#pricing" onClick={() => setMobileNavOpen(false)}>Pricing</Link>
-                            <Link href="/#customers" onClick={() => setMobileNavOpen(false)}>Customers</Link>
-                            <div className={styles.mobileAuthActions}>
-                                <Link href="/login" className={styles.textAction}>Sign in</Link>
-                                <Link href="/signup" className={styles.secondaryAction}>Start for free</Link>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </header>
+            <PublicSiteHeader placement="partner" />
 
             <section className={styles.hero}>
                 <div className={styles.container}>
@@ -610,67 +540,7 @@ export default function PartnerPage() {
                 </div>
             </section>
 
-            <footer className={styles.footer}>
-                <div className={styles.container}>
-                    <div className={styles.footerGrid}>
-                        <div className={styles.footerBrand}>
-                            <PartnerLogo />
-                            <p>
-                                Tahoe is the AI recruiting platform that sources, enriches, and sends outreach in one place.
-                                You just describe who you are looking for.
-                            </p>
-                        </div>
-
-                        <div>
-                            <h3>Product</h3>
-                            <Link href="/#product">Features</Link>
-                            <Link href="/#pricing">Pricing</Link>
-                        </div>
-
-                        <div>
-                            <h3>Company</h3>
-                            <Link href="/#customers">Customers</Link>
-                            <Link href="/#screens">Product vision</Link>
-                            <Link href="/partner">Partner program</Link>
-                        </div>
-
-                        <div>
-                            <h3>Legal</h3>
-                            <Link href="/privacy">Privacy</Link>
-                            <Link href="/cookie">Cookie</Link>
-                            <CookieSettingsButton className={styles.footerColumnButton}>Cookie settings</CookieSettingsButton>
-                            <Link href="/terms">Terms</Link>
-                        </div>
-
-                        <div>
-                            <h3>Contact</h3>
-                            <span>info@workonward.com</span>
-                            <span className={styles.addressText}>124 E 14th St, New York, NY 10003</span>
-                        </div>
-                    </div>
-
-                    <div className={styles.socialLinksRow}>
-                        <a href="https://www.linkedin.com/company/workonward" target="_blank" rel="noreferrer">LinkedIn</a>
-                        <a href="https://www.facebook.com/workonward" target="_blank" rel="noreferrer">Facebook</a>
-                        <a href="https://x.com/workonward" target="_blank" rel="noreferrer">X</a>
-                        <a href="https://www.instagram.com/workonward" target="_blank" rel="noreferrer">Instagram</a>
-                        <a href="https://www.youtube.com/@workonward" target="_blank" rel="noreferrer">YouTube</a>
-                    </div>
-
-                    <div className={styles.footerBottom}>
-                        <span>© 2026 WorkOnward. Made for recruiters who would rather hire than negotiate contracts.</span>
-                        <div className={styles.footerBottomLinks}>
-                            <Link href="/#product">Product</Link>
-                            <Link href="/#pricing">Pricing</Link>
-                            <Link href="/privacy">Privacy</Link>
-                            <Link href="/cookie">Cookie</Link>
-                            <CookieSettingsButton className={styles.footerBottomButton}>Cookie settings</CookieSettingsButton>
-                            <Link href="/terms">Terms</Link>
-                            <Link href="/login">Sign in</Link>
-                        </div>
-                    </div>
-                </div>
-            </footer>
+            <PublicSiteFooter placement="partner" />
 
             <PartnerApplyModal open={applyOpen} onOpenChange={setApplyOpen} />
         </main>

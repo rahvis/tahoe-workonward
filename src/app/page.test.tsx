@@ -13,7 +13,7 @@ test('renders Tahoe landing content with auth CTAs pointing to dedicated routes'
 
     expect(
         screen.getByRole('heading', {
-            name: /the way you'd describe the role, then reach out the same day/i,
+            name: /search 800m\+ profiles in your own words/i,
         }),
     ).toBeInTheDocument();
 
