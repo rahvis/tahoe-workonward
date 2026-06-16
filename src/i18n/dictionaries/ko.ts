@@ -219,4 +219,42 @@ export const ko = {
         ctaStart: '무료로 시작하기',
         ctaContact: 'Tahoe에 문의',
     },
+    about: {
+        metaTitle: '소개',
+        metaDescription:
+            'Tahoe AI는 리크루터가 맥락을 잃지 않고 후보자 워크플로를 검색, 보강, 시퀀스, 분석할 수 있도록 WorkOnward가 만들었습니다.',
+        ogDescription: 'WorkOnward가 만든 AI 채용 플랫폼, Tahoe AI를 알아보세요.',
+        breadcrumbHome: '홈',
+        breadcrumb: '소개',
+        eyebrow: '소개',
+        h1: 'Tahoe AI는 WorkOnward가 만듭니다.',
+        lede:
+            'Tahoe는 채용 워크플로를 더 들여다볼 수 있게 만들기 위해 존재합니다. 자연어 검색, 후보자 리스트, 연락처 정보 보강, 네이티브 아웃리치, 투명한 크레딧, 그리고 실제 작업을 가리키는 분석을 제공합니다.',
+        cards: [
+            ['경험', '우리는 리크루터가 매일 반복하는 일, 즉 검색, 저장, 보강, 시퀀스, 리포트를 중심으로 설계합니다.'],
+            ['전문성', 'Tahoe의 콘텐츠와 제품은 채용 운영, 발신자 상태, 소싱 벤치마크, AI 거버넌스에 기반합니다.'],
+            ['신뢰', '워크플로는 의사결정을 자동화 뒤에 숨기는 대신 출처 맥락, 지출, 발신자 한도, 수신거부 상태, 출처 근거를 드러냅니다.'],
+        ],
+        ctaBlog: '블로그 읽기',
+        ctaContact: '문의하기',
+    },
+    contact: {
+        metaTitle: '문의',
+        metaDescription:
+            'AI 채용 소프트웨어 관련 질문, 제품 피드백, 파트너십 요청, 지원에 대해 WorkOnward의 Tahoe AI에 문의하세요.',
+        ogDescription: '채용 소프트웨어, 파트너십, 지원 관련 질문은 Tahoe AI에 문의하세요.',
+        breadcrumbHome: '홈',
+        breadcrumb: '문의',
+        eyebrow: '문의',
+        h1: 'Tahoe AI에 문의하세요.',
+        lede:
+            'AI 채용 소프트웨어, 후보자 소싱, 보강, 아웃리치, 파트너십, 지원에 대한 질문은 WorkOnward 팀에 전달됩니다.',
+        emailHeading: '이메일',
+        addressHeading: '주소',
+        address: 'WorkOnward, 124 E 14th St, New York, NY 10003',
+        partnershipsHeading: '파트너십',
+        partnershipsBody: '채용 실무자, 콘텐츠 파트너, 제휴사는 파트너 프로그램을 통해 신청할 수 있습니다.',
+        ctaPartner: '파트너 프로그램',
+        ctaStart: '무료로 시작하기',
+    },
 } as const;

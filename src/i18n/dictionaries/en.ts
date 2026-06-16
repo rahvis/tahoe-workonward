@@ -223,4 +223,42 @@ export const en = {
         ctaStart: 'Start for free',
         ctaContact: 'Contact Tahoe',
     },
+    about: {
+        metaTitle: 'About',
+        metaDescription:
+            'Tahoe AI is built by WorkOnward to help recruiters search, enrich, sequence, and analyze candidate workflows without losing context.',
+        ogDescription: 'Learn about Tahoe AI, the AI recruiting platform powered by WorkOnward.',
+        breadcrumbHome: 'Home',
+        breadcrumb: 'About',
+        eyebrow: 'About',
+        h1: 'Tahoe AI is powered by WorkOnward.',
+        lede:
+            'Tahoe exists to make recruiting workflows more inspectable: search in your own words, candidate lists, contact enrichment, native outreach, visible credits, and analytics that point back to real work.',
+        cards: [
+            ['Experience', 'We design around the repeated daily work recruiters do: searching, saving, enriching, sequencing, and reporting.'],
+            ['Expertise', 'Tahoe content and product surfaces are grounded in recruiting operations, sender health, sourcing benchmarks, and AI governance.'],
+            ['Trust', 'The workflow exposes source context, spend, sender limits, suppression state, and source citations instead of hiding decisions behind automation.'],
+        ],
+        ctaBlog: 'Read the blog',
+        ctaContact: 'Contact us',
+    },
+    contact: {
+        metaTitle: 'Contact',
+        metaDescription:
+            'Contact Tahoe AI by WorkOnward for AI recruiting software questions, product feedback, partnership requests, and support.',
+        ogDescription: 'Get in touch with Tahoe AI for recruiting software, partnership, and support questions.',
+        breadcrumbHome: 'Home',
+        breadcrumb: 'Contact',
+        eyebrow: 'Contact',
+        h1: 'Talk to Tahoe AI.',
+        lede:
+            'Questions about AI recruiting software, candidate sourcing, enrichment, outreach, partnerships, or support can go to the WorkOnward team.',
+        emailHeading: 'Email',
+        addressHeading: 'Mailing address',
+        address: 'WorkOnward, 124 E 14th St, New York, NY 10003',
+        partnershipsHeading: 'Partnerships',
+        partnershipsBody: 'Recruiting operators, content partners, and affiliates can apply through the partner program.',
+        ctaPartner: 'Partner program',
+        ctaStart: 'Start for free',
+    },
 } as const;

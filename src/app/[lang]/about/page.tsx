@@ -1,61 +1,67 @@
 import type { Metadata } from 'next';
-import { OG_IMAGES } from '@/lib/og';
 import Link from 'next/link';
+import { OG_IMAGES } from '@/lib/og';
+import { type Locale, isLocale } from '@/i18n/config';
+import { getDictionary } from '@/i18n/getDictionary';
+import { buildAlternates, buildOgLocale } from '@/i18n/metadata';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
+import JsonLd from '@/components/seo/JsonLd';
 import styles from '../page.module.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.com';
 
-export const metadata: Metadata = {
-    title: 'About',
-    description: 'Tahoe AI is built by WorkOnward to help recruiters search, enrich, sequence, and analyze candidate workflows without losing context.',
-    alternates: {
-        canonical: '/about',
-    },
-    openGraph: {
-        title: 'About | Tahoe AI',
-        description: 'Learn about Tahoe AI, the AI recruiting platform powered by WorkOnward.',
-        url: '/about',
-        siteName: 'Tahoe AI',
-        images: OG_IMAGES,
-        type: 'website',
-    },
-};
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+    const { lang } = await params;
+    const locale = (isLocale(lang) ? lang : 'en') as Locale;
+    const t = (await getDictionary(locale)).about;
+    return {
+        title: t.metaTitle,
+        description: t.metaDescription,
+        alternates: buildAlternates(locale, '/about'),
+        openGraph: {
+            title: `${t.metaTitle} | Tahoe AI`,
+            description: t.ogDescription,
+            url: `/${locale}/about`,
+            siteName: 'Tahoe AI',
+            images: OG_IMAGES,
+            type: 'website',
+            ...buildOgLocale(locale),
+        },
+    };
+}
 
-const aboutJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
-        { '@type': 'ListItem', position: 2, name: 'About', item: `${SITE_URL}/about` },
-    ],
-};
+export default async function AboutPage({ params }: { params: Promise<{ lang: string }> }) {
+    const { lang } = await params;
+    const locale = (isLocale(lang) ? lang : 'en') as Locale;
+    const t = (await getDictionary(locale)).about;
+    const L = (path: string) => `/${locale}${path}`;
 
-export default function AboutPage() {
+    const aboutJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            { '@type': 'ListItem', position: 1, name: t.breadcrumbHome, item: `${SITE_URL}/${locale}` },
+            { '@type': 'ListItem', position: 2, name: t.breadcrumb, item: `${SITE_URL}/${locale}/about` },
+        ],
+    };
+
     return (
         <main className={styles.page}>
             <PublicSiteHeader />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutJsonLd).replace(/</g, '\\u003c') }}
-            />
+            <JsonLd data={aboutJsonLd} />
             <section className={styles.section}>
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
-                        <span className={styles.sectionEyebrow}>About</span>
-                        <h1>Tahoe AI is powered by WorkOnward.</h1>
-                        <p>
-                            Tahoe exists to make recruiting workflows more inspectable: search in your own words,
-                            candidate lists, contact enrichment, native outreach, visible credits, and analytics that
-                            point back to real work.
-                        </p>
+                        <span className={styles.sectionEyebrow}>{t.eyebrow}</span>
+                        <h1>{t.h1}</h1>
+                        <p>{t.lede}</p>
                     </div>
                     <div className={styles.featureGrid}>
-                        {[
-                            ['Experience', 'We design around the repeated daily work recruiters do: searching, saving, enriching, sequencing, and reporting.'],
-                            ['Expertise', 'Tahoe content and product surfaces are grounded in recruiting operations, sender health, sourcing benchmarks, and AI governance.'],
-                            ['Trust', 'The workflow exposes source context, spend, sender limits, suppression state, and source citations instead of hiding decisions behind automation.'],
-                        ].map(([title, body]) => (
+                        {t.cards.map(([title, body]) => (
                             <article key={title} className={styles.featureCard}>
                                 <h2>{title}</h2>
                                 <p>{body}</p>
@@ -63,8 +69,8 @@ export default function AboutPage() {
                         ))}
                     </div>
                     <div className={styles.heroActions}>
-                        <Link href="/blogs" className={styles.primaryAction}>Read the blog</Link>
-                        <Link href="/contact" className={styles.ghostAction}>Contact us</Link>
+                        <Link href={L('/blogs')} className={styles.primaryAction}>{t.ctaBlog}</Link>
+                        <Link href={L('/contact')} className={styles.ghostAction}>{t.ctaContact}</Link>
                     </div>
                 </div>
             </section>
