@@ -12,14 +12,14 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.c
 export const metadata: Metadata = {
     title: 'Our Story',
     description:
-        'Why we built Tahoe AI. The story behind a recruiting platform shaped by the depth and clarity of Lake Tahoe, made to turn noisy candidate data into clean, human signal.',
+        'Tahoe is an AI-powered recruiting platform by WorkOnward. Named after Lake Tahoe for its depth and clarity, it helps recruiters discover, enrich, and engage talent from one place.',
     alternates: {
         canonical: '/our-story',
     },
     openGraph: {
         title: 'Our Story | Tahoe AI',
         description:
-            'Why we created Tahoe AI: a calmer, clearer way to search for the people behind the noise.',
+            'Why we built Tahoe: an AI-powered recruiting platform by WorkOnward for talent discovery, enrichment, and engagement.',
         url: '/our-story',
         siteName: 'Tahoe AI',
         images: OG_IMAGES,
@@ -54,9 +54,8 @@ export default function OurStoryPage() {
                             Why we named it <em>Tahoe</em>.
                         </h1>
                         <p className={styles.heroLede}>
-                            Because somewhere beneath the noise of every search there is a person who
-                            is exactly right, and we wanted to build a place clear enough, and quiet
-                            enough, to finally see them.
+                            Tahoe is an AI-powered recruiting platform designed to help recruiters
+                            discover, enrich, and engage talent more efficiently.
                         </p>
                     </div>
                 </div>
@@ -67,14 +66,12 @@ export default function OurStoryPage() {
                 <PineTree className={`${styles.sidePine} ${styles.sidePineLeft}`} />
                 <div className={pageStyles.container}>
                     <div className={`${styles.reading} ${styles.chapterInner}`}>
-                        <h2 className={styles.chapterTitle}>The clearest water we know</h2>
+                        <h2 className={styles.chapterTitle}>Named for depth and clarity</h2>
                         <p className={styles.para}>
-                            Lake Tahoe is one of the deepest and clearest lakes on earth, and the
-                            strange thing about it, the thing that stays with you, is that its clarity
-                            comes from its depth rather than in spite of it. Most deep things are
-                            murky and most clear things are shallow; a place that is somehow both at
-                            once felt less like a body of water and more like a quiet promise about
-                            how seeing could work, if only the conditions were calm enough to allow it.
+                            Named after Lake Tahoe, known for its depth and clarity, Tahoe reflects
+                            our belief that great recruiting goes beyond simple keyword matching.
+                            Recruiters need better tools to uncover talent, understand potential, and
+                            build meaningful connections.
                         </p>
                     </div>
                 </div>
@@ -86,8 +83,7 @@ export default function OurStoryPage() {
                 <div className={pageStyles.container}>
                     <p className={styles.quote}>
                         <span className={styles.quoteMark} aria-hidden="true">“</span>
-                        Still water is not empty water; it is water you have finally grown quiet
-                        enough to see through.
+                        The best candidates are often hidden beneath the surface.
                         <span className={styles.quoteMark} aria-hidden="true">”</span>
                     </p>
                 </div>
@@ -102,14 +98,20 @@ export default function OurStoryPage() {
                 <PineTree className={`${styles.sidePine} ${styles.sidePineRight}`} />
                 <div className={pageStyles.container}>
                     <div className={`${styles.reading} ${styles.chapterInner}`}>
-                        <h2 className={styles.chapterTitle}>The noise a recruiter lives in</h2>
+                        <h2 className={styles.chapterTitle}>Why we built Tahoe</h2>
                         <p className={styles.para}>
-                            A recruiter does not work in clear water. A recruiter works in a fast
-                            current of half-finished profiles, stale titles, and signals that
-                            contradict one another by the thousand, where the right person is almost
-                            always present yet almost never easy to see. When a wonderful candidate is
-                            missed, it is seldom because they were unworthy of being found; it is
-                            because the water was never clear enough for anyone to see them in time.
+                            We built Tahoe after years of experience in recruiting and workforce
+                            development. Like many recruiters, we experienced the challenges of
+                            managing multiple sourcing tools, searching through large candidate
+                            databases, enriching contact information, and manually coordinating
+                            outreach campaigns. Too much time was spent on administrative work and not
+                            enough on building relationships with candidates.
+                        </p>
+                        <p className={styles.para}>
+                            Tahoe brings these workflows together into a single platform. Recruiters
+                            can search for talent using natural language, discover qualified
+                            candidates, enrich contact information, organize prospects into projects,
+                            and manage outreach more effectively, all from one place.
                         </p>
                     </div>
                 </div>
@@ -121,8 +123,7 @@ export default function OurStoryPage() {
                 <div className={pageStyles.container}>
                     <p className={styles.quote}>
                         <span className={styles.quoteMark} aria-hidden="true">“</span>
-                        The candidate you are searching for is rarely missing; far more often, they
-                        are only hard to see.
+                        Built by recruiters, for recruiters.
                         <span className={styles.quoteMark} aria-hidden="true">”</span>
                     </p>
                 </div>
@@ -137,15 +138,17 @@ export default function OurStoryPage() {
                 <PineTree className={`${styles.sidePine} ${styles.sidePineLeft}`} />
                 <div className={pageStyles.container}>
                     <div className={`${styles.reading} ${styles.chapterInner}`}>
-                        <h2 className={styles.chapterTitle}>What Tahoe became</h2>
+                        <h2 className={styles.chapterTitle}>Powered by WorkOnward</h2>
                         <p className={styles.para}>
-                            So we set out to build the opposite of one more noisy tool. We took the
-                            whole tangled work of finding a person and reaching out to them and
-                            distilled it, stubbornly, until only the clear part was left: you describe
-                            who you are hoping to find in plain words, and the depth answers back with
-                            clean signal, real people seen clearly and close enough to reach. The
-                            depth is still there, every bit of it; we only took away the murk that
-                            used to settle on top.
+                            Tahoe is powered by WorkOnward, a workforce technology company committed to
+                            creating better connections between talent and opportunity. Our mission is
+                            to help employers find the right people faster while improving access to
+                            career opportunities for job seekers from all backgrounds.
+                        </p>
+                        <p className={styles.para}>
+                            By combining AI-powered search, talent intelligence, and recruiting
+                            workflows, Tahoe helps recruiting teams focus on what matters most:
+                            building relationships and making great hires.
                         </p>
                     </div>
                 </div>
@@ -154,12 +157,11 @@ export default function OurStoryPage() {
             {/* Closing */}
             <section className={styles.closing}>
                 <div className={pageStyles.container}>
-                    <span className={pageStyles.sectionEyebrow}>Come closer</span>
-                    <h2 className={styles.closingTitle}>Come and look into the water.</h2>
+                    <span className={pageStyles.sectionEyebrow}>Tahoe by WorkOnward</span>
+                    <h2 className={styles.closingTitle}>Find the right people, faster.</h2>
                     <p className={styles.closingLede}>
-                        If you have ever felt the quiet tiredness of searching through noise, then we
-                        built this for you, and we would love for you to see what clarity can feel
-                        like.
+                        AI-powered talent discovery and engagement for modern recruiting teams.
+                        Continue with Google or email, and start in minutes.
                     </p>
                     <div className={styles.closingActions}>
                         <Link href="/signup" className={pageStyles.primaryAction}>Start for free</Link>
