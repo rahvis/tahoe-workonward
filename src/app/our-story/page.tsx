@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { OG_IMAGES } from '@/lib/og';
 import Link from 'next/link';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
-import { LakeScene, PineRidge, PineTree, Ripples } from './TahoeSketches';
+import { LakeScene, PineRidge, PineTree } from './TahoeSketches';
+import WaterWaves from './WaterWaves';
 import pageStyles from '../page.module.css';
 import styles from './our-story.module.css';
 
@@ -89,7 +90,7 @@ export default function OurStoryPage() {
 
             {/* Quote 1 */}
             <section className={styles.quoteWrap}>
-                <Ripples className={styles.quoteRipples} />
+                <WaterWaves />
                 <div className={pageStyles.container}>
                     <p className={styles.quote}>
                         <span className={styles.quoteMark} aria-hidden="true">“</span>
@@ -133,7 +134,7 @@ export default function OurStoryPage() {
 
             {/* Quote 2 */}
             <section className={styles.quoteWrap}>
-                <Ripples className={styles.quoteRipples} />
+                <WaterWaves />
                 <div className={pageStyles.container}>
                     <p className={styles.quote}>
                         <span className={styles.quoteMark} aria-hidden="true">“</span>
@@ -196,7 +197,7 @@ export default function OurStoryPage() {
 
             {/* Quote 3 */}
             <section className={styles.quoteWrap}>
-                <Ripples className={styles.quoteRipples} />
+                <WaterWaves />
                 <div className={pageStyles.container}>
                     <p className={styles.quote}>
                         <span className={styles.quoteMark} aria-hidden="true">“</span>

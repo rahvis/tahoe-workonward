@@ -114,23 +114,3 @@ export function PineTree(props: SVGProps<SVGSVGElement>) {
         </svg>
     );
 }
-
-// Concentric rings, like a single drop spreading across calm water. Used as a
-// small motif beside the pull quotes to echo the depth-and-clarity idea.
-export function Ripples(props: SVGProps<SVGSVGElement>) {
-    return (
-        <svg
-            viewBox="0 0 120 120"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.2"
-            aria-hidden="true"
-            {...props}
-        >
-            <ellipse cx="60" cy="60" rx="12" ry="5" strokeOpacity="0.75" />
-            <ellipse cx="60" cy="60" rx="26" ry="10" strokeOpacity="0.5" />
-            <ellipse cx="60" cy="60" rx="42" ry="16" strokeOpacity="0.32" />
-            <ellipse cx="60" cy="60" rx="58" ry="22" strokeOpacity="0.18" />
-        </svg>
-    );
-}

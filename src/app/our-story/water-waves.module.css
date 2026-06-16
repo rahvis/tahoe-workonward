@@ -1,0 +1,63 @@
+/* Animated water behind the Our Story pull quotes. Thin drifting wave lines,
+ * lighter than the pine line art, that loop seamlessly. See WaterWaves.tsx. */
+
+.layer {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    animation: wavesIn 1.1s ease both;
+}
+
+.wave {
+    position: absolute;
+    overflow: hidden;
+}
+
+.flow,
+.flowReverse {
+    display: block;
+    will-change: transform;
+    animation-name: flow;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+}
+
+.flowReverse {
+    animation-name: flowReverse;
+}
+
+@keyframes flow {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(var(--flow-shift));
+    }
+}
+
+@keyframes flowReverse {
+    from {
+        transform: translateX(var(--flow-shift));
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes wavesIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .flow,
+    .flowReverse {
+        animation: none;
+    }
+}

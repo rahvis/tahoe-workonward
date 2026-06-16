@@ -111,18 +111,6 @@
     isolation: isolate;
 }
 
-.quoteRipples {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: min(420px, 76%);
-    transform: translate(-50%, -52%);
-    color: #38596b;
-    opacity: 0.3;
-    z-index: -1;
-    pointer-events: none;
-}
-
 .quote {
     margin: 0 auto;
     max-width: 24ch;
