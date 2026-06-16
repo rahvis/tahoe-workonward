@@ -75,6 +75,17 @@ export async function apiRequest<T>(
         } else if (typeof detailStr === 'object') {
             detailStr = JSON.stringify(detailStr);
         }
+        // A generic 5xx means the server failed before producing a useful
+        // message — show a friendly, actionable line. Specific server messages
+        // (e.g. "Database unavailable, please try again") are preserved.
+        if (
+            response.status >= 500 &&
+            (detailStr === 'Internal server error' ||
+                detailStr === 'Request failed' ||
+                detailStr === `HTTP ${response.status}`)
+        ) {
+            detailStr = 'Something went wrong on our end. Please try again in a moment.';
+        }
         throw new ApiError(response.status, detailStr, error.detail);
     }
 
