@@ -5,7 +5,7 @@ import { Dialog } from '@/components/ui/tahoe-ui';
 import AltchaField, { type AltchaFieldHandle } from '@/components/auth/AltchaField';
 import { apiRequest } from '@/lib/api';
 import { trackLandingEvent } from '@/lib/public-analytics';
-import styles from '@/app/partner/partner.module.css';
+import styles from '@/app/[lang]/partner/partner.module.css';
 
 interface PartnerApplyModalProps {
     open: boolean;

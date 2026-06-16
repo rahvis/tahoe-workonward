@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
 import { apiRequest, setToken } from '@/lib/api';
-import styles from '@/app/(auth)/auth.module.css';
+import styles from '@/app/[lang]/(auth)/auth.module.css';
 
 interface TokenResponse {
     access_token: string;

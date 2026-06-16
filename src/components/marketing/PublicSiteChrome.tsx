@@ -5,7 +5,7 @@ import { useState } from 'react';
 import CookieSettingsButton from '@/components/consent/CookieSettingsButton';
 import { HamburgerMenuIcon, Cross1Icon } from '@/components/ui/icons';
 import { trackLandingEvent } from '@/lib/public-analytics';
-import styles from '@/app/page.module.css';
+import styles from '@/app/[lang]/page.module.css';
 
 function ArrowUpRightIcon() {
     return (

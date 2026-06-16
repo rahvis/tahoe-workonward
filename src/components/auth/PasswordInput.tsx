@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { LockClosedIcon, EyeOpenIcon, EyeClosedIcon } from '@/components/ui/icons';
-import styles from '@/app/(auth)/auth.module.css';
+import styles from '@/app/[lang]/(auth)/auth.module.css';
 
 interface PasswordInputProps {
     id: string;
