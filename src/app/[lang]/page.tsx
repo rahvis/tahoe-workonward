@@ -6,6 +6,8 @@ import { Inter, Montserrat } from 'next/font/google';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
 import { trackLandingEvent } from '@/lib/public-analytics';
+import { homeT } from '@/i18n/home-strings';
+import { useLocale } from '@/i18n/useLocale';
 import styles from './page.module.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.com';
@@ -618,6 +620,9 @@ function ProofVisual({ type }: { type: (typeof PROOF_TABS)[number]['visual'] }) 
 }
 
 function ProofShowcase() {
+    const lang = useLocale();
+    const PROOF_TABS = homeT[lang].proofTabs;
+    const L = (path: string) => `/${lang}${path}`;
     const [active, setActive] = useState(0);
     const [paused, setPaused] = useState(false);
     const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -632,7 +637,7 @@ function ProofShowcase() {
     return (
         <section className={styles.proofSection} aria-label="Why Tahoe">
             <div className={styles.container}>
-                <p className={styles.proofEyebrow}>Built for in-house recruiters and lean talent teams</p>
+                <p className={styles.proofEyebrow}>{homeT[lang].proofEyebrow}</p>
                 <div
                     className={styles.proofShowcase}
                     data-paused={paused ? 'true' : 'false'}
@@ -683,7 +688,7 @@ function ProofShowcase() {
                             <div className={styles.proofCopy}>
                                 <h3 className={styles.proofHeadline}>{activeTab.headline}</h3>
                                 <p className={styles.proofBody}>{activeTab.body}</p>
-                                <Link href={activeTab.cta.href} className={styles.proofCta}>
+                                <Link href={L(activeTab.cta.href)} className={styles.proofCta}>
                                     {activeTab.cta.label} <ArrowIcon />
                                 </Link>
                             </div>
@@ -699,6 +704,13 @@ function ProofShowcase() {
 }
 
 export default function LandingPage() {
+    const lang = useLocale();
+    const t = homeT[lang];
+    const L = (path: string) => `/${lang}${path}`;
+    const FEATURES = t.features;
+    const TESTIMONIALS = t.testimonials;
+    const SCREEN_TABS = t.screenTabs;
+    const HERO_QUERIES = t.heroQueries;
     const [activeTab, setActiveTab] = useState<ScreenTab>('search');
     const [queryIndex, setQueryIndex] = useState(0);
     const [typedQuery, setTypedQuery] = useState('');
@@ -803,18 +815,15 @@ export default function LandingPage() {
                     <div className={styles.heroGrid}>
                         <div className={styles.heroCopy}>
                             <h1 className={styles.heroTitle}>
-                                Search <span>800M+ profiles</span> in your own words.
+                                {t.heroTitlePre}<span>{t.heroTitleEm}</span>{t.heroTitlePost}
                             </h1>
-                            <p className={styles.heroBody}>
-                                Describe who you&apos;re looking for. Tahoe builds your shortlist, finds verified emails and
-                                phone numbers, and sends outreach from your own inbox.
-                            </p>
+                            <p className={styles.heroBody}>{t.heroBody}</p>
                             <div className={styles.heroActions}>
-                                <Link href="/signup" className={styles.primaryAction} onClick={() => trackAuthCta('start_free_trial', 'hero')}>
-                                    Start for free <ArrowIcon />
+                                <Link href={L('/signup')} className={styles.primaryAction} onClick={() => trackAuthCta('start_free_trial', 'hero')}>
+                                    {t.ctaStart} <ArrowIcon />
                                 </Link>
-                                <Link href="/contact" className={styles.ghostAction} onClick={() => trackAuthCta('book_demo', 'hero')}>
-                                    Book a demo <ArrowUpRightIcon />
+                                <Link href={L('/contact')} className={styles.ghostAction} onClick={() => trackAuthCta('book_demo', 'hero')}>
+                                    {t.ctaDemo} <ArrowUpRightIcon />
                                 </Link>
                                 <Image
                                     src="/loading_animations_transparent_all/fade_transparent.gif"
@@ -826,14 +835,10 @@ export default function LandingPage() {
                                     className={styles.heroActionAnimation}
                                 />
                             </div>
-                            <p className={styles.heroMeta}>Continue with Google or email. No credit card.</p>
+                            <p className={styles.heroMeta}>{t.heroMeta}</p>
 
                             <div className={styles.statsRow}>
-                                {[
-                                    ['800M+', 'profiles indexed'],
-                                    ['$49', 'growth plan / month'],
-                                    ['0.8s', 'avg cached query time'],
-                                ].map(([value, label]) => (
+                                {t.stats.map(([value, label]) => (
                                     <div key={label}>
                                         <strong>{value}</strong>
                                         <span>{label}</span>
@@ -911,12 +916,9 @@ export default function LandingPage() {
             <section id="product" className={styles.section}>
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
-                        <span className={styles.sectionEyebrow}>Product</span>
-                        <h2>Everything you need to source and reach candidates, all in one place.</h2>
-                        <p>
-                            Find people, build lists, enrich contacts, send outreach, and see what is working. No more
-                            stitching five tools together.
-                        </p>
+                        <span className={styles.sectionEyebrow}>{t.productEyebrow}</span>
+                        <h2>{t.productH2}</h2>
+                        <p>{t.productSub}</p>
                     </div>
 
                     <div className={styles.featureGrid}>
@@ -937,12 +939,9 @@ export default function LandingPage() {
             <section id="screens" className={`${styles.section} ${styles.warmSection}`}>
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
-                        <span className={styles.sectionEyebrow}>Features</span>
-                        <h2>See exactly how Tahoe works.</h2>
-                        <p>
-                            Real previews of the search, list, enrichment, campaign, mailbox, billing, and analytics
-                            workflows.
-                        </p>
+                        <span className={styles.sectionEyebrow}>{t.screensEyebrow}</span>
+                        <h2>{t.screensH2}</h2>
+                        <p>{t.screensSub}</p>
                     </div>
 
                     <div className={styles.tabRail} role="tablist" aria-label="Product screens">
@@ -962,14 +961,12 @@ export default function LandingPage() {
 
                     <div className={styles.screenIntro}>
                         <div>
-                            <strong>Preview the Tahoe experience.</strong>
-                            <p>
-                                A guided look at the product. Start free to run it with your own searches.
-                            </p>
+                            <strong>{t.screensIntroTitle}</strong>
+                            <p>{t.screensIntroSub}</p>
                         </div>
                         <div className={styles.screenIntroMeta}>
-                            <span><SparkIcon /> Search, organize, enrich, launch, and measure</span>
-                            <span><CheckIcon /> No setup required. Start free in minutes.</span>
+                            <span><SparkIcon /> {t.screensIntroMeta1}</span>
+                            <span><CheckIcon /> {t.screensIntroMeta2}</span>
                         </div>
                     </div>
 
@@ -981,16 +978,13 @@ export default function LandingPage() {
                 <div className={styles.container}>
                     <div className={styles.pricingGrid}>
                         <div className={styles.pricingCopy}>
-                            <span className={styles.sectionEyebrow}>The price story</span>
+                            <span className={styles.sectionEyebrow}>{t.priceEyebrow}</span>
                             <h2>
-                                Same search category. Same recruiter workflow. <span>A fraction of the cost.</span>
+                                {t.priceH2Pre}<span>{t.priceH2Accent}</span>
                             </h2>
-                            <p>
-                                Recruiter-grade sourcing and outreach without the enterprise contract. Credits and pricing
-                                are visible up front, with no surprise invoice at the end of the month.
-                            </p>
-                            <Link href="/signup" className={styles.primaryAction} onClick={() => trackAuthCta('start_free_trial', 'pricing')}>
-                                See full pricing <ArrowIcon />
+                            <p>{t.priceSub}</p>
+                            <Link href={L('/signup')} className={styles.primaryAction} onClick={() => trackAuthCta('start_free_trial', 'pricing')}>
+                                {t.priceCta} <ArrowIcon />
                             </Link>
                         </div>
 
@@ -1005,7 +999,7 @@ export default function LandingPage() {
                                 <div className={styles.priceCell}>
                                     <strong>$49</strong>
                                     <span>/mo</span>
-                                    <small>Cancel anytime</small>
+                                    <small>{t.priceCancel}</small>
                                 </div>
                             </div>
 
@@ -1033,8 +1027,8 @@ export default function LandingPage() {
             <section id="customers" className={styles.section}>
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
-                        <span className={styles.sectionEyebrow}>Why Tahoe</span>
-                        <h2>Built for the way recruiters actually work.</h2>
+                        <span className={styles.sectionEyebrow}>{t.customersEyebrow}</span>
+                        <h2>{t.customersH2}</h2>
                     </div>
 
                     <div className={styles.testimonialGrid}>
@@ -1059,27 +1053,20 @@ export default function LandingPage() {
                 <div className={styles.container}>
                     <div className={styles.finalCtaCard}>
                         <div>
-                            <h2>Run your first search in two minutes.</h2>
-                            <p>
-                                Continue with Google or email, run your first search, and see your shortlist before lunch.
-                            </p>
+                            <h2>{t.finalH2}</h2>
+                            <p>{t.finalSub}</p>
                             <div className={styles.heroActions}>
-                                <Link href="/signup" className={styles.accentAction} onClick={() => trackAuthCta('start_free_trial', 'final_cta')}>
-                                    Start for free <ArrowIcon />
+                                <Link href={L('/signup')} className={styles.accentAction} onClick={() => trackAuthCta('start_free_trial', 'final_cta')}>
+                                    {t.finalCtaStart} <ArrowIcon />
                                 </Link>
-                                <Link href="/contact" className={styles.inverseGhostAction} onClick={() => trackAuthCta('book_demo', 'final_cta')}>
-                                    Book a demo <ArrowUpRightIcon />
+                                <Link href={L('/contact')} className={styles.inverseGhostAction} onClick={() => trackAuthCta('book_demo', 'final_cta')}>
+                                    {t.finalCtaDemo} <ArrowUpRightIcon />
                                 </Link>
                             </div>
                         </div>
 
                         <div className={styles.ctaChecklist}>
-                            {[
-                                'Sign in with Google or email',
-                                'No credit card required to get started',
-                                'Send outreach from your own inbox',
-                                'Credits and enrichment costs shown up front',
-                            ].map((item) => (
+                            {t.finalChecklist.map((item) => (
                                 <div key={item}>
                                     <CheckIcon />
                                     <span>{item}</span>
