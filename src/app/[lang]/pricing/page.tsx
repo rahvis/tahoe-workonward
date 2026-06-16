@@ -1,43 +1,61 @@
 import type { Metadata } from 'next';
-import { OG_IMAGES } from '@/lib/og';
 import Link from 'next/link';
+import { OG_IMAGES } from '@/lib/og';
+import { type Locale, isLocale } from '@/i18n/config';
+import { getDictionary } from '@/i18n/getDictionary';
+import { buildAlternates, buildOgLocale } from '@/i18n/metadata';
+import { faqLd } from '@/lib/structured-data';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
+import JsonLd from '@/components/seo/JsonLd';
 import styles from '../page.module.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.com';
 
-export const metadata: Metadata = {
-    title: 'Pricing',
-    description: 'Tahoe AI pricing starts at $49 per month for AI recruiting search, candidate lists, contact enrichment workflows, outreach, and analytics.',
-    alternates: {
-        canonical: '/pricing',
-    },
-    openGraph: {
-        title: 'Pricing | Tahoe AI',
-        description: 'Simple AI recruiting software pricing with visible credits, enrichment costs, outreach, and analytics.',
-        url: '/pricing',
-        siteName: 'Tahoe AI',
-        images: OG_IMAGES,
-        type: 'website',
-    },
-};
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+    const { lang } = await params;
+    const locale = (isLocale(lang) ? lang : 'en') as Locale;
+    const t = (await getDictionary(locale)).pricing;
+    return {
+        title: t.metaTitle,
+        description: t.metaDescription,
+        alternates: buildAlternates(locale, '/pricing'),
+        openGraph: {
+            title: `${t.metaTitle} | Tahoe AI`,
+            description: t.ogDescription,
+            url: `/${locale}/pricing`,
+            siteName: 'Tahoe AI',
+            images: OG_IMAGES,
+            type: 'website',
+            ...buildOgLocale(locale),
+        },
+    };
+}
 
-const pricingJsonLd = [
-    {
+export default async function PricingPage({ params }: { params: Promise<{ lang: string }> }) {
+    const { lang } = await params;
+    const locale = (isLocale(lang) ? lang : 'en') as Locale;
+    const t = (await getDictionary(locale)).pricing;
+    const L = (path: string) => `/${locale}${path}`;
+
+    const offerLd = {
         '@context': 'https://schema.org',
         '@type': 'SoftwareApplication',
         name: 'Tahoe AI',
         applicationCategory: 'BusinessApplication',
         applicationSubCategory: 'AI recruiting software',
         operatingSystem: 'Web',
-        url: `${SITE_URL}/pricing`,
+        url: `${SITE_URL}/${locale}/pricing`,
         offers: {
             '@type': 'Offer',
-            name: 'Growth plan',
+            name: t.planName,
             price: '49',
             priceCurrency: 'USD',
             availability: 'https://schema.org/InStock',
-            url: `${SITE_URL}/pricing`,
+            url: `${SITE_URL}/${locale}/pricing`,
             priceSpecification: {
                 '@type': 'UnitPriceSpecification',
                 price: '49',
@@ -45,76 +63,58 @@ const pricingJsonLd = [
                 unitText: 'month',
             },
         },
-    },
-    {
+    };
+    const breadcrumbLd = {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
-            { '@type': 'ListItem', position: 2, name: 'Pricing', item: `${SITE_URL}/pricing` },
+            { '@type': 'ListItem', position: 1, name: t.breadcrumbHome, item: `${SITE_URL}/${locale}` },
+            { '@type': 'ListItem', position: 2, name: t.breadcrumb, item: `${SITE_URL}/${locale}/pricing` },
         ],
-    },
-];
+    };
 
-export default function PricingPage() {
     return (
         <main className={styles.page}>
             <PublicSiteHeader />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingJsonLd).replace(/</g, '\\u003c') }}
-            />
+            <JsonLd data={[offerLd, breadcrumbLd, faqLd(t.faq.map(([q, a]) => ({ q, a })))]} />
+
             <section className={styles.section}>
                 <div className={styles.container}>
                     <div className={styles.pricingGrid}>
                         <div className={styles.pricingCopy}>
-                            <span className={styles.sectionEyebrow}>Pricing</span>
-                            <h1>Recruiter-grade tools without the enterprise contract.</h1>
-                            <p>
-                                Tahoe starts at $49 per month. You get search in your own words, candidate lists, clear
-                                credit costs, contact enrichment, outreach, and analytics in one workflow.
-                            </p>
-                            <Link href="/signup" className={styles.primaryAction}>Start for free</Link>
+                            <span className={styles.sectionEyebrow}>{t.eyebrow}</span>
+                            <h1>{t.h1}</h1>
+                            <p>{t.lede}</p>
+                            <Link href={L('/signup')} className={styles.primaryAction}>{t.ctaStart}</Link>
                         </div>
                         <div className={styles.pricingCard}>
                             <div className={styles.pricingFeaturedRow}>
-                                <div className={styles.featuredBrand}>Growth</div>
+                                <div className={styles.featuredBrand}>{t.planName}</div>
                                 <div className={styles.barTrack}>
                                     <div className={styles.barFillAccent} style={{ width: '100%' }} />
                                 </div>
                                 <div className={styles.priceCell}>
                                     <strong>$49</strong>
-                                    <span>/mo</span>
-                                    <small>Cancel anytime</small>
+                                    <span>{t.perMonth}</span>
+                                    <small>{t.cancelAnytime}</small>
                                 </div>
                             </div>
-                            {[
-                                'Search candidates in your own words',
-                                'Candidate lists and recruiting projects',
-                                'Contact enrichment readiness workflows',
-                                'Native outreach sequencing',
-                                'Mailbox pacing and sender controls',
-                                'Credit ledger and recruiting analytics',
-                            ].map((item) => (
+                            {t.planFeatures.map((item) => (
                                 <div key={item} className={styles.detailLine}>{item}</div>
                             ))}
                         </div>
                     </div>
                 </div>
             </section>
+
             <section className={styles.section}>
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
-                        <span className={styles.sectionEyebrow}>Pricing FAQ</span>
-                        <h2>Questions about credits and billing</h2>
+                        <span className={styles.sectionEyebrow}>{t.faqEyebrow}</span>
+                        <h2>{t.faqHeading}</h2>
                     </div>
                     <div className={styles.featureGrid}>
-                        {[
-                            ['What is a credit?', 'Credits cover the work Tahoe does for you. Search credits run your candidate searches, and enrich credits find verified emails and phone numbers. You always see the cost before you spend.'],
-                            ['Do unused credits roll over?', 'Each plan includes a fresh monthly allowance. Unused credits do not roll over, so you start every month with your full balance.'],
-                            ['Do I pay extra to send outreach?', 'No. Outreach sends from your own inbox, so there is no separate sending charge.'],
-                            ['Can I start without a credit card?', 'Yes. Start for free with Google or email, run your first search, and add a card only when you are ready.'],
-                        ].map(([question, answer]) => (
+                        {t.faq.map(([question, answer]) => (
                             <article key={question} className={styles.featureCard}>
                                 <h3>{question}</h3>
                                 <p>{answer}</p>
@@ -123,6 +123,7 @@ export default function PricingPage() {
                     </div>
                 </div>
             </section>
+
             <PublicSiteFooter />
         </main>
     );
