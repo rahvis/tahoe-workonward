@@ -81,6 +81,7 @@ export function PublicSiteHeader({ placement = 'blog' }: { placement?: string } 
                         <Link href="/features" onClick={() => trackSectionNav('features', `${placement}_header_desktop`)}>Features</Link>
                         <Link href="/pricing" onClick={() => trackSectionNav('pricing', `${placement}_header_desktop`)}>Pricing</Link>
                         <Link href="/customers" onClick={() => trackSectionNav('customers', `${placement}_header_desktop`)}>Customers</Link>
+                        <Link href="/our-story" onClick={() => trackSectionNav('our_story', `${placement}_header_desktop`)}>Our Story</Link>
                         <Link href="/blogs" onClick={() => trackBlogNav(`${placement}_header_desktop`)}>Blog</Link>
                     </nav>
 
@@ -112,6 +113,7 @@ export function PublicSiteHeader({ placement = 'blog' }: { placement?: string } 
                         <Link href="/features" onClick={() => { trackSectionNav('features', `${placement}_header_mobile`); setMobileNavOpen(false); }}>Features</Link>
                         <Link href="/pricing" onClick={() => { trackSectionNav('pricing', `${placement}_header_mobile`); setMobileNavOpen(false); }}>Pricing</Link>
                         <Link href="/customers" onClick={() => { trackSectionNav('customers', `${placement}_header_mobile`); setMobileNavOpen(false); }}>Customers</Link>
+                        <Link href="/our-story" onClick={() => { trackSectionNav('our_story', `${placement}_header_mobile`); setMobileNavOpen(false); }}>Our Story</Link>
                         <Link href="/blogs" onClick={() => { trackBlogNav(`${placement}_header_mobile`); setMobileNavOpen(false); }}>Blog</Link>
                         <div className={styles.mobileAuthActions}>
                             <Link href="/login" className={styles.textAction} onClick={() => trackAuthCta('sign_in', `${placement}_header_mobile`)}>Sign in</Link>
@@ -145,6 +147,7 @@ export function PublicSiteFooter({ placement = 'blog' }: { placement?: string } 
 
                     <div>
                         <h3>Company</h3>
+                        <Link href="/our-story" onClick={() => trackSectionNav('our_story', `${placement}_footer_column`)}>Our Story</Link>
                         <Link href="/blogs" onClick={() => trackBlogNav(`${placement}_footer_column`)}>Blog</Link>
                         <a
                             href="/resources"

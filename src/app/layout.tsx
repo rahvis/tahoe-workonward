@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Instrument_Sans, Montserrat } from "next/font/google";
+import { Inter, Instrument_Sans, Montserrat, Newsreader } from "next/font/google";
 import "vanilla-cookieconsent/dist/cookieconsent.css";
 import "./globals.css";
 import "./tahoe-theme.css";
@@ -23,6 +23,15 @@ const instrumentSans = Instrument_Sans({
   subsets: ["latin"],
   variable: "--font-instrument",
   weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+// Literary serif used only on the Our Story page for a calm, storybook voice.
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  weight: ["300", "400", "500"],
+  style: ["normal", "italic"],
   display: "swap",
 });
 
@@ -87,7 +96,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={`${inter.variable} ${montserrat.variable} ${instrumentSans.variable}`}>
+      <body className={`${inter.variable} ${montserrat.variable} ${instrumentSans.variable} ${newsreader.variable}`}>
         <PublicGoogleAnalytics />
         <PublicCookieConsent />
         {children}

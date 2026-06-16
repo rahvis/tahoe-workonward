@@ -1,0 +1,307 @@
+/* Our Story — a quiet, storybook reading surface.
+ * Serif voice, generous measure, and pencil-sketch line art washed back so the
+ * words stay in front. No heavy weights anywhere; emphasis is carried by italics
+ * and space, the way a printed page would carry it. */
+
+.page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow: hidden;
+    background:
+        radial-gradient(120% 80% at 50% -10%, #fffdf8 0%, rgba(255, 253, 248, 0) 60%),
+        linear-gradient(180deg, #fbf8f2 0%, #ffffff 30%, #f8f5ef 100%);
+    color: var(--tahoe-color-text-primary);
+}
+
+.serif {
+    font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+}
+
+/* ---- shared layout ---- */
+
+.container {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.reading {
+    max-width: 680px;
+    margin: 0 auto;
+}
+
+.eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--tahoe-font-body);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--tahoe-color-text-tertiary);
+}
+
+.eyebrowDot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--tahoe-color-accent);
+}
+
+/* ---- hero ---- */
+
+.hero {
+    position: relative;
+    padding: clamp(72px, 12vw, 152px) 0 clamp(56px, 8vw, 104px);
+    text-align: center;
+    isolation: isolate;
+}
+
+.heroLake {
+    position: absolute;
+    left: 50%;
+    top: clamp(40px, 7vw, 92px);
+    transform: translateX(-50%);
+    width: min(960px, 116%);
+    color: #38596b;
+    opacity: 0.22;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.heroInner {
+    position: relative;
+}
+
+.heroTitle {
+    margin: 22px auto 0;
+    max-width: 14ch;
+    font-family: var(--font-serif), Georgia, serif;
+    font-weight: 300;
+    font-size: clamp(2.6rem, 6.4vw, 4.6rem);
+    line-height: 1.04;
+    letter-spacing: -0.018em;
+    color: var(--tahoe-color-text-primary);
+}
+
+.heroTitle em {
+    font-style: italic;
+    position: relative;
+}
+
+.heroTitle em::after {
+    content: "";
+    position: absolute;
+    left: 2%;
+    right: 2%;
+    bottom: 0.06em;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(255, 104, 44, 0), rgba(255, 104, 44, 0.55), rgba(255, 104, 44, 0));
+}
+
+.heroLede {
+    margin: clamp(22px, 3vw, 30px) auto 0;
+    max-width: 40ch;
+    font-family: var(--font-serif), Georgia, serif;
+    font-weight: 300;
+    font-size: clamp(1.12rem, 2.3vw, 1.42rem);
+    line-height: 1.62;
+    font-style: italic;
+    color: var(--tahoe-color-text-secondary);
+}
+
+/* ---- chapters ---- */
+
+.chapter {
+    position: relative;
+    padding: clamp(48px, 7vw, 92px) 0;
+}
+
+.chapterInner {
+    position: relative;
+    z-index: 1;
+}
+
+.chapterTitle {
+    margin: 0 0 clamp(20px, 3vw, 30px);
+    font-family: var(--font-serif), Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(1.55rem, 3.4vw, 2.2rem);
+    line-height: 1.18;
+    letter-spacing: -0.01em;
+    color: var(--tahoe-color-text-primary);
+}
+
+.para {
+    margin: 0 0 1.35em;
+    font-family: var(--font-serif), Georgia, serif;
+    font-weight: 400;
+    font-size: 1.2rem;
+    line-height: 1.85;
+    color: #38352f;
+}
+
+.para:last-child {
+    margin-bottom: 0;
+}
+
+.para em {
+    font-style: italic;
+}
+
+/* A storybook drop cap on the opening line. */
+.opening::first-letter {
+    float: left;
+    font-family: var(--font-serif), Georgia, serif;
+    font-weight: 400;
+    font-size: 3.5em;
+    line-height: 0.78;
+    padding: 0.06em 0.12em 0 0;
+    color: var(--tahoe-color-text-primary);
+}
+
+/* ---- pull quote ---- */
+
+.quoteWrap {
+    position: relative;
+    padding: clamp(40px, 7vw, 86px) 0;
+    text-align: center;
+    isolation: isolate;
+}
+
+.quoteRipples {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(420px, 76%);
+    transform: translate(-50%, -52%);
+    color: #38596b;
+    opacity: 0.3;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.quote {
+    margin: 0 auto;
+    max-width: 22ch;
+    font-family: var(--font-serif), Georgia, serif;
+    font-weight: 300;
+    font-style: italic;
+    font-size: clamp(1.55rem, 3.7vw, 2.25rem);
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    color: var(--tahoe-color-text-primary);
+}
+
+.quoteMark {
+    color: var(--tahoe-color-accent);
+    opacity: 0.8;
+}
+
+/* ---- divider ---- */
+
+.divider {
+    display: flex;
+    justify-content: center;
+    padding: clamp(8px, 2vw, 20px) 0;
+}
+
+.dividerRidge {
+    width: min(560px, 84%);
+    color: #3f5547;
+    opacity: 0.34;
+}
+
+/* ---- translucent side pines (the page's quiet backdrop) ---- */
+
+.sidePine {
+    position: absolute;
+    bottom: -10px;
+    width: clamp(120px, 16vw, 230px);
+    color: #3f5547;
+    opacity: 0.09;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.sidePineLeft {
+    left: -34px;
+}
+
+.sidePineRight {
+    right: -28px;
+    transform: scaleX(-1);
+}
+
+/* ---- closing ---- */
+
+.closing {
+    position: relative;
+    padding: clamp(64px, 9vw, 120px) 0 clamp(80px, 11vw, 140px);
+    text-align: center;
+    isolation: isolate;
+}
+
+.closingTitle {
+    margin: 18px auto 0;
+    max-width: 18ch;
+    font-family: var(--font-serif), Georgia, serif;
+    font-weight: 300;
+    font-size: clamp(1.9rem, 4.4vw, 3rem);
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    color: var(--tahoe-color-text-primary);
+}
+
+.closingLede {
+    margin: 20px auto 0;
+    max-width: 42ch;
+    font-family: var(--font-serif), Georgia, serif;
+    font-weight: 300;
+    font-style: italic;
+    font-size: clamp(1.08rem, 2.2vw, 1.3rem);
+    line-height: 1.6;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.closingActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: center;
+    margin-top: clamp(30px, 4vw, 42px);
+}
+
+.signature {
+    margin: clamp(34px, 5vw, 50px) auto 0;
+    font-family: var(--font-serif), Georgia, serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    color: var(--tahoe-color-text-tertiary);
+}
+
+.closingRidge {
+    margin: clamp(40px, 6vw, 64px) auto 0;
+    width: min(640px, 90%);
+    color: #3f5547;
+    opacity: 0.3;
+}
+
+@media (max-width: 640px) {
+    .para {
+        font-size: 1.12rem;
+        line-height: 1.8;
+    }
+
+    .sidePine {
+        display: none;
+    }
+
+    .opening::first-letter {
+        font-size: 3em;
+    }
+}
