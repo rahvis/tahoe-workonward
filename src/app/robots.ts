@@ -37,18 +37,33 @@ const aiAndSearchCrawlers = [
     'MJ12bot',
 ];
 
+// Keep the authenticated app and the auth screens out of the index, in both
+// locales. Marketing, blog, and resource content stays fully crawlable.
+const authAndAppPaths = [
+    '/dashboard',
+    '/*/login',
+    '/*/signup',
+    '/*/forgot-password',
+    '/*/reset-password',
+    '/*/verify-email',
+    '/*/resend-verification',
+];
+
 export default function robots(): MetadataRoute.Robots {
     return {
         rules: [
             {
                 userAgent: '*',
                 allow: '/',
+                disallow: authAndAppPaths,
             },
             {
                 userAgent: aiAndSearchCrawlers,
                 allow: '/',
+                disallow: authAndAppPaths,
             },
         ],
+        host: siteUrl,
         sitemap: `${siteUrl}/sitemap.xml`,
     };
 }
