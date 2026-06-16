@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
 import { LakeScene, PineRidge, PineTree, Ripples } from './TahoeSketches';
+import pageStyles from '../page.module.css';
 import styles from './our-story.module.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.com';
@@ -34,7 +35,7 @@ const storyJsonLd = {
 
 export default function OurStoryPage() {
     return (
-        <main className={styles.page}>
+        <main className={pageStyles.page}>
             <PublicSiteHeader placement="our_story" />
             <script
                 type="application/ld+json"
@@ -44,12 +45,8 @@ export default function OurStoryPage() {
             {/* Hero */}
             <section className={styles.hero}>
                 <LakeScene className={styles.heroLake} />
-                <div className={styles.container}>
+                <div className={pageStyles.container}>
                     <div className={styles.heroInner}>
-                        <span className={styles.eyebrow}>
-                            <span className={styles.eyebrowDot} aria-hidden="true" />
-                            Our Story
-                        </span>
                         <h1 className={styles.heroTitle}>
                             Why we named it <em>Tahoe</em>.
                         </h1>
@@ -65,10 +62,10 @@ export default function OurStoryPage() {
             {/* Chapter 1: the lake */}
             <section className={styles.chapter}>
                 <PineTree className={`${styles.sidePine} ${styles.sidePineLeft}`} />
-                <div className={styles.container}>
+                <div className={pageStyles.container}>
                     <div className={`${styles.reading} ${styles.chapterInner}`}>
                         <h2 className={styles.chapterTitle}>The clearest water we know</h2>
-                        <p className={`${styles.para} ${styles.opening}`}>
+                        <p className={styles.para}>
                             Lake Tahoe is one of the deepest and clearest lakes on earth, and the
                             strange thing about it, the thing that stays with you long after you have
                             left the shore, is that its clarity comes from its depth rather than in
@@ -91,7 +88,7 @@ export default function OurStoryPage() {
             {/* Quote 1 */}
             <section className={styles.quoteWrap}>
                 <Ripples className={styles.quoteRipples} />
-                <div className={styles.container}>
+                <div className={pageStyles.container}>
                     <p className={styles.quote}>
                         <span className={styles.quoteMark} aria-hidden="true">“</span>
                         Still water is not empty water; it is water you have finally grown quiet
@@ -108,7 +105,7 @@ export default function OurStoryPage() {
             {/* Chapter 2: the recruiter's noise */}
             <section className={styles.chapter}>
                 <PineTree className={`${styles.sidePine} ${styles.sidePineRight}`} />
-                <div className={styles.container}>
+                <div className={pageStyles.container}>
                     <div className={`${styles.reading} ${styles.chapterInner}`}>
                         <h2 className={styles.chapterTitle}>The noise a recruiter lives in</h2>
                         <p className={styles.para}>
@@ -135,7 +132,7 @@ export default function OurStoryPage() {
             {/* Quote 2 */}
             <section className={styles.quoteWrap}>
                 <Ripples className={styles.quoteRipples} />
-                <div className={styles.container}>
+                <div className={pageStyles.container}>
                     <p className={styles.quote}>
                         <span className={styles.quoteMark} aria-hidden="true">“</span>
                         The candidate you are searching for is rarely missing; far more often, they
@@ -152,7 +149,7 @@ export default function OurStoryPage() {
             {/* Chapter 3: the turn */}
             <section className={styles.chapter}>
                 <PineTree className={`${styles.sidePine} ${styles.sidePineLeft}`} />
-                <div className={styles.container}>
+                <div className={pageStyles.container}>
                     <div className={`${styles.reading} ${styles.chapterInner}`}>
                         <h2 className={styles.chapterTitle}>So we chose depth over more noise</h2>
                         <p className={styles.para}>
@@ -176,7 +173,7 @@ export default function OurStoryPage() {
 
             {/* Chapter 4: what Tahoe is */}
             <section className={styles.chapter}>
-                <div className={styles.container}>
+                <div className={pageStyles.container}>
                     <div className={`${styles.reading} ${styles.chapterInner}`}>
                         <h2 className={styles.chapterTitle}>What Tahoe became</h2>
                         <p className={styles.para}>
@@ -198,7 +195,7 @@ export default function OurStoryPage() {
             {/* Quote 3 */}
             <section className={styles.quoteWrap}>
                 <Ripples className={styles.quoteRipples} />
-                <div className={styles.container}>
+                <div className={pageStyles.container}>
                     <p className={styles.quote}>
                         <span className={styles.quoteMark} aria-hidden="true">“</span>
                         Depth is only frightening while it stays murky; the moment it turns clear, it
@@ -210,11 +207,8 @@ export default function OurStoryPage() {
 
             {/* Closing */}
             <section className={styles.closing}>
-                <div className={styles.container}>
-                    <span className={styles.eyebrow}>
-                        <span className={styles.eyebrowDot} aria-hidden="true" />
-                        Come closer
-                    </span>
+                <div className={pageStyles.container}>
+                    <span className={pageStyles.sectionEyebrow}>Come closer</span>
                     <h2 className={styles.closingTitle}>Come and look into the water.</h2>
                     <p className={styles.closingLede}>
                         If you have ever felt the quiet tiredness of searching through noise, then we
@@ -222,8 +216,8 @@ export default function OurStoryPage() {
                         like.
                     </p>
                     <div className={styles.closingActions}>
-                        <Link href="/signup" className="tahoe-button">Start for free</Link>
-                        <Link href="/product" className="tahoe-button-secondary">See the product</Link>
+                        <Link href="/signup" className={pageStyles.primaryAction}>Start for free</Link>
+                        <Link href="/product" className={pageStyles.ghostAction}>See the product</Link>
                     </div>
                     <p className={styles.signature}>Made with care, by the team at WorkOnward.</p>
                     <PineRidge className={styles.closingRidge} />
