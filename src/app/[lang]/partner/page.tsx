@@ -4,10 +4,11 @@ import { useMemo, useState } from 'react';
 import PartnerApplyModal from '@/components/partner/PartnerApplyModal';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
 import { trackLandingEvent } from '@/lib/public-analytics';
+import { partnerT } from '@/i18n/partner-strings';
+import { useLocale } from '@/i18n/useLocale';
 import styles from './partner.module.css';
 
 const REV_SHARE = 0.30;
-const REV_SHARE_PERCENT = Math.round(REV_SHARE * 100);
 const REV_SHARE_MONTHS = 12;
 
 const BENEFITS = [
@@ -51,21 +52,6 @@ const BENEFITS = [
     },
 ];
 
-const HOW_STEPS = [
-    {
-        title: 'Apply in two minutes',
-        body: 'Tell us about your audience and how you talk about recruiting tools. We review every application within 2-3 business days.',
-    },
-    {
-        title: 'Get your link + assets',
-        body: 'On approval you get a tracked partner link, a private dashboard, and our co-marketing kit, ready to drop into a video, post, or newsletter.',
-    },
-    {
-        title: 'Earn 30% for 12 months',
-        body: 'Every paid Tahoe subscription you refer pays you 30% recurring for 12 months. Payouts run monthly via Stripe.',
-    },
-];
-
 const REFERRAL_ROWS = [
     { name: 'Wave Studio', plan: 'Growth · annual', mrr: 990, status: 'Active', payout: 297 },
     { name: 'Northrise', plan: 'Growth · monthly', mrr: 99, status: 'Active', payout: 29.7 },
@@ -78,37 +64,6 @@ const HERO_PARTNER_ROWS = [
     { initials: 'WS', name: 'Wave Studio', meta: 'Growth · annual', amount: '+ $297' },
     { initials: 'HT', name: 'Halo Talent', meta: 'Scale · annual', amount: '+ $597' },
     { initials: 'NR', name: 'Northrise', meta: 'Growth · monthly', amount: '+ $29.70' },
-];
-
-const FAQS = [
-    {
-        question: `How does the ${REV_SHARE_PERCENT}% revenue share work?`,
-        answer: `For every paid Tahoe subscription you refer, you earn ${REV_SHARE_PERCENT}% of what that customer pays Tahoe for ${REV_SHARE_MONTHS} months, paid out monthly via Stripe. Annual plans count toward all 12 months on day one.`,
-    },
-    {
-        question: 'When and how do I get paid?',
-        answer: 'Payouts run on the 1st of every month via Stripe Connect, covering qualified earnings from the previous calendar month, after a 10-day refund window. Minimum payout is $50.',
-    },
-    {
-        question: 'How long does the cookie last?',
-        answer: 'Your tracked partner link sets a 60-day attribution cookie. As long as the customer signs up within 60 days of the click, the workspace is attributed to you.',
-    },
-    {
-        question: 'Can I run paid ads?',
-        answer: 'Yes, on your own channels. We do ask that you avoid bidding on Tahoe-branded keywords or impersonating Tahoe in ads. Full guidelines are shared after approval.',
-    },
-    {
-        question: 'What counts as a qualified referral?',
-        answer: 'A referral is qualified once the workspace pays its first Tahoe invoice and stays past the 10-day refund window. Free trials and unpaid signups are tracked but only earn once they convert.',
-    },
-    {
-        question: 'How do you protect my links from fraud?',
-        answer: 'Every signup is run through device fingerprinting, IP heuristics, and refund-window checks before earnings post to your ledger. We will never claw back legitimate paid conversions.',
-    },
-    {
-        question: 'How do I get support?',
-        answer: 'Approved partners get a dedicated Slack channel and a named partner manager at WorkOnward. We respond inside one business day, usually faster.',
-    },
 ];
 
 const HERO_CHART_PATH = 'M0 60 L40 50 L80 56 L120 38 L160 44 L200 28 L240 32 L280 14 L320 18 L360 6';
@@ -257,6 +212,8 @@ function formatUsd(value: number): string {
 }
 
 export default function PartnerPage() {
+    const lang = useLocale();
+    const t = partnerT[lang];
     const [applyOpen, setApplyOpen] = useState(false);
     const [referrals, setReferrals] = useState(25);
     const [planPrice, setPlanPrice] = useState(99);
@@ -280,43 +237,33 @@ export default function PartnerPage() {
                         <div className={styles.heroCopy}>
                             <span className={styles.heroEyebrow}>
                                 <span className={styles.heroEyebrowDot} />
-                                Tahoe Partner Program
+                                {t.heroEyebrow}
                             </span>
                             <h1 className={styles.heroTitle}>
-                                Earn <span>{REV_SHARE_PERCENT}% recurring</span> revenue share for {REV_SHARE_MONTHS} months.
+                                {t.heroTitlePre}<span>{t.heroTitleEm}</span>{t.heroTitlePost}
                             </h1>
-                            <p className={styles.heroBody}>
-                                Tahoe pays creators, operators, and recruiting communities a real share of every paying
-                                customer they send. No earnings cap. Monthly Stripe payouts. A named human at WorkOnward
-                                helping you ship the next campaign.
-                            </p>
+                            <p className={styles.heroBody}>{t.heroBody}</p>
                             <div className={styles.heroActions}>
                                 <button
                                     type="button"
                                     className={styles.primaryAction}
                                     onClick={() => openApply('hero_primary')}
                                 >
-                                    Apply to be a partner <ArrowIcon />
+                                    {t.heroApply} <ArrowIcon />
                                 </button>
                                 <a href="#faq" className={styles.ghostAction}>
-                                    Read the FAQ
+                                    {t.heroFaq}
                                 </a>
                             </div>
-                            <p className={styles.heroMeta}>Approval in 2-3 business days · Free to join</p>
+                            <p className={styles.heroMeta}>{t.heroMeta}</p>
 
                             <div className={styles.heroStats}>
-                                <div>
-                                    <strong>30%</strong>
-                                    <span>recurring rev-share</span>
-                                </div>
-                                <div>
-                                    <strong>12 months</strong>
-                                    <span>per paid customer</span>
-                                </div>
-                                <div>
-                                    <strong>60-day</strong>
-                                    <span>attribution window</span>
-                                </div>
+                                {t.heroStats.map((stat) => (
+                                    <div key={stat.label}>
+                                        <strong>{stat.value}</strong>
+                                        <span>{stat.label}</span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
@@ -328,20 +275,17 @@ export default function PartnerPage() {
             <section className={`${styles.section} ${styles.warmSection}`} id="benefits">
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
-                        <span className={styles.sectionEyebrow}>Why partner with Tahoe</span>
-                        <h2>Built for partners who actually ship, not just collect codes.</h2>
-                        <p>
-                            Tahoe is a AI recruiting platform that customers stay on for years. That makes recurring
-                            economics genuinely good for the people who introduce us, not a one-time bounty.
-                        </p>
+                        <span className={styles.sectionEyebrow}>{t.benefitsEyebrow}</span>
+                        <h2>{t.benefitsH2}</h2>
+                        <p>{t.benefitsBody}</p>
                     </div>
 
                     <div className={styles.benefitsGrid}>
-                        {BENEFITS.map((benefit) => (
-                            <article key={benefit.title} className={styles.benefitCard}>
+                        {BENEFITS.map((benefit, index) => (
+                            <article key={index} className={styles.benefitCard}>
                                 <div className={styles.benefitIcon}>{benefit.icon}</div>
-                                <h3 className={styles.benefitTitle}>{benefit.title}</h3>
-                                <p className={styles.benefitBody}>{benefit.body}</p>
+                                <h3 className={styles.benefitTitle}>{t.benefits[index].title}</h3>
+                                <p className={styles.benefitBody}>{t.benefits[index].body}</p>
                             </article>
                         ))}
                     </div>
@@ -351,13 +295,13 @@ export default function PartnerPage() {
             <section className={styles.section} id="how-it-works">
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
-                        <span className={styles.sectionEyebrow}>How it works</span>
-                        <h2>Three steps from application to first payout.</h2>
-                        <p>No spreadsheets, no manual claim links, no surprise reductions. Just send qualified workspaces, get paid.</p>
+                        <span className={styles.sectionEyebrow}>{t.howEyebrow}</span>
+                        <h2>{t.howH2}</h2>
+                        <p>{t.howBody}</p>
                     </div>
 
                     <div className={styles.howRail}>
-                        {HOW_STEPS.map((step, index) => (
+                        {t.howSteps.map((step, index) => (
                             <article key={step.title} className={styles.howStep}>
                                 <span className={styles.howStepGhost}>{index + 1}</span>
                                 <div className={styles.howStepNumber}>{index + 1}</div>
@@ -372,12 +316,9 @@ export default function PartnerPage() {
             <section className={`${styles.section} ${styles.warmSection}`} id="dashboard">
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
-                        <span className={styles.sectionEyebrow}>Partner dashboard</span>
-                        <h2>Live earnings, attribution, and payout state in one calm surface.</h2>
-                        <p>
-                            Approved partners get a private dashboard built on the same platform Tahoe ships to
-                            recruiters. Track every referral, see your next Stripe payout, and grab assets in one place.
-                        </p>
+                        <span className={styles.sectionEyebrow}>{t.dashEyebrow}</span>
+                        <h2>{t.dashH2}</h2>
+                        <p>{t.dashBody}</p>
                     </div>
 
                     <PartnerDashboardMock />
@@ -387,19 +328,16 @@ export default function PartnerPage() {
             <section className={styles.section} id="calculator">
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
-                        <span className={styles.sectionEyebrow}>Earnings calculator</span>
-                        <h2>See what {REV_SHARE_PERCENT}% recurring actually pays.</h2>
-                        <p>
-                            Drag the inputs to model what you would earn each month, each year, and across the full
-                            12-month payout window for every customer.
-                        </p>
+                        <span className={styles.sectionEyebrow}>{t.calcEyebrow}</span>
+                        <h2>{t.calcH2}</h2>
+                        <p>{t.calcBody}</p>
                     </div>
 
                     <div className={styles.calcGrid}>
                         <div className={styles.calcCard}>
                             <div className={styles.calcRow}>
                                 <label htmlFor="calc-referrals" className={styles.calcLabel}>
-                                    Active paying referrals
+                                    {t.calcReferralsLabel}
                                 </label>
                                 <div className={styles.calcInputShell}>
                                     <input
@@ -425,7 +363,7 @@ export default function PartnerPage() {
 
                             <div className={styles.calcRow}>
                                 <label htmlFor="calc-plan" className={styles.calcLabel}>
-                                    Average customer plan ($/month)
+                                    {t.calcPlanLabel}
                                 </label>
                                 <div className={styles.calcInputShell}>
                                     <span className={styles.calcInputPrefix}>$</span>
@@ -452,27 +390,24 @@ export default function PartnerPage() {
                                 />
                             </div>
 
-                            <p className={styles.modalHint}>
-                                Math: referrals × plan × {REV_SHARE_PERCENT}% rev-share, paid monthly for {REV_SHARE_MONTHS} months
-                                per customer.
-                            </p>
+                            <p className={styles.modalHint}>{t.calcHint}</p>
                         </div>
 
                         <div className={styles.calcResultCard}>
-                            <span className={styles.calcResultLabel}>Estimated monthly earnings</span>
+                            <span className={styles.calcResultLabel}>{t.calcMonthly}</span>
                             <div className={styles.calcResultBig}>{formatUsd(monthlyEarnings)}</div>
                             <div className={styles.calcResultSplit}>
                                 <div>
-                                    <span className={styles.calcResultLabel}>Yearly</span>
+                                    <span className={styles.calcResultLabel}>{t.calcYearly}</span>
                                     <div className={styles.calcResultSubBig}>{formatUsd(annualEarnings)}</div>
                                 </div>
                                 <div>
-                                    <span className={styles.calcResultLabel}>Per customer · 12 months</span>
+                                    <span className={styles.calcResultLabel}>{t.calcPerCustomer}</span>
                                     <div className={styles.calcResultSubBig}>{formatUsd(planPrice * REV_SHARE * REV_SHARE_MONTHS)}</div>
                                 </div>
                             </div>
                             <span className={styles.calcMeta}>
-                                Lifetime program total at this run-rate: <strong>{formatUsd(programEarnings)}</strong>
+                                {t.calcLifetime} <strong>{formatUsd(programEarnings)}</strong>
                             </span>
                         </div>
                     </div>
@@ -482,12 +417,12 @@ export default function PartnerPage() {
             <section className={`${styles.section} ${styles.warmSection}`} id="faq">
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
-                        <span className={styles.sectionEyebrow}>FAQ</span>
-                        <h2>Everything you might want to know before applying.</h2>
+                        <span className={styles.sectionEyebrow}>{t.faqEyebrow}</span>
+                        <h2>{t.faqH2}</h2>
                     </div>
 
                     <div className={styles.faqList}>
-                        {FAQS.map((entry) => (
+                        {t.faqs.map((entry) => (
                             <details key={entry.question} className={styles.faqItem}>
                                 <summary className={styles.faqQuestion}>
                                     <span>{entry.question}</span>
@@ -504,32 +439,23 @@ export default function PartnerPage() {
                 <div className={styles.container}>
                     <div className={styles.finalCtaCard}>
                         <div>
-                            <h2>Ready to earn alongside Tahoe?</h2>
-                            <p>
-                                Tahoe is built for recruiters who care about how they work. If your audience cares
-                                about that too, we want you in the program.
-                            </p>
+                            <h2>{t.finalH2}</h2>
+                            <p>{t.finalBody}</p>
                             <div className={styles.heroActions}>
                                 <button
                                     type="button"
                                     className={styles.accentAction}
                                     onClick={() => openApply('final_cta')}
                                 >
-                                    Apply to be a partner <ArrowIcon />
+                                    {t.finalApply} <ArrowIcon />
                                 </button>
                                 <a href="#faq" className={styles.inverseGhostAction}>
-                                    Read the FAQ
+                                    {t.finalFaq}
                                 </a>
                             </div>
                         </div>
                         <div className={styles.ctaChecklist}>
-                            {[
-                                '30% recurring rev-share for 12 months',
-                                'Monthly payouts via Stripe Connect',
-                                '60-day attribution window',
-                                'A real human partner manager',
-                                'Co-marketing assets on day one',
-                            ].map((item) => (
+                            {t.finalChecklist.map((item) => (
                                 <div key={item} className={styles.ctaChecklistItem}>
                                     <CheckIcon />
                                     <span>{item}</span>
