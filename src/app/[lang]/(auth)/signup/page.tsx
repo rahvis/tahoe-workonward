@@ -8,10 +8,16 @@ import GoogleAuthSection from '@/components/auth/GoogleAuthSection';
 import AuthShell from '@/components/auth/AuthShell';
 import PasswordInput from '@/components/auth/PasswordInput';
 import PasswordChecklist from '@/components/auth/PasswordChecklist';
+import { authT } from '@/i18n/auth-dictionary';
+import { useLocale } from '@/i18n/useLocale';
 import styles from '../auth.module.css';
 
 export default function SignupPage() {
     const router = useRouter();
+    const lang = useLocale();
+    const t = authT[lang].signup;
+    const c = authT[lang].common;
+    const L = (path: string) => `/${lang}${path}`;
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
@@ -27,17 +33,17 @@ export default function SignupPage() {
         setSuccess('');
 
         if (!firstName.trim() || !lastName.trim() || !email.trim() || !password || !confirmPassword) {
-            setError('Please fill in all fields.');
+            setError(t.errFill);
             return;
         }
 
         if (password !== confirmPassword) {
-            setError('Passwords do not match');
+            setError(t.errNoMatch);
             return;
         }
 
         if (password.length < 12) {
-            setError('Password must be at least 12 characters');
+            setError(t.errMin);
             return;
         }
 
@@ -57,27 +63,23 @@ export default function SignupPage() {
                     confirm_password: confirmPassword,
                 },
             });
-            setSuccess(
-                response.is_verified
-                    ? 'Account created successfully! You can now sign in.'
-                    : 'Account created. Check your email to verify your account before signing in.',
-            );
+            setSuccess(response.is_verified ? t.successVerified : t.successCheck);
             setError('');
             setPassword('');
             setConfirmPassword('');
         } catch (err) {
             if (err instanceof Error) {
                 if (err.message.includes('Email already registered')) {
-                    setError('Email already registered. Please sign in.');
+                    setError(t.errRegistered);
                 } else if (err.message.includes('Database unavailable')) {
-                    setError('Backend is unavailable right now. Please try again shortly.');
+                    setError(t.errBackend);
                 } else if (err.message.includes('verify your email')) {
-                    setError('Please verify your email before signing in.');
+                    setError(t.errVerify);
                 } else {
-                    setError(err.message || 'Registration failed. Please retry.');
+                    setError(err.message || t.errGeneric);
                 }
             } else {
-                setError('Registration failed.');
+                setError(t.errGeneric);
             }
         } finally {
             setLoading(false);
@@ -85,7 +87,7 @@ export default function SignupPage() {
     };
 
     return (
-        <AuthShell title="Create an account" subtitle="" panelNote="">
+        <AuthShell title={t.title} subtitle="" panelNote="">
             <div className={styles.stack}>
                 {error && (
                     <div className="tahoe-banner tahoe-banner-error" role="alert">
@@ -110,13 +112,13 @@ export default function SignupPage() {
                 <form onSubmit={handleSubmit} className={styles.form} noValidate>
                     <div className={styles.fieldGridTwo}>
                         <div className={styles.field}>
-                            <label htmlFor="signup-first-name" className="tahoe-label">First Name</label>
+                            <label htmlFor="signup-first-name" className="tahoe-label">{t.firstName}</label>
                             <div className={styles.inputShell}>
                                 <span className={styles.inputIcon}><PersonIcon /></span>
                                 <input
                                     id="signup-first-name"
                                     className={styles.input}
-                                    placeholder="John"
+                                    placeholder={t.firstNamePlaceholder}
                                     value={firstName}
                                     onChange={(e) => setFirstName(e.target.value)}
                                     required
@@ -125,13 +127,13 @@ export default function SignupPage() {
                         </div>
 
                         <div className={styles.field}>
-                            <label htmlFor="signup-last-name" className="tahoe-label">Last Name</label>
+                            <label htmlFor="signup-last-name" className="tahoe-label">{t.lastName}</label>
                             <div className={styles.inputShell}>
                                 <span className={styles.inputIcon}><PersonIcon /></span>
                                 <input
                                     id="signup-last-name"
                                     className={styles.input}
-                                    placeholder="Doe"
+                                    placeholder={t.lastNamePlaceholder}
                                     value={lastName}
                                     onChange={(e) => setLastName(e.target.value)}
                                     required
@@ -141,13 +143,13 @@ export default function SignupPage() {
                     </div>
 
                     <div className={styles.field}>
-                        <label htmlFor="signup-email" className="tahoe-label">Email</label>
+                        <label htmlFor="signup-email" className="tahoe-label">{c.email}</label>
                         <div className={styles.inputShell}>
                             <span className={styles.inputIcon}><EnvelopeClosedIcon /></span>
                             <input
                                 id="signup-email"
                                 className={styles.input}
-                                placeholder="you@example.com"
+                                placeholder={c.emailPlaceholder}
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -157,23 +159,23 @@ export default function SignupPage() {
                     </div>
 
                     <div className={styles.field}>
-                        <label htmlFor="signup-password" className="tahoe-label">Password</label>
+                        <label htmlFor="signup-password" className="tahoe-label">{t.password}</label>
                         <PasswordInput
                             id="signup-password"
                             value={password}
                             onChange={setPassword}
-                            placeholder="At least 12 characters"
+                            placeholder={t.passwordPlaceholder}
                             autoComplete="new-password"
                         />
                     </div>
 
                     <div className={styles.field}>
-                        <label htmlFor="signup-confirm-password" className="tahoe-label">Confirm Password</label>
+                        <label htmlFor="signup-confirm-password" className="tahoe-label">{t.confirm}</label>
                         <PasswordInput
                             id="signup-confirm-password"
                             value={confirmPassword}
                             onChange={setConfirmPassword}
-                            placeholder="Re-enter your password"
+                            placeholder={t.confirmPlaceholder}
                             autoComplete="new-password"
                         />
                     </div>
@@ -181,13 +183,13 @@ export default function SignupPage() {
                     <PasswordChecklist password={password} confirmPassword={confirmPassword} showMatch minLength={12} />
 
                     <button className="tahoe-button" type="submit" disabled={loading}>
-                        {loading ? 'Creating account...' : 'Create Account'}
+                        {loading ? t.submitting : t.submit}
                     </button>
                 </form>
 
                 <div className={styles.footerLinks}>
                     <div>
-                        Already have an account? <Link href="/login" className={styles.authLink}>Sign in</Link>
+                        {t.alreadyHave} <Link href={L('/login')} className={styles.authLink}>{c.signIn}</Link>
                     </div>
                 </div>
             </div>

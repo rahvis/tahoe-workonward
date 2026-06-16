@@ -7,11 +7,17 @@ import { ExclamationTriangleIcon, CheckCircledIcon } from '@/components/ui/icons
 import AuthShell from '@/components/auth/AuthShell';
 import PasswordInput from '@/components/auth/PasswordInput';
 import PasswordChecklist from '@/components/auth/PasswordChecklist';
+import { authT } from '@/i18n/auth-dictionary';
+import { useLocale } from '@/i18n/useLocale';
 import styles from '../auth.module.css';
 
 const MIN_LENGTH = 12;
 
 function ResetPasswordContent() {
+    const lang = useLocale();
+    const t = authT[lang].reset;
+    const c = authT[lang].common;
+    const L = (path: string) => `/${lang}${path}`;
     const searchParams = useSearchParams();
     const token = searchParams.get('token') || '';
     const [password, setPassword] = useState('');
@@ -25,15 +31,15 @@ function ResetPasswordContent() {
         setError('');
 
         if (!password || !confirmPassword) {
-            setError('Please enter and confirm your new password.');
+            setError(t.errFill);
             return;
         }
         if (password !== confirmPassword) {
-            setError('Passwords do not match');
+            setError(t.errNoMatch);
             return;
         }
         if (password.length < MIN_LENGTH) {
-            setError(`Password must be at least ${MIN_LENGTH} characters`);
+            setError(t.errMin);
             return;
         }
 
@@ -47,18 +53,14 @@ function ResetPasswordContent() {
             setPassword('');
             setConfirmPassword('');
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to reset password');
+            setError(err instanceof Error ? err.message : t.errReset);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <AuthShell
-            title="Reset your password"
-            subtitle="Choose a new password for your Tahoe account."
-            panelNote="For your security, this link works once and expires 1 hour after it was sent."
-        >
+        <AuthShell title={t.title} subtitle={t.subtitle} panelNote={t.panelNote}>
             <div className={styles.stack}>
                 {error && (
                     <div className="tahoe-banner tahoe-banner-error" role="alert">
@@ -71,11 +73,11 @@ function ResetPasswordContent() {
                     <>
                         <div className="tahoe-banner tahoe-banner-error" role="alert">
                             <ExclamationTriangleIcon />
-                            <span>This reset link is invalid or incomplete.</span>
+                            <span>{t.invalidLink}</span>
                         </div>
                         <div className={styles.footerLinks}>
                             <div>
-                                <Link href="/forgot-password" className={styles.authLink}>Request a new reset link</Link>
+                                <Link href={L('/forgot-password')} className={styles.authLink}>{t.requestNew}</Link>
                             </div>
                         </div>
                     </>
@@ -83,11 +85,11 @@ function ResetPasswordContent() {
                     <>
                         <div className="tahoe-banner tahoe-banner-success" role="status">
                             <CheckCircledIcon />
-                            <span>Your password has been reset. You can now sign in with your new password.</span>
+                            <span>{t.success}</span>
                         </div>
                         <div className={styles.footerLinks}>
                             <div>
-                                <Link href="/login" className={styles.authLink}>Sign in</Link>
+                                <Link href={L('/login')} className={styles.authLink}>{c.signIn}</Link>
                             </div>
                         </div>
                     </>
@@ -95,23 +97,23 @@ function ResetPasswordContent() {
                     <>
                         <form onSubmit={handleSubmit} className={styles.form} noValidate>
                             <div className={styles.field}>
-                                <label htmlFor="reset-password" className="tahoe-label">New password</label>
+                                <label htmlFor="reset-password" className="tahoe-label">{t.newPassword}</label>
                                 <PasswordInput
                                     id="reset-password"
                                     value={password}
                                     onChange={setPassword}
-                                    placeholder="At least 12 characters"
+                                    placeholder={t.newPasswordPlaceholder}
                                     autoComplete="new-password"
                                 />
                             </div>
 
                             <div className={styles.field}>
-                                <label htmlFor="reset-confirm-password" className="tahoe-label">Confirm new password</label>
+                                <label htmlFor="reset-confirm-password" className="tahoe-label">{t.confirm}</label>
                                 <PasswordInput
                                     id="reset-confirm-password"
                                     value={confirmPassword}
                                     onChange={setConfirmPassword}
-                                    placeholder="Re-enter your new password"
+                                    placeholder={t.confirmPlaceholder}
                                     autoComplete="new-password"
                                 />
                             </div>
@@ -119,13 +121,13 @@ function ResetPasswordContent() {
                             <PasswordChecklist password={password} confirmPassword={confirmPassword} showMatch minLength={MIN_LENGTH} />
 
                             <button className="tahoe-button" type="submit" disabled={loading}>
-                                {loading ? 'Resetting...' : 'Reset password'}
+                                {loading ? t.submitting : t.submit}
                             </button>
                         </form>
 
                         <div className={styles.footerLinks}>
                             <div>
-                                <Link href="/login" className={styles.authLink}>Back to sign in</Link>
+                                <Link href={L('/login')} className={styles.authLink}>{c.backToSignIn}</Link>
                             </div>
                         </div>
                     </>
@@ -137,7 +139,7 @@ function ResetPasswordContent() {
 
 export default function ResetPasswordPage() {
     return (
-        <Suspense fallback={<div className={styles.loadingState}><span className="tahoe-spinner" /><span>Loading...</span></div>}>
+        <Suspense fallback={<div className={styles.loadingState}><span className="tahoe-spinner" /><span>...</span></div>}>
             <ResetPasswordContent />
         </Suspense>
     );

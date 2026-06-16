@@ -4,9 +4,15 @@ import Link from 'next/link';
 import { apiRequest } from '@/lib/api';
 import { EnvelopeClosedIcon, ExclamationTriangleIcon, CheckCircledIcon } from '@/components/ui/icons';
 import AuthShell from '@/components/auth/AuthShell';
+import { authT } from '@/i18n/auth-dictionary';
+import { useLocale } from '@/i18n/useLocale';
 import styles from '../auth.module.css';
 
 export default function ForgotPasswordPage() {
+    const lang = useLocale();
+    const t = authT[lang].forgot;
+    const c = authT[lang].common;
+    const L = (path: string) => `/${lang}${path}`;
     const [email, setEmail] = useState('');
     const [error, setError] = useState('');
     const [submitted, setSubmitted] = useState(false);
@@ -17,7 +23,7 @@ export default function ForgotPasswordPage() {
         setError('');
 
         if (!email.trim()) {
-            setError('Please enter your email address.');
+            setError(t.errEmail);
             return;
         }
 
@@ -33,18 +39,14 @@ export default function ForgotPasswordPage() {
             // we always show the same confirmation — no account enumeration.
             setSubmitted(true);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to send reset link');
+            setError(err instanceof Error ? err.message : t.errSend);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <AuthShell
-            title="Forgot your password?"
-            subtitle="Enter your email and Tahoe will send a link to reset your password."
-            panelNote="Reset links are only for email/password accounts and expire after 1 hour."
-        >
+        <AuthShell title={t.title} subtitle={t.subtitle} panelNote={t.panelNote}>
             <div className={styles.stack}>
                 {error && (
                     <div className="tahoe-banner tahoe-banner-error" role="alert">
@@ -57,19 +59,14 @@ export default function ForgotPasswordPage() {
                     <>
                         <div className="tahoe-banner tahoe-banner-success" role="status">
                             <CheckCircledIcon />
-                            <span>
-                                If that email is registered, a reset link is on its way.
-                                Check your inbox (and spam folder).
-                            </span>
+                            <span>{t.success}</span>
                         </div>
                         <div className={styles.altchaHint}>
-                            Signed up with Google? Use <strong>Continue with Google</strong> on the{' '}
-                            <Link href="/login" className={styles.authLink}>sign-in page</Link> —
-                            Google accounts don&apos;t have a password to reset.
+                            {t.googlePre} <strong>{t.googleStrong}</strong> {t.googlePost}
                         </div>
                         <div className={styles.footerLinks}>
                             <div>
-                                <Link href="/login" className={styles.authLink}>Back to sign in</Link>
+                                <Link href={L('/login')} className={styles.authLink}>{c.backToSignIn}</Link>
                             </div>
                         </div>
                     </>
@@ -77,13 +74,13 @@ export default function ForgotPasswordPage() {
                     <>
                         <form onSubmit={handleSubmit} className={styles.form} noValidate>
                             <div className={styles.field}>
-                                <label htmlFor="forgot-email" className="tahoe-label">Email</label>
+                                <label htmlFor="forgot-email" className="tahoe-label">{c.email}</label>
                                 <div className={styles.inputShell}>
                                     <span className={styles.inputIcon}><EnvelopeClosedIcon /></span>
                                     <input
                                         id="forgot-email"
                                         className={styles.input}
-                                        placeholder="you@example.com"
+                                        placeholder={c.emailPlaceholder}
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
@@ -93,13 +90,13 @@ export default function ForgotPasswordPage() {
                             </div>
 
                             <button className="tahoe-button" type="submit" disabled={loading}>
-                                {loading ? 'Sending...' : 'Send reset link'}
+                                {loading ? t.submitting : t.submit}
                             </button>
                         </form>
 
                         <div className={styles.footerLinks}>
                             <div>
-                                Remember your password? <Link href="/login" className={styles.authLink}>Sign in</Link>
+                                {t.remember} <Link href={L('/login')} className={styles.authLink}>{c.signIn}</Link>
                             </div>
                         </div>
                     </>

@@ -1,5 +1,8 @@
+'use client';
 import Link from 'next/link';
 import BrandMark from '@/components/branding/BrandMark';
+import { authT } from '@/i18n/auth-dictionary';
+import { useLocale } from '@/i18n/useLocale';
 import styles from './auth-shell.module.css';
 
 interface AuthShellProps {
@@ -17,38 +20,37 @@ export default function AuthShell({
     footer,
     panelNote = '',
 }: AuthShellProps) {
+    const lang = useLocale();
+    const s = authT[lang].shell;
+    const home = `/${lang}`;
+
     return (
         <main className={styles.page} data-tahoe-auth-shell>
             <div className={styles.shell}>
                 <aside className={styles.marketingPanel} aria-hidden="true">
                     <div className={styles.brandLockup}>
-                        <Link href="/" className={styles.brandLink} tabIndex={-1}>
+                        <Link href={home} className={styles.brandLink} tabIndex={-1}>
                             <BrandMark compact />
                         </Link>
-                        <span className={styles.brandEyebrow}>Recruiter Operating System</span>
+                        <span className={styles.brandEyebrow}>{s.brandEyebrow}</span>
                     </div>
 
                     <div className={styles.heroBlock}>
-                        <span className={styles.heroEyebrow}>Recruiter workflow</span>
-                        <h1 className={styles.heroTitle}>
-                            Search, organize, enrich, and launch from one calm surface.
-                        </h1>
-                        <p className={styles.heroBody}>
-                            Tahoe keeps the recruiter flow direct: search in your own words, focused lists,
-                            native outreach, and product-grade operational visibility.
-                        </p>
+                        <span className={styles.heroEyebrow}>{s.heroEyebrow}</span>
+                        <h1 className={styles.heroTitle}>{s.heroTitle}</h1>
+                        <p className={styles.heroBody}>{s.heroBody}</p>
                     </div>
 
                     <ul className={styles.featureList}>
-                        <li><span className={styles.bullet} aria-hidden="true" />Search candidates in your own words</li>
-                        <li><span className={styles.bullet} aria-hidden="true" />Send from your own inbox</li>
-                        <li><span className={styles.bullet} aria-hidden="true" />Credits and actions stay explicit</li>
+                        <li><span className={styles.bullet} aria-hidden="true" />{s.feature1}</li>
+                        <li><span className={styles.bullet} aria-hidden="true" />{s.feature2}</li>
+                        <li><span className={styles.bullet} aria-hidden="true" />{s.feature3}</li>
                     </ul>
                 </aside>
 
                 <section className={styles.formPanel}>
                     <div className={styles.formCard}>
-                        <Link href="/" className={styles.formBrandLink} aria-label="Tahoe home">
+                        <Link href={home} className={styles.formBrandLink} aria-label="Tahoe home">
                             <BrandMark compact />
                         </Link>
                         <div className={styles.formHeader}>

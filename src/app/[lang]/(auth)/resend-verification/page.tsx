@@ -5,9 +5,15 @@ import { useSearchParams } from 'next/navigation';
 import { apiRequest } from '@/lib/api';
 import { EnvelopeClosedIcon, ExclamationTriangleIcon, CheckCircledIcon } from '@/components/ui/icons';
 import AuthShell from '@/components/auth/AuthShell';
+import { authT } from '@/i18n/auth-dictionary';
+import { useLocale } from '@/i18n/useLocale';
 import styles from '../auth.module.css';
 
 function ResendVerificationContent() {
+    const lang = useLocale();
+    const t = authT[lang].resend;
+    const c = authT[lang].common;
+    const L = (path: string) => `/${lang}${path}`;
     const searchParams = useSearchParams();
     const prefillEmail = searchParams.get('email') || '';
     const [email, setEmail] = useState(prefillEmail);
@@ -27,7 +33,7 @@ function ResendVerificationContent() {
         setSuccess('');
 
         if (!email.trim()) {
-            setError('Please enter your email address.');
+            setError(t.errEmail);
             return;
         }
 
@@ -38,22 +44,16 @@ function ResendVerificationContent() {
                 method: 'POST',
                 body: { email: email.trim().toLowerCase() },
             });
-            setSuccess(
-                'If your account needs verification, a new link is on its way. Check your email.',
-            );
+            setSuccess(t.success);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to send verification email');
+            setError(err instanceof Error ? err.message : t.errSend);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <AuthShell
-            title="Resend verification"
-            subtitle="Enter your email and Tahoe will send a fresh verification link."
-            panelNote="Use this if the original verification email expired or never arrived."
-        >
+        <AuthShell title={t.title} subtitle={t.subtitle} panelNote={t.panelNote}>
             <div className={styles.stack}>
                 {error && (
                     <div className="tahoe-banner tahoe-banner-error" role="alert">
@@ -71,13 +71,13 @@ function ResendVerificationContent() {
 
                 <form onSubmit={handleSubmit} className={styles.form} noValidate>
                     <div className={styles.field}>
-                        <label htmlFor="resend-email" className="tahoe-label">Email</label>
+                        <label htmlFor="resend-email" className="tahoe-label">{c.email}</label>
                         <div className={styles.inputShell}>
                             <span className={styles.inputIcon}><EnvelopeClosedIcon /></span>
                             <input
                                 id="resend-email"
                                 className={styles.input}
-                                placeholder="you@example.com"
+                                placeholder={c.emailPlaceholder}
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -87,13 +87,13 @@ function ResendVerificationContent() {
                     </div>
 
                     <button className="tahoe-button" type="submit" disabled={loading}>
-                        {loading ? 'Sending...' : 'Resend verification email'}
+                        {loading ? t.submitting : t.submit}
                     </button>
                 </form>
 
                 <div className={styles.footerLinks}>
                     <div>
-                        Already verified? <Link href="/login" className={styles.authLink}>Sign in</Link>
+                        {t.alreadyVerified} <Link href={L('/login')} className={styles.authLink}>{c.signIn}</Link>
                     </div>
                 </div>
             </div>
@@ -103,7 +103,7 @@ function ResendVerificationContent() {
 
 export default function ResendVerificationPage() {
     return (
-        <Suspense fallback={<div className={styles.loadingState}><span className="tahoe-spinner" /><span>Loading...</span></div>}>
+        <Suspense fallback={<div className={styles.loadingState}><span className="tahoe-spinner" /><span>...</span></div>}>
             <ResendVerificationContent />
         </Suspense>
     );

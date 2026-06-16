@@ -7,10 +7,16 @@ import { EnvelopeClosedIcon, ExclamationTriangleIcon } from '@/components/ui/ico
 import GoogleAuthSection from '@/components/auth/GoogleAuthSection';
 import AuthShell from '@/components/auth/AuthShell';
 import PasswordInput from '@/components/auth/PasswordInput';
+import { authT } from '@/i18n/auth-dictionary';
+import { useLocale } from '@/i18n/useLocale';
 import styles from '../auth.module.css';
 
 export default function LoginPage() {
     const router = useRouter();
+    const lang = useLocale();
+    const t = authT[lang].login;
+    const c = authT[lang].common;
+    const L = (path: string) => `/${lang}${path}`;
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -21,7 +27,7 @@ export default function LoginPage() {
         setError('');
 
         if (!email.trim() || !password) {
-            setError('Please enter your email and password.');
+            setError(t.errFill);
             return;
         }
 
@@ -35,14 +41,14 @@ export default function LoginPage() {
             setToken(data.access_token);
             router.push('/dashboard');
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Login failed');
+            setError(err instanceof Error ? err.message : t.errFailed);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <AuthShell title="Welcome back" subtitle="Sign in to your Tahoe account and continue the recruiter workflow.">
+        <AuthShell title={t.title} subtitle={t.subtitle}>
             <div className={styles.stack}>
                 {error && (
                     <div className="tahoe-banner tahoe-banner-error" role="alert">
@@ -51,7 +57,7 @@ export default function LoginPage() {
                             {error}
                             {error.toLowerCase().includes('verify your email') && (
                                 <span className={styles.bannerLinks}>
-                                    <Link href={`/resend-verification?email=${encodeURIComponent(email.trim().toLowerCase())}`} className={styles.authLink}>Resend verification email</Link>
+                                    <Link href={L(`/resend-verification?email=${encodeURIComponent(email.trim().toLowerCase())}`)} className={styles.authLink}>{t.resendVerification}</Link>
                                 </span>
                             )}
                         </span>
@@ -66,13 +72,13 @@ export default function LoginPage() {
 
                 <form onSubmit={handleSubmit} className={styles.form} noValidate>
                     <div className={styles.field}>
-                        <label htmlFor="login-email" className="tahoe-label">Email</label>
+                        <label htmlFor="login-email" className="tahoe-label">{c.email}</label>
                         <div className={styles.inputShell}>
                             <span className={styles.inputIcon}><EnvelopeClosedIcon /></span>
                             <input
                                 id="login-email"
                                 className={styles.input}
-                                placeholder="you@example.com"
+                                placeholder={c.emailPlaceholder}
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -83,26 +89,26 @@ export default function LoginPage() {
 
                     <div className={styles.field}>
                         <div className={styles.labelRow}>
-                            <label htmlFor="login-password" className="tahoe-label">Password</label>
-                            <Link href="/forgot-password" className={styles.authLink}>Forgot password?</Link>
+                            <label htmlFor="login-password" className="tahoe-label">{c.password}</label>
+                            <Link href={L('/forgot-password')} className={styles.authLink}>{t.forgot}</Link>
                         </div>
                         <PasswordInput
                             id="login-password"
                             value={password}
                             onChange={setPassword}
-                            placeholder="Enter your password"
+                            placeholder={t.passwordPlaceholder}
                             autoComplete="current-password"
                         />
                     </div>
 
                     <button className="tahoe-button" type="submit" disabled={loading}>
-                        {loading ? 'Signing in...' : 'Sign In'}
+                        {loading ? t.submitting : t.submit}
                     </button>
                 </form>
 
                 <div className={styles.footerLinks}>
                     <div>
-                        Don&apos;t have an account? <Link href="/signup" className={styles.authLink}>Sign up</Link>
+                        {t.noAccount} <Link href={L('/signup')} className={styles.authLink}>{c.signUp}</Link>
                     </div>
                 </div>
             </div>
