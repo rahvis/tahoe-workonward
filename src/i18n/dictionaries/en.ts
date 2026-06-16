@@ -261,4 +261,29 @@ export const en = {
         ctaPartner: 'Partner program',
         ctaStart: 'Start for free',
     },
+    blogIndex: {
+        metaTitle: 'AI Recruiting Blog',
+        metaDescription:
+            'Research-backed Tahoe articles on AI sourcing, candidate lists, enrichment, outreach, mailbox health, and recruiting analytics.',
+        ogDescription:
+            'Research-backed articles on AI sourcing, outreach, enrichment, and recruiting operations.',
+        eyebrow: 'Tahoe blog',
+        h1: 'Recruiting workflows, written plainly.',
+        lede:
+            'Product notes on sourcing, candidate lists, enrichment, outreach, analytics, and the operating details that make recruiting teams faster.',
+        page: 'Page',
+        of: 'of',
+        previous: 'Previous',
+        next: 'Next',
+    },
+    resourceIndex: {
+        metaTitle: 'Resources',
+        metaDescription:
+            'Practical Tahoe guides and playbooks for AI candidate sourcing, search, enrichment, and recruiting outreach.',
+        ogDescription: 'Guides and playbooks for sourcing, search, enrichment, and outreach.',
+        eyebrow: 'Tahoe resources',
+        h1: 'Guides to get more out of Tahoe.',
+        lede:
+            'Practical playbooks and tips for sourcing, search, enrichment, and outreach, written so you can put them to work in your next search.',
+    },
 } as const;

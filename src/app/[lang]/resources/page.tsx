@@ -1,55 +1,58 @@
 import type { Metadata } from 'next';
-import { OG_IMAGES } from '@/lib/og';
 import Link from 'next/link';
+import { OG_IMAGES } from '@/lib/og';
+import { type Locale, isLocale } from '@/i18n/config';
+import { getDictionary } from '@/i18n/getDictionary';
+import { buildAlternates, buildOgLocale } from '@/i18n/metadata';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
 import { resources } from '@/lib/resources';
+import JsonLd from '@/components/seo/JsonLd';
 import shared from '../blogs/blogs.module.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.com';
-const RESOURCES_DESCRIPTION =
-    'Tahoe resources: practical guides, tips, and playbooks for getting the most out of AI sourcing, search, enrichment, and outreach.';
 
-export const metadata: Metadata = {
-    title: 'Resources',
-    description: RESOURCES_DESCRIPTION,
-    alternates: {
-        canonical: '/resources',
-    },
-    openGraph: {
-        title: 'Resources | Tahoe AI',
-        description: RESOURCES_DESCRIPTION,
-        url: '/resources',
-        siteName: 'Tahoe AI',
-        images: OG_IMAGES,
-        type: 'website',
-    },
-};
-
-function absoluteUrl(path: string) {
-    return new URL(path, SITE_URL).toString();
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+    const { lang } = await params;
+    const locale = (isLocale(lang) ? lang : 'en') as Locale;
+    const t = (await getDictionary(locale)).resourceIndex;
+    return {
+        title: t.metaTitle,
+        description: t.metaDescription,
+        alternates: buildAlternates(locale, '/resources'),
+        openGraph: {
+            title: `${t.metaTitle} | Tahoe AI`,
+            description: t.ogDescription,
+            url: `/${locale}/resources`,
+            siteName: 'Tahoe AI',
+            images: OG_IMAGES,
+            type: 'website',
+            ...buildOgLocale(locale),
+        },
+    };
 }
 
-function buildResourcesJsonLd() {
-    return [
+export default async function ResourcesPage({ params }: { params: Promise<{ lang: string }> }) {
+    const { lang } = await params;
+    const locale = (isLocale(lang) ? lang : 'en') as Locale;
+    const t = (await getDictionary(locale)).resourceIndex;
+    const L = (path: string) => `/${locale}${path}`;
+
+    const jsonLd = [
         {
             '@context': 'https://schema.org',
             '@type': 'CollectionPage',
             name: 'Tahoe AI Resources',
-            description: RESOURCES_DESCRIPTION,
-            url: absoluteUrl('/resources'),
-            publisher: {
-                '@type': 'Organization',
-                name: 'Tahoe AI',
-                url: absoluteUrl('/'),
-                logo: {
-                    '@type': 'ImageObject',
-                    url: absoluteUrl('/logo/workonward_logo.svg'),
-                },
-            },
+            description: t.metaDescription,
+            url: `${SITE_URL}/${locale}/resources`,
+            publisher: { '@type': 'Organization', name: 'Tahoe AI', url: `${SITE_URL}/${locale}` },
             hasPart: resources.map((resource) => ({
                 '@type': 'Article',
                 headline: resource.title,
-                url: absoluteUrl(`/resources/${resource.slug}`),
+                url: `${SITE_URL}/${locale}/resources/${resource.slug}`,
                 datePublished: resource.date,
                 dateModified: resource.updated,
                 description: resource.metaDescription,
@@ -59,43 +62,25 @@ function buildResourcesJsonLd() {
             '@context': 'https://schema.org',
             '@type': 'BreadcrumbList',
             itemListElement: [
-                {
-                    '@type': 'ListItem',
-                    position: 1,
-                    name: 'Home',
-                    item: absoluteUrl('/'),
-                },
-                {
-                    '@type': 'ListItem',
-                    position: 2,
-                    name: 'Resources',
-                    item: absoluteUrl('/resources'),
-                },
+                { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/${locale}` },
+                { '@type': 'ListItem', position: 2, name: t.eyebrow, item: `${SITE_URL}/${locale}/resources` },
             ],
         },
     ];
-}
 
-export default function ResourcesPage() {
     return (
         <main className={shared.page}>
             <PublicSiteHeader />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(buildResourcesJsonLd()).replace(/</g, '\\u003c') }}
-            />
+            <JsonLd data={jsonLd} />
 
             <section className={shared.hero}>
                 <div className={shared.container}>
                     <div className={shared.eyebrow}>
                         <span className={shared.eyebrowDot} />
-                        <span>Tahoe resources</span>
+                        <span>{t.eyebrow}</span>
                     </div>
-                    <h1>Guides to get more out of Tahoe.</h1>
-                    <p>
-                        Practical playbooks and tips for sourcing, search, enrichment, and outreach, written so you can
-                        put them to work in your next search.
-                    </p>
+                    <h1>{t.h1}</h1>
+                    <p>{t.lede}</p>
                 </div>
             </section>
 
@@ -109,7 +94,7 @@ export default function ResourcesPage() {
                                     <span>{resource.readingTime}</span>
                                 </div>
                                 <h2>
-                                    <Link href={`/resources/${resource.slug}`} className={shared.postLink}>
+                                    <Link href={L(`/resources/${resource.slug}`)} className={shared.postLink}>
                                         {resource.title}
                                     </Link>
                                 </h2>

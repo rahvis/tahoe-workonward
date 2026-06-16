@@ -1,54 +1,81 @@
 import type { Metadata } from 'next';
-import { OG_IMAGES } from '@/lib/og';
 import Link from 'next/link';
+import { OG_IMAGES } from '@/lib/og';
+import { type Locale, isLocale } from '@/i18n/config';
+import { getDictionary } from '@/i18n/getDictionary';
+import { buildAlternates, buildOgLocale } from '@/i18n/metadata';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
 import { blogPosts } from '@/lib/blog-posts';
+import JsonLd from '@/components/seo/JsonLd';
 import styles from './blogs.module.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.com';
-const BLOG_DESCRIPTION = 'Research-backed Tahoe articles on AI sourcing, candidate lists, enrichment, outreach, mailbox health, and recruiting analytics.';
 
-export const metadata: Metadata = {
-    title: 'AI Recruiting Blog',
-    description: BLOG_DESCRIPTION,
-    alternates: {
-        canonical: '/blogs',
-    },
-    openGraph: {
-        title: 'AI Recruiting Blog | Tahoe AI',
-        description: 'Research-backed articles on AI sourcing, outreach, enrichment, and recruiting operations.',
-        url: '/blogs',
-        siteName: 'Tahoe AI',
-        images: OG_IMAGES,
-        type: 'website',
-    },
-};
-
-function absoluteUrl(path: string) {
-    return new URL(path, SITE_URL).toString();
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+    const { lang } = await params;
+    const locale = (isLocale(lang) ? lang : 'en') as Locale;
+    const t = (await getDictionary(locale)).blogIndex;
+    return {
+        title: t.metaTitle,
+        description: t.metaDescription,
+        alternates: buildAlternates(locale, '/blogs'),
+        openGraph: {
+            title: `${t.metaTitle} | Tahoe AI`,
+            description: t.ogDescription,
+            url: `/${locale}/blogs`,
+            siteName: 'Tahoe AI',
+            images: OG_IMAGES,
+            type: 'website',
+            ...buildOgLocale(locale),
+        },
+    };
 }
 
-function buildBlogIndexJsonLd() {
-    return [
+const POSTS_PER_PAGE = 9;
+
+function parsePage(value: string | string[] | undefined, totalPages: number) {
+    const pageValue = Array.isArray(value) ? value[0] : value;
+    const requestedPage = Number.parseInt(pageValue ?? '1', 10);
+    if (!Number.isFinite(requestedPage)) return 1;
+    return Math.min(Math.max(requestedPage, 1), totalPages);
+}
+
+export default async function BlogsPage({
+    params,
+    searchParams,
+}: {
+    params: Promise<{ lang: string }>;
+    searchParams?: Promise<{ page?: string | string[] }>;
+}) {
+    const { lang } = await params;
+    const locale = (isLocale(lang) ? lang : 'en') as Locale;
+    const t = (await getDictionary(locale)).blogIndex;
+    const sp = await searchParams;
+    const L = (path: string) => `/${locale}${path}`;
+    const getPageHref = (page: number) => (page <= 1 ? L('/blogs') : L(`/blogs?page=${page}`));
+
+    const totalPages = Math.max(1, Math.ceil(blogPosts.length / POSTS_PER_PAGE));
+    const currentPage = parsePage(sp?.page, totalPages);
+    const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
+    const visiblePosts = blogPosts.slice(startIndex, startIndex + POSTS_PER_PAGE);
+    const dateLocale = locale === 'ko' ? 'ko-KR' : 'en';
+
+    const jsonLd = [
         {
             '@context': 'https://schema.org',
             '@type': 'Blog',
             name: 'Tahoe AI Blog',
-            description: BLOG_DESCRIPTION,
-            url: absoluteUrl('/blogs'),
-            publisher: {
-                '@type': 'Organization',
-                name: 'Tahoe AI',
-                url: absoluteUrl('/'),
-                logo: {
-                    '@type': 'ImageObject',
-                    url: absoluteUrl('/logo/workonward_logo.svg'),
-                },
-            },
+            description: t.metaDescription,
+            url: `${SITE_URL}/${locale}/blogs`,
+            publisher: { '@type': 'Organization', name: 'Tahoe AI', url: `${SITE_URL}/${locale}` },
             blogPost: blogPosts.map((post) => ({
                 '@type': 'BlogPosting',
                 headline: post.title,
-                url: absoluteUrl(`/blogs/${post.slug}`),
+                url: `${SITE_URL}/${locale}/blogs/${post.slug}`,
                 datePublished: post.date,
                 dateModified: post.updated,
                 description: post.metaDescription,
@@ -58,70 +85,25 @@ function buildBlogIndexJsonLd() {
             '@context': 'https://schema.org',
             '@type': 'BreadcrumbList',
             itemListElement: [
-                {
-                    '@type': 'ListItem',
-                    position: 1,
-                    name: 'Home',
-                    item: absoluteUrl('/'),
-                },
-                {
-                    '@type': 'ListItem',
-                    position: 2,
-                    name: 'Blog',
-                    item: absoluteUrl('/blogs'),
-                },
+                { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/${locale}` },
+                { '@type': 'ListItem', position: 2, name: t.eyebrow, item: `${SITE_URL}/${locale}/blogs` },
             ],
         },
     ];
-}
-
-const POSTS_PER_PAGE = 9;
-
-type BlogsPageProps = {
-    searchParams?: Promise<{
-        page?: string | string[];
-    }>;
-};
-
-function getPageHref(page: number) {
-    return page <= 1 ? '/blogs' : `/blogs?page=${page}`;
-}
-
-function parsePage(value: string | string[] | undefined, totalPages: number) {
-    const pageValue = Array.isArray(value) ? value[0] : value;
-    const requestedPage = Number.parseInt(pageValue ?? '1', 10);
-    if (!Number.isFinite(requestedPage)) {
-        return 1;
-    }
-    return Math.min(Math.max(requestedPage, 1), totalPages);
-}
-
-export default async function BlogsPage({ searchParams }: BlogsPageProps = {}) {
-    const params = await searchParams;
-    const totalPages = Math.max(1, Math.ceil(blogPosts.length / POSTS_PER_PAGE));
-    const currentPage = parsePage(params?.page, totalPages);
-    const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
-    const visiblePosts = blogPosts.slice(startIndex, startIndex + POSTS_PER_PAGE);
 
     return (
         <main className={styles.page}>
             <PublicSiteHeader />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBlogIndexJsonLd()).replace(/</g, '\\u003c') }}
-            />
+            <JsonLd data={jsonLd} />
 
             <section className={styles.hero}>
                 <div className={styles.container}>
                     <div className={styles.eyebrow}>
                         <span className={styles.eyebrowDot} />
-                        <span>Tahoe blog</span>
+                        <span>{t.eyebrow}</span>
                     </div>
-                    <h1>Recruiting workflows, written plainly.</h1>
-                    <p>
-                        Product notes on sourcing, candidate lists, enrichment, outreach, analytics, and the operating
-                        details that make recruiting teams faster.
-                    </p>
+                    <h1>{t.h1}</h1>
+                    <p>{t.lede}</p>
                 </div>
             </section>
 
@@ -132,12 +114,12 @@ export default async function BlogsPage({ searchParams }: BlogsPageProps = {}) {
                             <div>
                                 <div className={styles.postMeta}>
                                     <time dateTime={post.date}>
-                                        {new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(`${post.date}T00:00:00`))}
+                                        {new Intl.DateTimeFormat(dateLocale, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(`${post.date}T00:00:00`))}
                                     </time>
                                     <span>{post.readingTime}</span>
                                 </div>
                                 <h2>
-                                    <Link href={`/blogs/${post.slug}`} className={styles.postLink}>
+                                    <Link href={L(`/blogs/${post.slug}`)} className={styles.postLink}>
                                         {post.title}
                                     </Link>
                                 </h2>
@@ -153,28 +135,22 @@ export default async function BlogsPage({ searchParams }: BlogsPageProps = {}) {
                 </div>
 
                 <nav className={styles.pagination} aria-label="Blog pagination">
-                    <span>
-                        Page {currentPage} of {totalPages}
-                    </span>
+                    <span>{t.page} {currentPage} {t.of} {totalPages}</span>
                     <div className={styles.paginationActions}>
                         {currentPage > 1 ? (
-                            <Link href={getPageHref(currentPage - 1)}>Previous</Link>
+                            <Link href={getPageHref(currentPage - 1)}>{t.previous}</Link>
                         ) : (
-                            <span aria-disabled="true">Previous</span>
+                            <span aria-disabled="true">{t.previous}</span>
                         )}
                         {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
-                            <Link
-                                key={page}
-                                href={getPageHref(page)}
-                                aria-current={page === currentPage ? 'page' : undefined}
-                            >
+                            <Link key={page} href={getPageHref(page)} aria-current={page === currentPage ? 'page' : undefined}>
                                 {page}
                             </Link>
                         ))}
                         {currentPage < totalPages ? (
-                            <Link href={getPageHref(currentPage + 1)}>Next</Link>
+                            <Link href={getPageHref(currentPage + 1)}>{t.next}</Link>
                         ) : (
-                            <span aria-disabled="true">Next</span>
+                            <span aria-disabled="true">{t.next}</span>
                         )}
                     </div>
                 </nav>

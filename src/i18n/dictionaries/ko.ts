@@ -257,4 +257,28 @@ export const ko = {
         ctaPartner: '파트너 프로그램',
         ctaStart: '무료로 시작하기',
     },
+    blogIndex: {
+        metaTitle: 'AI 채용 블로그',
+        metaDescription:
+            'AI 소싱, 후보자 리스트, 정보 보강, 아웃리치, 메일함 상태, 채용 분석에 대한 근거 기반의 Tahoe 아티클.',
+        ogDescription: 'AI 소싱, 아웃리치, 보강, 채용 운영에 대한 근거 기반 아티클.',
+        eyebrow: 'Tahoe 블로그',
+        h1: '쉽게 풀어 쓴 채용 워크플로.',
+        lede:
+            '소싱, 후보자 리스트, 보강, 아웃리치, 분석, 그리고 채용팀을 더 빠르게 만드는 운영 디테일에 대한 제품 노트.',
+        page: '페이지',
+        of: '/',
+        previous: '이전',
+        next: '다음',
+    },
+    resourceIndex: {
+        metaTitle: '리소스',
+        metaDescription:
+            'AI 후보자 소싱, 검색, 보강, 채용 아웃리치를 위한 실용적인 Tahoe 가이드와 플레이북.',
+        ogDescription: '소싱, 검색, 보강, 아웃리치를 위한 가이드와 플레이북.',
+        eyebrow: 'Tahoe 리소스',
+        h1: 'Tahoe를 더 잘 활용하는 가이드.',
+        lede:
+            '소싱, 검색, 보강, 아웃리치를 위한 실용적인 플레이북과 팁. 다음 검색에 바로 적용할 수 있도록 작성했습니다.',
+    },
 } as const;
