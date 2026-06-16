@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { OG_IMAGES } from '@/lib/og';
 import Link from 'next/link';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
 import { resources } from '@/lib/resources';
@@ -19,6 +20,7 @@ export const metadata: Metadata = {
         description: RESOURCES_DESCRIPTION,
         url: '/resources',
         siteName: 'Tahoe AI',
+        images: OG_IMAGES,
         type: 'website',
     },
 };

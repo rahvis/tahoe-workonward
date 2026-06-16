@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { OG_IMAGES } from '@/lib/og';
 import Link from 'next/link';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
 import styles from '../page.module.css';
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
         description: 'Simple AI recruiting software pricing with visible credits, enrichment costs, outreach, and analytics.',
         url: '/pricing',
         siteName: 'Tahoe AI',
+        images: OG_IMAGES,
         type: 'website',
     },
 };

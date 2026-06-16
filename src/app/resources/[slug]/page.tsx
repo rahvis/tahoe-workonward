@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { OG_IMAGES, OG_IMAGE_URL } from '@/lib/og';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
@@ -164,6 +165,7 @@ export async function generateMetadata({ params }: ResourcePageProps): Promise<M
             description: resource.metaDescription,
             url: `/resources/${resource.slug}`,
             siteName: 'Tahoe AI',
+            images: OG_IMAGES,
             type: 'article',
             publishedTime: resource.date,
             modifiedTime: resource.updated,
@@ -171,6 +173,7 @@ export async function generateMetadata({ params }: ResourcePageProps): Promise<M
         },
         twitter: {
             card: 'summary_large_image',
+            images: [OG_IMAGE_URL],
             title: brandedTitle,
             description: resource.metaDescription,
         },

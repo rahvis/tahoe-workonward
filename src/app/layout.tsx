@@ -5,6 +5,7 @@ import "./globals.css";
 import "./tahoe-theme.css";
 import PublicGoogleAnalytics from "@/components/analytics/PublicGoogleAnalytics";
 import PublicCookieConsent from "@/components/consent/PublicCookieConsent";
+import { OG_IMAGES, OG_IMAGE_URL } from "@/lib/og";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -52,12 +53,14 @@ export const metadata: Metadata = {
     url: "/",
     siteName: "Tahoe AI",
     type: "website",
+    images: OG_IMAGES,
   },
   twitter: {
     card: "summary_large_image",
     title: "Tahoe AI | AI Recruiting Search and Outreach",
     description:
       "AI recruiting software for sourcing, enrichment, outreach sequencing, mailbox controls, and analytics.",
+    images: [OG_IMAGE_URL],
   },
   robots: {
     index: true,

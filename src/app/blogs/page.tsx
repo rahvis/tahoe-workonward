@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { OG_IMAGES } from '@/lib/og';
 import Link from 'next/link';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
 import { blogPosts } from '@/lib/blog-posts';
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
         description: 'Research-backed articles on AI sourcing, outreach, enrichment, and recruiting operations.',
         url: '/blogs',
         siteName: 'Tahoe AI',
+        images: OG_IMAGES,
         type: 'website',
     },
 };

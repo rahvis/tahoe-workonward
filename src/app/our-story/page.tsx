@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { OG_IMAGES } from '@/lib/og';
 import Link from 'next/link';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
 import { LakeScene, PineRidge, PineTree, Ripples } from './TahoeSketches';
@@ -20,6 +21,7 @@ export const metadata: Metadata = {
             'Why we created Tahoe AI: a calmer, clearer way to search for the people behind the noise.',
         url: '/our-story',
         siteName: 'Tahoe AI',
+        images: OG_IMAGES,
         type: 'article',
     },
 };

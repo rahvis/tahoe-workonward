@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { OG_IMAGES } from '@/lib/og';
 import Link from 'next/link';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
 import styles from '../page.module.css';
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
         description: 'How recruiting teams use Tahoe AI for sourcing, enrichment, outreach, and analytics.',
         url: '/customers',
         siteName: 'Tahoe AI',
+        images: OG_IMAGES,
         type: 'website',
     },
 };
