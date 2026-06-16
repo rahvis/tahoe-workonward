@@ -3,17 +3,25 @@ import { OG_IMAGES, OG_IMAGE_URL } from '@/lib/og';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
-import { blogPosts, getBlogPost, getRelatedBlogPosts, type BlogPost } from '@/lib/blog-posts';
+import { getBlogPosts, getBlogPost, getRelatedBlogPosts, type BlogPost } from '@/lib/blog-posts';
+import { type Locale, isLocale } from '@/i18n/config';
+import { buildAlternates, buildOgLocale } from '@/i18n/metadata';
 import styles from '../blogs.module.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.com';
 
 type BlogPostPageProps = {
-    params: Promise<{ slug: string }>;
+    params: Promise<{ slug: string; lang: string }>;
 };
 
-function formatDate(date: string) {
-    return new Intl.DateTimeFormat('en', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(`${date}T00:00:00`));
+const ARTICLE_UI = {
+    en: { backToBlog: 'Back to blog', topics: 'Topics', sources: 'Sources', latest: 'Latest from Tahoe', home: 'Home', blog: 'Blog' },
+    ko: { backToBlog: '블로그로 돌아가기', topics: '주제', sources: '출처', latest: 'Tahoe 최신 글', home: '홈', blog: '블로그' },
+} as const;
+
+function formatDate(date: string, locale: Locale) {
+    const intlLocale = locale === 'ko' ? 'ko-KR' : 'en';
+    return new Intl.DateTimeFormat(intlLocale, { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(`${date}T00:00:00`));
 }
 
 function absoluteUrl(path: string) {
@@ -136,8 +144,9 @@ function BlogInfographicFigure({ post }: { post: BlogPost }) {
     );
 }
 
-function buildArticleJsonLd(post: BlogPost) {
-    const url = absoluteUrl(`/blogs/${post.slug}`);
+function buildArticleJsonLd(post: BlogPost, locale: Locale) {
+    const ui = ARTICLE_UI[locale];
+    const url = absoluteUrl(`/${locale}/blogs/${post.slug}`);
 
     return [
         {
@@ -169,14 +178,14 @@ function buildArticleJsonLd(post: BlogPost) {
                 {
                     '@type': 'ListItem',
                     position: 1,
-                    name: 'Home',
-                    item: absoluteUrl('/'),
+                    name: ui.home,
+                    item: absoluteUrl(`/${locale}`),
                 },
                 {
                     '@type': 'ListItem',
                     position: 2,
-                    name: 'Blog',
-                    item: absoluteUrl('/blogs'),
+                    name: ui.blog,
+                    item: absoluteUrl(`/${locale}/blogs`),
                 },
                 {
                     '@type': 'ListItem',
@@ -190,12 +199,13 @@ function buildArticleJsonLd(post: BlogPost) {
 }
 
 export function generateStaticParams() {
-    return blogPosts.map((post) => ({ slug: post.slug }));
+    return getBlogPosts('en').map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
-    const { slug } = await params;
-    const post = getBlogPost(slug);
+    const { slug, lang } = await params;
+    const locale = (isLocale(lang) ? lang : 'en') as Locale;
+    const post = getBlogPost(locale, slug);
     if (!post) {
         return {
             title: 'Tahoe Blog',
@@ -205,19 +215,18 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     return {
         title: post.metaTitle,
         description: post.metaDescription,
-        alternates: {
-            canonical: `/blogs/${post.slug}`,
-        },
+        alternates: buildAlternates(locale, `/blogs/${post.slug}`),
         openGraph: {
             title: brandedTitle,
             description: post.metaDescription,
-            url: `/blogs/${post.slug}`,
+            url: `/${locale}/blogs/${post.slug}`,
             siteName: 'Tahoe AI',
             images: OG_IMAGES,
             type: 'article',
             publishedTime: post.date,
             modifiedTime: post.updated,
             tags: post.tags,
+            ...buildOgLocale(locale),
         },
         twitter: {
             card: 'summary_large_image',
@@ -229,13 +238,16 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-    const { slug } = await params;
-    const post = getBlogPost(slug);
+    const { slug, lang } = await params;
+    const locale = (isLocale(lang) ? lang : 'en') as Locale;
+    const ui = ARTICLE_UI[locale];
+    const L = (path: string) => `/${locale}${path}`;
+    const post = getBlogPost(locale, slug);
     if (!post) {
         notFound();
     }
-    const related = getRelatedBlogPosts(post.slug);
-    const jsonLd = buildArticleJsonLd(post);
+    const related = getRelatedBlogPosts(locale, post.slug);
+    const jsonLd = buildArticleJsonLd(post, locale);
 
     return (
         <main className={styles.page}>
@@ -248,9 +260,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             <article className={styles.article}>
                 <div className={styles.container}>
                     <header className={styles.articleHeader}>
-                        <Link href="/blogs" className={styles.backLink}>Back to blog</Link>
+                        <Link href={L('/blogs')} className={styles.backLink}>{ui.backToBlog}</Link>
                         <div className={styles.articleMeta}>
-                            <time dateTime={post.date}>{formatDate(post.date)}</time>
+                            <time dateTime={post.date}>{formatDate(post.date, locale)}</time>
                             <span>{post.readingTime}</span>
                         </div>
                         <h1>{post.title}</h1>
@@ -277,7 +289,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
                         <aside className={styles.aside} aria-label="Article context">
                             <div className={styles.asidePanel}>
-                                <h2>Topics</h2>
+                                <h2>{ui.topics}</h2>
                                 <div className={styles.tagRow}>
                                     {post.tags.map((tag) => (
                                         <span key={tag} className={styles.tag}>{tag}</span>
@@ -285,7 +297,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                                 </div>
                             </div>
                             <div className={styles.asidePanel}>
-                                <h2>Sources</h2>
+                                <h2>{ui.sources}</h2>
                                 <div className={styles.sourceList}>
                                     {post.citations.map((citation) => (
                                         <a key={citation.url} href={citation.url} target="_blank" rel="noreferrer" className={styles.sourceItem}>
@@ -297,10 +309,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                             </div>
                             {related.length > 0 ? (
                                 <div className={styles.asidePanel}>
-                                    <h2>Latest from Tahoe</h2>
+                                    <h2>{ui.latest}</h2>
                                     <div className={styles.relatedList}>
                                         {related.map((item) => (
-                                            <Link key={item.slug} href={`/blogs/${item.slug}`} className={`${styles.postLink} ${styles.relatedItem}`}>
+                                            <Link key={item.slug} href={L(`/blogs/${item.slug}`)} className={`${styles.postLink} ${styles.relatedItem}`}>
                                                 <strong>{item.title}</strong>
                                                 <span>{item.readingTime}</span>
                                             </Link>

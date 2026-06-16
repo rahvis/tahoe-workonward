@@ -5,7 +5,7 @@ import { type Locale, isLocale } from '@/i18n/config';
 import { getDictionary } from '@/i18n/getDictionary';
 import { buildAlternates, buildOgLocale } from '@/i18n/metadata';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
-import { resources } from '@/lib/resources';
+import { getResources } from '@/lib/resources';
 import JsonLd from '@/components/seo/JsonLd';
 import shared from '../blogs/blogs.module.css';
 
@@ -40,6 +40,7 @@ export default async function ResourcesPage({ params }: { params: Promise<{ lang
     const locale = (isLocale(lang) ? lang : 'en') as Locale;
     const t = (await getDictionary(locale)).resourceIndex;
     const L = (path: string) => `/${locale}${path}`;
+    const resourceList = getResources(locale);
 
     const jsonLd = [
         {
@@ -49,7 +50,7 @@ export default async function ResourcesPage({ params }: { params: Promise<{ lang
             description: t.metaDescription,
             url: `${SITE_URL}/${locale}/resources`,
             publisher: { '@type': 'Organization', name: 'Tahoe AI', url: `${SITE_URL}/${locale}` },
-            hasPart: resources.map((resource) => ({
+            hasPart: resourceList.map((resource) => ({
                 '@type': 'Article',
                 headline: resource.title,
                 url: `${SITE_URL}/${locale}/resources/${resource.slug}`,
@@ -86,7 +87,7 @@ export default async function ResourcesPage({ params }: { params: Promise<{ lang
 
             <section className={shared.container} aria-label="Resources">
                 <div className={shared.postGrid}>
-                    {resources.map((resource) => (
+                    {resourceList.map((resource) => (
                         <article key={resource.slug} className={shared.postCard}>
                             <div>
                                 <div className={shared.postMeta}>

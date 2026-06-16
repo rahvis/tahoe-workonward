@@ -5,7 +5,7 @@ import { type Locale, isLocale } from '@/i18n/config';
 import { getDictionary } from '@/i18n/getDictionary';
 import { buildAlternates, buildOgLocale } from '@/i18n/metadata';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
-import { blogPosts } from '@/lib/blog-posts';
+import { getBlogPosts } from '@/lib/blog-posts';
 import JsonLd from '@/components/seo/JsonLd';
 import styles from './blogs.module.css';
 
@@ -58,10 +58,11 @@ export default async function BlogsPage({
     const L = (path: string) => `/${locale}${path}`;
     const getPageHref = (page: number) => (page <= 1 ? L('/blogs') : L(`/blogs?page=${page}`));
 
-    const totalPages = Math.max(1, Math.ceil(blogPosts.length / POSTS_PER_PAGE));
+    const posts = getBlogPosts(locale);
+    const totalPages = Math.max(1, Math.ceil(posts.length / POSTS_PER_PAGE));
     const currentPage = parsePage(sp?.page, totalPages);
     const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
-    const visiblePosts = blogPosts.slice(startIndex, startIndex + POSTS_PER_PAGE);
+    const visiblePosts = posts.slice(startIndex, startIndex + POSTS_PER_PAGE);
     const dateLocale = locale === 'ko' ? 'ko-KR' : 'en';
 
     const jsonLd = [
@@ -72,7 +73,7 @@ export default async function BlogsPage({
             description: t.metaDescription,
             url: `${SITE_URL}/${locale}/blogs`,
             publisher: { '@type': 'Organization', name: 'Tahoe AI', url: `${SITE_URL}/${locale}` },
-            blogPost: blogPosts.map((post) => ({
+            blogPost: posts.map((post) => ({
                 '@type': 'BlogPosting',
                 headline: post.title,
                 url: `${SITE_URL}/${locale}/blogs/${post.slug}`,
