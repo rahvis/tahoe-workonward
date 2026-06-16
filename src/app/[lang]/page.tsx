@@ -25,12 +25,6 @@ const montserrat = Montserrat({
     display: 'swap',
 });
 
-const HERO_QUERIES = [
-    "Senior backend engineers in Berlin who've shipped fintech",
-    'Product designers in Brooklyn open to remote, 5+ yrs at B2B SaaS',
-    'ML engineers with PyTorch, ex-FAANG, willing to relocate',
-];
-
 const HERO_RESULTS = [
     { name: 'Marcus Chen', role: 'Staff Backend Eng · Klarna', location: 'Berlin', match: 96 },
     { name: 'Aisha Okonkwo', role: 'Senior Backend · N26', location: 'Berlin', match: 94 },
@@ -38,102 +32,7 @@ const HERO_RESULTS = [
     { name: 'Sofia Marchetti', role: 'Backend · Solarisbank', location: 'Berlin', match: 88 },
 ];
 
-const PROOF_TABS = [
-    {
-        label: '800M+ profiles',
-        headline: "Search the world's talent.",
-        body: 'One search in plain words across 800M+ profiles.',
-        cta: { label: 'Start for free', href: '/signup' },
-        visual: 'search' as const,
-    },
-    {
-        label: 'Verified emails and phones',
-        headline: 'Reach people for real.',
-        body: 'Work email, personal email, and mobile, verified before you spend a credit.',
-        cta: { label: 'See pricing', href: '/pricing' },
-        visual: 'contact' as const,
-    },
-    {
-        label: 'Send from your own inbox',
-        headline: 'Outreach that lands.',
-        body: 'Sequences send from your connected Gmail, so replies come back to you.',
-        cta: { label: 'Explore features', href: '/features' },
-        visual: 'inbox' as const,
-    },
-    {
-        label: 'No credit card to start',
-        headline: 'Start free in minutes.',
-        body: 'Run your first search today. Add a card only when you are ready.',
-        cta: { label: 'Start for free', href: '/signup' },
-        visual: 'start' as const,
-    },
-];
-
-const FEATURES = [
-    {
-        tag: '01',
-        title: 'Search in your own words',
-        body: "Describe the hire the way you'd say it out loud. No Boolean, no filter syntax. Tahoe turns it into a recruiter-grade search.",
-    },
-    {
-        tag: '02',
-        title: 'See results you can act on',
-        body: 'Fast, honest previews show exactly who you can reach right now, with no inflated match counts.',
-    },
-    {
-        tag: '03',
-        title: 'Build shortlists that keep their context',
-        body: 'Save the right people into focused lists and move from sourcing to outreach without losing your place.',
-    },
-    {
-        tag: '04',
-        title: 'Verified contact details, priced up front',
-        body: 'Work email, personal email, and mobile. You see the cost before you spend a credit.',
-    },
-    {
-        tag: '05',
-        title: 'Send from your own inbox',
-        body: 'Outreach goes out from the inbox candidates already trust, so Tahoe fits your workflow instead of replacing it.',
-    },
-    {
-        tag: '06',
-        title: "See what's working",
-        body: 'Searches, lists, enrichments, sends, replies, and credit usage, all in one clear view.',
-    },
-];
-
-const SCREEN_TABS = [
-    { id: 'search', label: 'Search' },
-    { id: 'lists', label: 'Lists + Enrich' },
-    { id: 'campaigns', label: 'Campaigns + Mailboxes' },
-    { id: 'billing', label: 'Billing + Analytics' },
-] as const;
-
-type ScreenTab = (typeof SCREEN_TABS)[number]['id'];
-
-const TESTIMONIALS = [
-    {
-        stat: '800M+',
-        label: 'profiles to search',
-        quote: "Describe who you're looking for in your own words and get a shortlist you can actually work, not a wall of filters.",
-        name: 'Find the right people',
-        role: 'Search to shortlist in minutes',
-    },
-    {
-        stat: '1 inbox',
-        label: 'your own',
-        quote: 'Outreach sends from the mailbox your candidates already trust, so your workflow stays exactly where it is.',
-        name: 'Reach out with confidence',
-        role: 'Send from your own mailbox',
-    },
-    {
-        stat: '$0',
-        label: 'to start',
-        quote: 'See enrichment and credit costs before you spend, and start free with no credit card.',
-        name: 'Know your costs',
-        role: 'Clear pricing, no surprises',
-    },
-];
+type ScreenTab = (typeof homeT.en.screenTabs)[number]['id'];
 
 const PRICE_COMPARE = [
     { name: 'LinkedIn Recruiter', price: 999, contract: 'Annual contract' },
@@ -562,7 +461,7 @@ function BillingAndAnalyticsScreen() {
     );
 }
 
-function ProofVisual({ type }: { type: (typeof PROOF_TABS)[number]['visual'] }) {
+function ProofVisual({ type }: { type: (typeof homeT.en.proofTabs)[number]['visual'] }) {
     if (type === 'contact') {
         return (
             <div className={styles.proofCardMock}>
@@ -755,7 +654,7 @@ export default function LandingPage() {
             window.clearTimeout(revealTimer);
             window.clearTimeout(rotateTimer);
         };
-    }, [queryIndex]);
+    }, [queryIndex, HERO_QUERIES]);
 
     useEffect(() => {
         const thresholds = [25, 50, 75, 90];
