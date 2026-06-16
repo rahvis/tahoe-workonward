@@ -21,7 +21,6 @@ export default function LegalPage({
 
             <div className={styles.container}>
                 <section className={styles.hero}>
-                    <span className={styles.eyebrow}>{doc.eyebrow}</span>
                     <h1 className={styles.title}>{doc.title}</h1>
                     <p className={styles.lede}>{doc.lede}</p>
                     <div className={styles.meta}>
