@@ -27,7 +27,8 @@ export default function PublicCookieConsent() {
         }
 
         hasInitializedRef.current = true;
-        void CookieConsent.run(buildCookieConsentConfig());
+        const locale = pathname.split('/')[1] === 'ko' ? 'ko' : 'en';
+        void CookieConsent.run(buildCookieConsentConfig(locale));
     }, [pathname]);
 
     return null;
