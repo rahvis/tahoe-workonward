@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Button, TahoeSelect, TextField } from '@/components/ui/tahoe-ui';
 import { ApiError } from '@/lib/api';
 import {
@@ -140,6 +140,14 @@ export default function CandidateDetailPage() {
     );
 }
 
+// Prefix a bare URL with https:// so anchors resolve (LinkedIn/portfolio entered
+// without a scheme). mailto:/tel: and already-qualified URLs pass through.
+function withScheme(u: string): string {
+    const t = u.trim();
+    if (/^(https?:\/\/|mailto:|tel:)/i.test(t)) return t;
+    return `https://${t}`;
+}
+
 function ProfileTab({ detail, appId, onSaved }: { detail: ApplicationDetail; appId: string; onSaved: () => void }) {
     const profile = (detail.profile ?? {}) as Record<string, unknown>;
     const [summary, setSummary] = useState(String(profile.summary ?? ''));
@@ -149,6 +157,29 @@ function ProfileTab({ detail, appId, onSaved }: { detail: ApplicationDetail; app
 
     const experience = Array.isArray(profile.experience) ? profile.experience as Array<Record<string, unknown>> : [];
     const education = Array.isArray(profile.education) ? profile.education as Array<Record<string, unknown>> : [];
+
+    // Contact & links — email always present; LinkedIn comes from the submitted
+    // form answer first (reliable even if extraction misses it), then the résumé.
+    const contact = (profile.contact ?? {}) as Record<string, unknown>;
+    const answers = (detail.application.answers ?? {}) as Record<string, unknown>;
+    const cand = detail.candidate;
+    const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : '');
+    const otherLinks = Array.isArray(contact.other_links)
+        ? (contact.other_links as unknown[]).map((x) => str(x)).filter(Boolean) : [];
+    const contactRows: Array<{ label: string; value: string; href?: string }> = [];
+    const email = str(cand?.email) || str(contact.email);
+    const phone = str(cand?.phone) || str(contact.phone);
+    const location = str(cand?.location) || str(contact.location);
+    const linkedin = str(answers.linkedin) || str(cand?.linkedin_url) || str(contact.linkedin_url);
+    const github = str(cand?.github_url) || str(contact.github_url);
+    const portfolio = str(cand?.portfolio_url) || str(contact.portfolio_url);
+    if (email) contactRows.push({ label: 'Email', value: email, href: `mailto:${email}` });
+    if (phone) contactRows.push({ label: 'Phone', value: phone, href: `tel:${phone}` });
+    if (location) contactRows.push({ label: 'Location', value: location });
+    if (linkedin) contactRows.push({ label: 'LinkedIn', value: linkedin, href: withScheme(linkedin) });
+    if (github) contactRows.push({ label: 'GitHub', value: github, href: withScheme(github) });
+    if (portfolio) contactRows.push({ label: 'Portfolio', value: portfolio, href: withScheme(portfolio) });
+    otherLinks.forEach((l) => contactRows.push({ label: 'Link', value: l, href: withScheme(l) }));
 
     const save = async () => {
         setSaving(true); setMsg('');
@@ -163,6 +194,34 @@ function ProfileTab({ detail, appId, onSaved }: { detail: ApplicationDetail; app
 
     return (
         <div className={styles.tabBody}>
+            {contactRows.length > 0 && (
+                <section
+                    style={{
+                        border: '1px solid var(--tahoe-color-border-subtle)',
+                        borderRadius: 'var(--tahoe-radius-md)', padding: '14px 16px',
+                        marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8,
+                    }}
+                >
+                    <h3 className={styles.sectionH} style={{ marginTop: 0 }}>Contact &amp; links</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: 16, rowGap: 6, fontSize: 14 }}>
+                        {contactRows.map((r, i) => (
+                            <Fragment key={i}>
+                                <span style={{ color: 'var(--tahoe-color-text-tertiary)' }}>{r.label}</span>
+                                {r.href ? (
+                                    <a
+                                        href={r.href}
+                                        target={r.href.startsWith('http') ? '_blank' : undefined}
+                                        rel="noopener noreferrer"
+                                        style={{ color: 'var(--tahoe-color-accent)', wordBreak: 'break-all', textDecoration: 'none' }}
+                                    >{r.value}</a>
+                                ) : (
+                                    <span style={{ wordBreak: 'break-all' }}>{r.value}</span>
+                                )}
+                            </Fragment>
+                        ))}
+                    </div>
+                </section>
+            )}
             <label className={styles.fieldLabel}>Summary</label>
             <textarea className={styles.textarea} rows={3} value={summary} onChange={(e) => setSummary(e.target.value)} />
             <label className={styles.fieldLabel}>Skills (comma-separated)</label>

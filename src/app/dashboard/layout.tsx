@@ -51,7 +51,10 @@ const sectionConfig = {
             { href: '/dashboard/jobs/postings', label: 'Job Postings' },
             { href: '/dashboard/jobs/pipeline', label: 'Candidates' },
             { href: '/dashboard/jobs/search', label: 'Talent Search' },
-            { href: '/dashboard/jobs/messages', label: 'Messages' },
+            // Hidden from the sidebar (UI only). The /dashboard/jobs/messages route +
+            // all backend messaging stay intact and are reached via the candidate
+            // Email tab → "Open Messages". Re-enable by uncommenting:
+            // { href: '/dashboard/jobs/messages', label: 'Messages' },
             { href: '/dashboard/jobs/career-page', label: 'Organization' },
             { href: '/dashboard/jobs/analytics', label: 'Analytics' },
         ],

@@ -167,7 +167,8 @@ function FieldInput({
             // autocomplete (Google-Places-backed) so a typed city resolves to a
             // full "City, …, Country" string.
             const meta = `${f.label} ${f.help_text ?? ''}`.toLowerCase();
-            const isLocation = f.type === 'text' && /countr/.test(meta) && /(city|location)/.test(meta);
+            const isLocation = f.type === 'location_autocomplete'
+                || (f.type === 'text' && /countr/.test(meta) && /(city|location)/.test(meta));
             control = isLocation ? (
                 <LocationAutocomplete
                     value={String(val ?? '')}
