@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import type { FormFieldDef } from '@/lib/jobs';
+import LocationAutocomplete from './LocationAutocomplete';
 import styles from '../public.module.css';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -161,8 +162,21 @@ function FieldInput({
                 </label>
             );
             break;
-        default:
-            control = (
+        default: {
+            // A free-text "city + country" field becomes a searchable location
+            // autocomplete (Google-Places-backed) so a typed city resolves to a
+            // full "City, …, Country" string.
+            const meta = `${f.label} ${f.help_text ?? ''}`.toLowerCase();
+            const isLocation = f.type === 'text' && /countr/.test(meta) && /(city|location)/.test(meta);
+            control = isLocation ? (
+                <LocationAutocomplete
+                    value={String(val ?? '')}
+                    onChange={(v) => set(f.id, v)}
+                    placeholder={f.placeholder ?? 'Start typing your city…'}
+                    required={f.required}
+                    ariaLabel={f.label}
+                />
+            ) : (
                 <input
                     className={styles.input}
                     type={f.type === 'email' ? 'email' : f.type === 'url' ? 'url' : f.type === 'phone' ? 'tel' : 'text'}
@@ -172,6 +186,8 @@ function FieldInput({
                     required={f.required}
                 />
             );
+            break;
+        }
     }
 
     return (

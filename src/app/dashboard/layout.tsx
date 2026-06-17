@@ -52,9 +52,8 @@ const sectionConfig = {
             { href: '/dashboard/jobs/pipeline', label: 'Candidates' },
             { href: '/dashboard/jobs/search', label: 'Talent Search' },
             { href: '/dashboard/jobs/messages', label: 'Messages' },
-            { href: '/dashboard/jobs/career-page', label: 'Career Page' },
+            { href: '/dashboard/jobs/career-page', label: 'Organization' },
             { href: '/dashboard/jobs/analytics', label: 'Analytics' },
-            { href: '/dashboard/jobs/settings', label: 'Settings' },
         ],
     },
     outreach: {

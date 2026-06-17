@@ -22,6 +22,7 @@ import {
     listStages,
     patchApplication,
     patchProfile,
+    reingestApplication,
 } from '@/lib/jobs';
 import JobsBreadcrumb from '../../../_components/JobsBreadcrumb';
 import shared from '../../../_components/jobs-shared.module.css';
@@ -125,11 +126,14 @@ export default function CandidateDetailPage() {
                 {tab === 'scorecard' && <ScorecardTab appId={appId} />}
                 {tab === 'activity' && <ActivityTab appId={appId} />}
                 {tab === 'email' && (
-                    <p className={shared.subtle}>
-                        Send-only candidate email. <Link
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
+                        <p className={shared.subtle}>Send-only candidate email. Replies go to your real mailbox.</p>
+                        <Link
                             href={`/dashboard/jobs/messages?candidate_id=${candidate?.id ?? ''}&application_id=${application.id}&job_id=${jobId}&email=${encodeURIComponent(candidate?.email ?? '')}&name=${encodeURIComponent(candidate?.full_name ?? '')}`}
-                        >Open Messages →</Link> Replies go to your real mailbox.
-                    </p>
+                        >
+                            <Button variant="soft" color="orange">Open Messages →</Button>
+                        </Link>
+                    </div>
                 )}
             </div>
         </div>
@@ -180,15 +184,27 @@ function ProfileTab({ detail, appId, onSaved }: { detail: ApplicationDetail; app
 
 function ResumeTab({ appId, filename, parseStatus }: { appId: string; filename: string | null; parseStatus: string }) {
     const [error, setError] = useState('');
+    const [msg, setMsg] = useState('');
+    const [busy, setBusy] = useState(false);
     const open = async () => {
         setError('');
         try { const { url } = await getResumeUrl(appId); window.open(url, '_blank', 'noopener'); }
         catch (e) { setError(e instanceof Error ? e.message : 'Could not open resume'); }
     };
+    const retry = async () => {
+        setBusy(true); setError(''); setMsg('');
+        try { await reingestApplication(appId); setMsg('Re-queued for parsing — refresh in a few seconds.'); }
+        catch (e) { setError(e instanceof Error ? e.message : 'Could not retry parsing'); }
+        finally { setBusy(false); }
+    };
     return (
         <div className={styles.tabBody}>
             <p className={shared.subtle}>{filename || 'resume'} · parse status: {parseStatus}</p>
-            <Button variant="soft" onClick={open}>Open original resume ↗</Button>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <Button variant="soft" onClick={open}>Open original resume ↗</Button>
+                {parseStatus === 'failed' && <Button onClick={retry} disabled={busy}>{busy ? 'Retrying…' : 'Retry parsing'}</Button>}
+            </div>
+            {msg && <p className={shared.ok}>{msg}</p>}
             {error && <p className={shared.error}>{error}</p>}
         </div>
     );

@@ -1,0 +1,25 @@
+.wrap { position: relative; }
+.list {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    background: var(--tahoe-color-canvas);
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: var(--tahoe-radius-md);
+    box-shadow: var(--tahoe-shadow-soft);
+    max-height: 240px;
+    overflow-y: auto;
+}
+.item {
+    padding: 8px 12px;
+    border-radius: var(--tahoe-radius-sm);
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--tahoe-color-text-secondary);
+}
+.item:hover, .itemActive { background: var(--tahoe-color-surface-subtle); color: var(--tahoe-color-text-primary); }

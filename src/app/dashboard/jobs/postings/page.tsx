@@ -127,7 +127,7 @@ function JobPostingsInner() {
                 <TahoeSelect className={styles.statusSelect} value={status} aria-label="Filter by status" onChange={(e) => setParam('status', e.target.value)}>
                     {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </TahoeSelect>
-                <Link href="/dashboard/jobs/postings/new"><Button size="3">Create job</Button></Link>
+                <Link href="/dashboard/jobs/postings/new"><Button size="3" className={styles.createBtn}>Create job</Button></Link>
             </div>
 
             {error && <p className={shared.error} role="alert">{error}</p>}

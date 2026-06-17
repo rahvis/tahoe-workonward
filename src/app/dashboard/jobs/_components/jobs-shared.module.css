@@ -72,7 +72,7 @@
     top: 0;
     z-index: 1;
 }
-.controlLabel { font-size: 13px; color: var(--tahoe-color-text-secondary); display: inline-flex; align-items: center; gap: 6px; }
+.controlLabel { font-size: 13px; color: var(--tahoe-color-text-secondary); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .subtle { color: var(--tahoe-color-text-secondary); font-size: 14px; margin: 0; }
 .error { color: var(--tahoe-color-danger); font-size: 14px; }
 .ok { color: var(--tahoe-color-success); font-size: 13px; }

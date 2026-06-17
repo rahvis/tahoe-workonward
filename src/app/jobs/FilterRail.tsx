@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { TahoeSelect } from '@/components/ui/tahoe-ui';
 import styles from './public.module.css';
 
 const LOCATION_TYPES = ['remote', 'hybrid', 'onsite'];
@@ -45,25 +46,25 @@ export default function FilterRail({ departments }: { departments: string[] }) {
             {departments.length > 0 && (
                 <div className={styles.filterGroup}>
                     <label className={styles.filterLabel} htmlFor="f-dept">Department</label>
-                    <select id="f-dept" className={styles.filterSelect} value={params.get('department') ?? ''} onChange={(e) => setParam('department', e.target.value)}>
+                    <TahoeSelect id="f-dept" value={params.get('department') ?? ''} onChange={(e) => setParam('department', e.target.value)}>
                         <option value="">All</option>
                         {departments.map((d) => <option key={d} value={d}>{d}</option>)}
-                    </select>
+                    </TahoeSelect>
                 </div>
             )}
             <div className={styles.filterGroup}>
                 <label className={styles.filterLabel} htmlFor="f-loc">Location</label>
-                <select id="f-loc" className={styles.filterSelect} value={params.get('location_type') ?? ''} onChange={(e) => setParam('location_type', e.target.value)}>
+                <TahoeSelect id="f-loc" value={params.get('location_type') ?? ''} onChange={(e) => setParam('location_type', e.target.value)}>
                     <option value="">All</option>
                     {LOCATION_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
+                </TahoeSelect>
             </div>
             <div className={styles.filterGroup}>
                 <label className={styles.filterLabel} htmlFor="f-emp">Employment</label>
-                <select id="f-emp" className={styles.filterSelect} value={params.get('employment_type') ?? ''} onChange={(e) => setParam('employment_type', e.target.value)}>
+                <TahoeSelect id="f-emp" value={params.get('employment_type') ?? ''} onChange={(e) => setParam('employment_type', e.target.value)}>
                     <option value="">All</option>
                     {EMPLOYMENT_TYPES.map((t) => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
-                </select>
+                </TahoeSelect>
             </div>
         </aside>
     );

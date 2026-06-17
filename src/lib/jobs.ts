@@ -285,6 +285,8 @@ export const addScorecard = (appId: string, sc: { overall?: string; comment?: st
     apiRequest<Scorecard>(`/api/jobs/applications/${appId}/scorecard`, { method: 'POST', body: sc });
 
 export const listActivity = (appId: string) => apiRequest<Activity[]>(`/api/jobs/applications/${appId}/activity`);
+export const reingestApplication = (appId: string) =>
+    apiRequest<{ requeued: boolean }>(`/api/jobs/applications/${appId}/reingest`, { method: 'POST' });
 export const getResumeUrl = (appId: string) =>
     apiRequest<{ url: string; filename: string | null; expires_in: number }>(`/api/jobs/applications/${appId}/resume-url`);
 

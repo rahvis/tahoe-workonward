@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { fetchStatus } from '@/lib/public-jobs';
 import styles from '../../public.module.css';
+import Confetti from './Confetti';
 
 export const metadata: Metadata = { title: 'Application status', robots: { index: false } };
 
@@ -16,14 +17,15 @@ export default async function AppliedPage({ params }: { params: Params }) {
             <div className={styles.statusCard}>
                 <h1 className={styles.statusTitle}>Link not found</h1>
                 <p className={styles.statusSub}>This status link is invalid or has expired.</p>
-                <Link href="/jobs" className={styles.submitBtn} style={{ display: 'inline-block', textDecoration: 'none' }}>Browse more jobs</Link>
+                <Link href="/jobs" className={styles.browseBtn}>Browse more jobs</Link>
             </div>
         );
     }
 
     return (
-        <div className={styles.statusCard}>
-            <h1 className={styles.statusTitle}>✅ Application received</h1>
+        <div className={`${styles.statusCard} ${styles.statusCardSuccess}`}>
+            <Confetti />
+            <h1 className={styles.statusTitleSuccess}>Application received</h1>
             <p className={styles.statusSub}>
                 Thanks for applying to <strong>{status.job_title}</strong>. We’ve emailed you a link to track your status.
             </p>
@@ -39,7 +41,7 @@ export default async function AppliedPage({ params }: { params: Params }) {
                 ))}
             </div>
             <div style={{ marginTop: 24 }}>
-                <Link href="/jobs" className={styles.backLink}>← Browse more jobs</Link>
+                <Link href="/jobs" className={styles.browseBtn}>Browse more jobs</Link>
             </div>
         </div>
     );

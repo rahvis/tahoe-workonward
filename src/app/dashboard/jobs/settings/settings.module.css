@@ -26,4 +26,9 @@
 .weightField input[type="range"] { width: 100%; accent-color: var(--tahoe-color-accent); }
 .numInput { width: 90px; border: 1px solid var(--tahoe-color-border-subtle); border-radius: var(--tahoe-radius-sm); padding: 7px 9px; font: inherit; font-size: 14px; }
 
-.actions { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
+.actions { display: flex; gap: 10px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+
+/* Organization page: two compact cards side by side (stack on narrow). */
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+@media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+.cardHint { font-size: 13px; color: var(--tahoe-color-text-tertiary); margin: -4px 0 4px; }

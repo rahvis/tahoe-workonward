@@ -66,7 +66,7 @@ export default async function JobDetailPage({ params, searchParams }: { params: 
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
             <Link href="/jobs" className={styles.backLink}>← All Jobs</Link>
             {branding?.company_name && (
-                <div className={styles.brandBanner} style={branding.accent_color ? { borderColor: branding.accent_color } : undefined}>
+                <div className={styles.brandBanner}>
                     {branding.logo_url && (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={branding.logo_url} alt={branding.company_name} className={styles.brandLogo} />
