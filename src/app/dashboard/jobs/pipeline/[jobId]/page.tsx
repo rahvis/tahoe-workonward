@@ -109,7 +109,7 @@ export default function JobPipelinePage() {
     }, [stages, items]);
 
     return (
-        <div className={shared.page}>
+        <div className={shared.fullPage}>
             <JobsBreadcrumb items={[{ label: 'Candidates', href: '/dashboard/jobs/pipeline' }, { label: 'Pipeline' }]} />
 
             <div className={shared.toolbar}>
@@ -151,23 +151,24 @@ export default function JobPipelinePage() {
             {loading ? (
                 <div className={shared.loading}>Loading…</div>
             ) : view === 'table' ? (
-                <TableView items={items} stages={stages} selected={selected} toggle={toggle} jobId={jobId} onMove={move} />
+                <div className={shared.scrollArea}>
+                    <TableView items={items} stages={stages} selected={selected} toggle={toggle} jobId={jobId} onMove={move} />
+                    {nextCursor && (
+                        <div className={styles.loadMore}>
+                            <Button variant="soft" onClick={async () => {
+                                const page = await listApplications(jobId, { sort, status: statusFilter || undefined, cursor: nextCursor, limit: 100 });
+                                setItems((prev) => [...prev, ...page.items]);
+                                setNextCursor(page.next_cursor);
+                            }}>Load more</Button>
+                        </div>
+                    )}
+                </div>
             ) : (
                 <BoardView
                     stages={stages} byStage={byStage} jobId={jobId} onMove={move}
                     draggingId={draggingId} setDraggingId={setDraggingId} overStage={overStage} setOverStage={setOverStage}
                     items={items}
                 />
-            )}
-
-            {view === 'table' && nextCursor && (
-                <div className={styles.loadMore}>
-                    <Button variant="soft" onClick={async () => {
-                        const page = await listApplications(jobId, { sort, status: statusFilter || undefined, cursor: nextCursor, limit: 100 });
-                        setItems((prev) => [...prev, ...page.items]);
-                        setNextCursor(page.next_cursor);
-                    }}>Load more</Button>
-                </div>
             )}
         </div>
     );

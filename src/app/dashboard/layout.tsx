@@ -134,19 +134,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
     const activeSection = inferActiveSection(pathname);
-    const [expanded, setExpanded] = useState<Set<PrimarySection>>(() => new Set([activeSection]));
+    // Explicit open/closed overrides keyed by section. When a section has no
+    // override it defaults to "open if it's the active section". This lets the
+    // user collapse the active section and re-expand it (the old logic force-
+    // expanded the active section, so clicking it never collapsed).
+    const [openOverride, setOpenOverride] = useState<Partial<Record<PrimarySection, boolean>>>({});
+    const isSectionOpen = (key: PrimarySection) => openOverride[key] ?? key === activeSection;
 
     useEffect(() => {
         if (!isLoggedIn()) {
             router.push('/login');
         }
     }, [router]);
-
-    // Active section is always treated as expanded; manual collapses still win
-    // for non-active sections via the `expanded` set toggled in `toggleSection`.
-    const expandedWithActive = expanded.has(activeSection)
-        ? expanded
-        : new Set<PrimarySection>([...expanded, activeSection]);
 
     const handleLogout = () => {
         disableGoogleAutoSelect();
@@ -157,12 +156,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
 
     const toggleSection = (key: PrimarySection) => {
-        setExpanded((prev) => {
-            const next = new Set(prev);
-            if (next.has(key)) next.delete(key);
-            else next.add(key);
-            return next;
-        });
+        setOpenOverride((prev) => ({ ...prev, [key]: !(prev[key] ?? key === activeSection) }));
     };
 
     const primaryNav = (Object.entries(sectionConfig) as Array<[PrimarySection, typeof sectionConfig[PrimarySection]]>).map(
@@ -195,7 +189,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                     <nav className={styles.sidebarNav} aria-label="Primary dashboard navigation">
                         {primaryNav.map((item) => {
-                            const isExpanded = expandedWithActive.has(item.key);
+                            const isExpanded = isSectionOpen(item.key);
                             const isActive = item.key === activeSection;
                             const hasSubnav = item.subnav.length > 0;
 

@@ -69,7 +69,7 @@ export default function EditJobPage() {
     );
 
     return (
-        <div className={shared.page}>
+        <div className={shared.formPage}>
             <JobsBreadcrumb items={[{ label: 'Job Postings', href: '/dashboard/jobs/postings' }, { label: job.title || 'Edit' }]} />
             <JobForm
                 jobId={jobId}

@@ -190,45 +190,50 @@ export default function JobForm({ jobId, initial, submitLabel, saving, error, on
     return (
         <form className={styles.layout} onSubmit={handleSubmit}>
             <div className={styles.formCol}>
-                {headerExtra}
+                {/* Static top: edit-mode header + Draft-with-AI never scroll. */}
+                <div className={styles.formStatic}>
+                    {headerExtra}
 
-                <section className={styles.aiBox} aria-label="Draft with AI">
-                    <label className={styles.aiLabel} htmlFor="ai-prompt">Draft with AI ✨</label>
-                    <textarea
-                        id="ai-prompt"
-                        className={styles.textarea}
-                        rows={2}
-                        placeholder="e.g. Senior backend engineer, Go + Kafka, remote US/CA, $160–200k"
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                    />
-                    <div className={styles.aiRow}>
-                        <Button type="button" variant="soft" onClick={runDraft} disabled={drafting || !prompt.trim()}>
-                            {drafting ? 'Drafting…' : 'Draft with AI'}
-                        </Button>
-                        {drafting && (
-                            <Button type="button" variant="ghost" onClick={() => draftAbort.current?.abort()}>Cancel</Button>
-                        )}
-                        {jobId && (
-                            <Button type="button" variant="ghost" onClick={runCheck} disabled={checking}>
-                                {checking ? 'Checking…' : 'Check post 🔎'}
+                    <section className={styles.aiBox} aria-label="Draft with AI">
+                        <label className={styles.aiLabel} htmlFor="ai-prompt">Draft with AI ✨</label>
+                        <textarea
+                            id="ai-prompt"
+                            className={styles.textarea}
+                            rows={2}
+                            placeholder="e.g. Senior backend engineer, Go + Kafka, remote US/CA, $160–200k"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                        />
+                        <div className={styles.aiRow}>
+                            <Button type="button" variant="soft" onClick={runDraft} disabled={drafting || !prompt.trim()}>
+                                {drafting ? 'Drafting…' : 'Draft with AI'}
                             </Button>
+                            {drafting && (
+                                <Button type="button" variant="ghost" onClick={() => draftAbort.current?.abort()}>Cancel</Button>
+                            )}
+                            {jobId && (
+                                <Button type="button" variant="ghost" onClick={runCheck} disabled={checking}>
+                                    {checking ? 'Checking…' : 'Check post 🔎'}
+                                </Button>
+                            )}
+                        </div>
+                        {aiError && <p className={styles.errorText}>{aiError}</p>}
+                        {suggestions && (
+                            <ul className={styles.suggestions}>
+                                {suggestions.length === 0 && <li className={styles.suggestionOk}>No issues found 🎉</li>}
+                                {suggestions.map((s, i) => (
+                                    <li key={i} className={s.severity === 'warning' ? styles.suggestionWarn : styles.suggestionInfo}>
+                                        <strong>{s.field ? `${s.field}: ` : ''}</strong>{s.issue}
+                                        {s.suggestion ? <em> — {s.suggestion}</em> : null}
+                                    </li>
+                                ))}
+                            </ul>
                         )}
-                    </div>
-                    {aiError && <p className={styles.errorText}>{aiError}</p>}
-                    {suggestions && (
-                        <ul className={styles.suggestions}>
-                            {suggestions.length === 0 && <li className={styles.suggestionOk}>No issues found 🎉</li>}
-                            {suggestions.map((s, i) => (
-                                <li key={i} className={s.severity === 'warning' ? styles.suggestionWarn : styles.suggestionInfo}>
-                                    <strong>{s.field ? `${s.field}: ` : ''}</strong>{s.issue}
-                                    {s.suggestion ? <em> — {s.suggestion}</em> : null}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </section>
+                    </section>
+                </div>
 
+                {/* Scrollable region: only the fields (Title → Save) scroll. */}
+                <div className={styles.scrollFields}>
                 <Field label="Title" required>
                     <TextField.Root value={form.title} onChange={(e) => set('title', e.target.value)} required />
                 </Field>
@@ -316,6 +321,7 @@ export default function JobForm({ jobId, initial, submitLabel, saving, error, on
                 <div className={styles.actions}>
                     <Button type="submit" size="3" disabled={saving || !form.title.trim()}>{saving ? 'Saving…' : submitLabel}</Button>
                     {dirty && <span className={styles.dirtyHint}>Unsaved changes</span>}
+                </div>
                 </div>
             </div>
 

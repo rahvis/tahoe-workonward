@@ -115,19 +115,18 @@ function JobPostingsInner() {
         <div className={shared.page}>
             <JobsBreadcrumb items={[{ label: 'Job Postings' }]} />
 
-            <div className={shared.toolbar}>
+            <div className={styles.toolbar}>
                 <TextField.Root
                     type="search"
                     placeholder="Search jobs…"
                     aria-label="Search jobs"
-                    rootClassName={shared.grow}
+                    rootClassName={styles.search}
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                 />
-                <TahoeSelect value={status} aria-label="Filter by status" onChange={(e) => setParam('status', e.target.value)}>
+                <TahoeSelect className={styles.statusSelect} value={status} aria-label="Filter by status" onChange={(e) => setParam('status', e.target.value)}>
                     {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </TahoeSelect>
-                <span className={shared.spacer} />
                 <Link href="/dashboard/jobs/postings/new"><Button size="3">Create job</Button></Link>
             </div>
 

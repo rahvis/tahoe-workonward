@@ -25,7 +25,7 @@ export default function NewJobPage() {
     };
 
     return (
-        <div className={shared.page}>
+        <div className={shared.formPage}>
             <JobsBreadcrumb items={[{ label: 'Job Postings', href: '/dashboard/jobs/postings' }, { label: 'New' }]} />
             <JobForm submitLabel="Save draft" saving={saving} error={error} onSubmit={onSubmit} />
         </div>

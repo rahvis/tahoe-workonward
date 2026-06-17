@@ -10,12 +10,28 @@
 .evidence { color: var(--tahoe-color-text-tertiary); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .loadMore { display: flex; justify-content: center; padding: 8px; }
 
-.board { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
-.column { flex: 0 0 264px; background: var(--tahoe-color-surface-subtle); border: 1px solid var(--tahoe-color-border-subtle); border-radius: var(--tahoe-radius-md); display: flex; flex-direction: column; min-height: 120px; }
+/* Board fills the remaining viewport height; columns flex to fit the screen
+   width (and scroll horizontally only when there are too many to fit). A visible
+   grayed scrollbar makes the horizontal scroll discoverable. */
+.board {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--tahoe-color-text-tertiary) var(--tahoe-color-surface-muted);
+}
+.board::-webkit-scrollbar { height: 10px; }
+.board::-webkit-scrollbar-track { background: var(--tahoe-color-surface-muted); border-radius: 999px; }
+.board::-webkit-scrollbar-thumb { background: var(--tahoe-color-text-tertiary); border-radius: 999px; border: 2px solid var(--tahoe-color-surface-muted); }
+.column { flex: 1 1 220px; min-width: 220px; max-width: 340px; height: 100%; background: var(--tahoe-color-surface-subtle); border: 1px solid var(--tahoe-color-border-subtle); border-radius: var(--tahoe-radius-md); display: flex; flex-direction: column; min-height: 0; }
 .columnOver { border-color: var(--tahoe-color-accent); background: #fff4ef; }
-.columnHead { padding: 10px 12px; font-weight: 500; font-size: 13px; display: flex; justify-content: space-between; border-bottom: 1px solid var(--tahoe-color-border-subtle); }
+.columnHead { padding: 10px 12px; font-weight: 500; font-size: 13px; display: flex; justify-content: space-between; border-bottom: 1px solid var(--tahoe-color-border-subtle); flex: 0 0 auto; }
 .columnCount { color: var(--tahoe-color-text-tertiary); }
-.columnBody { padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+.columnBody { padding: 8px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; min-height: 0; flex: 1 1 auto; }
 .card { background: var(--tahoe-color-canvas); border: 1px solid var(--tahoe-color-border-subtle); border-radius: var(--tahoe-radius-sm); padding: 10px; cursor: grab; }
 .card:active { cursor: grabbing; }
 .cardTop { display: flex; justify-content: space-between; gap: 6px; }

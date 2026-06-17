@@ -77,7 +77,7 @@ export default function TalentSearchPage() {
         : [];
 
     return (
-        <div className={shared.page}>
+        <div className={shared.fullPage}>
             <JobsBreadcrumb items={[{ label: 'Talent Search' }]} />
             <p className={shared.subtle}>Ask in plain English. Searches only your own applicants.</p>
 
@@ -121,34 +121,36 @@ export default function TalentSearchPage() {
 
             {error && <p className={shared.error} role="alert">{error}</p>}
 
-            {results === null ? (
-                <div className={shared.empty}>Enter a query to search your applicant pool.</div>
-            ) : results.length === 0 ? (
-                <div className={shared.empty}>No matching candidates.</div>
-            ) : (
-                <table className={shared.table}>
-                    <thead>
-                        <tr><th aria-label="select" /><th>Candidate</th><th>Match</th><th>Yrs</th><th>Location</th><th>Why / cited evidence</th></tr>
-                    </thead>
-                    <tbody>
-                        {results.map((r) => (
-                            <tr key={r.application_id}>
-                                <td><input type="checkbox" checked={selected.has(r.application_id)} onChange={() => toggle(r.application_id)} aria-label={`Select ${r.candidate_email}`} /></td>
-                                <td>
-                                    <Link href={`/dashboard/jobs/pipeline/${r.job_id}/${r.application_id}`}>{r.candidate_name || r.candidate_email}</Link>
-                                </td>
-                                <td className={styles.match}>{r.match_pct != null ? `${Math.round(r.match_pct)}%` : '—'}</td>
-                                <td className={shared.muted}>{r.years ?? '—'}</td>
-                                <td className={shared.muted}>{[r.city, r.country].filter(Boolean).join(', ') || '—'}</td>
-                                <td className={styles.why}>
-                                    {r.why && <div className={styles.whyLine}>{r.why}</div>}
-                                    {r.evidence && <div className={styles.evidence}>“{r.evidence}”</div>}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
+            <div className={shared.scrollArea}>
+                {results === null ? (
+                    <div className={shared.empty}>Enter a query to search your applicant pool.</div>
+                ) : results.length === 0 ? (
+                    <div className={shared.empty}>No matching candidates.</div>
+                ) : (
+                    <table className={shared.table}>
+                        <thead>
+                            <tr><th aria-label="select" /><th>Candidate</th><th>Match</th><th>Yrs</th><th>Location</th><th>Why / cited evidence</th></tr>
+                        </thead>
+                        <tbody>
+                            {results.map((r) => (
+                                <tr key={r.application_id}>
+                                    <td><input type="checkbox" checked={selected.has(r.application_id)} onChange={() => toggle(r.application_id)} aria-label={`Select ${r.candidate_email}`} /></td>
+                                    <td>
+                                        <Link href={`/dashboard/jobs/pipeline/${r.job_id}/${r.application_id}`}>{r.candidate_name || r.candidate_email}</Link>
+                                    </td>
+                                    <td className={styles.match}>{r.match_pct != null ? `${Math.round(r.match_pct)}%` : '—'}</td>
+                                    <td className={shared.muted}>{r.years ?? '—'}</td>
+                                    <td className={shared.muted}>{[r.city, r.country].filter(Boolean).join(', ') || '—'}</td>
+                                    <td className={styles.why}>
+                                        {r.why && <div className={styles.whyLine}>{r.why}</div>}
+                                        {r.evidence && <div className={styles.evidence}>“{r.evidence}”</div>}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
         </div>
     );
 }

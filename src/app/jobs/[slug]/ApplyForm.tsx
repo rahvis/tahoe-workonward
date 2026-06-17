@@ -1,8 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMemo, useRef, useState } from 'react';
-import AltchaField, { type AltchaFieldHandle } from '@/components/auth/AltchaField';
+import { useMemo, useState } from 'react';
 import type { FormFieldDef } from '@/lib/jobs';
 import styles from '../public.module.css';
 
@@ -12,7 +11,6 @@ type Values = Record<string, string | string[] | boolean>;
 
 export default function ApplyForm({ slug, fields }: { slug: string; fields: FormFieldDef[] }) {
     const router = useRouter();
-    const altchaRef = useRef<AltchaFieldHandle>(null);
     const [values, setValues] = useState<Values>({});
     const [file, setFile] = useState<File | null>(null);
     const [submitting, setSubmitting] = useState(false);
@@ -42,7 +40,6 @@ export default function ApplyForm({ slug, fields }: { slug: string; fields: Form
 
         setSubmitting(true);
         try {
-            const altcha = (await altchaRef.current?.ensureVerified().catch(() => '')) ?? '';
             const email = String(values['email'] ?? '').trim();
             const answers: Record<string, unknown> = {};
             for (const [k, v] of Object.entries(values)) if (k !== 'email') answers[k] = v;
@@ -51,7 +48,6 @@ export default function ApplyForm({ slug, fields }: { slug: string; fields: Form
             fd.append('resume', file);
             fd.append('email', email);
             fd.append('answers', JSON.stringify(answers));
-            fd.append('altcha', altcha);
 
             const res = await fetch(`${API}/api/public/jobs/${encodeURIComponent(slug)}/apply`, { method: 'POST', body: fd });
             if (!res.ok) {
@@ -63,7 +59,6 @@ export default function ApplyForm({ slug, fields }: { slug: string; fields: Form
             router.push(`/jobs/applied/${data.status_token}`);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Submission failed. Please try again.');
-            altchaRef.current?.reset();
             setSubmitting(false);
         }
     };
@@ -73,7 +68,6 @@ export default function ApplyForm({ slug, fields }: { slug: string; fields: Form
             {fields.map((f) => (
                 <FieldInput key={f.id} field={f} values={values} set={set} fileFieldId={fileFieldId} setFile={setFile} />
             ))}
-            <AltchaField ref={altchaRef} flow="job-application" />
             {error && <p className={styles.formError} role="alert">{error}</p>}
             <button className={styles.submitBtn} type="submit" disabled={submitting}>
                 {submitting ? 'Submitting…' : 'Submit Application'}

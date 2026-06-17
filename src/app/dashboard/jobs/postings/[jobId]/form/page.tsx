@@ -98,7 +98,7 @@ export default function FormBuilderPage() {
     if (loading) return <div className={shared.page}><div className={shared.loading}>Loading…</div></div>;
 
     return (
-        <div className={shared.page}>
+        <div className={shared.formPage}>
             <JobsBreadcrumb items={[
                 { label: 'Job Postings', href: '/dashboard/jobs/postings' },
                 { label: job?.title ?? 'Job', href: `/dashboard/jobs/postings/${jobId}/edit` },

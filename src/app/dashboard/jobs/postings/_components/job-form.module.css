@@ -2,7 +2,9 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
     gap: 24px;
-    align-items: start;
+    align-items: stretch;
+    flex: 1 1 auto;
+    min-height: 0;
     font-family: var(--tahoe-font-body);
     color: var(--tahoe-color-text-primary);
 }
@@ -11,7 +13,19 @@
     .layout { grid-template-columns: 1fr; }
 }
 
-.formCol { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+/* Left column: a static top block + an internally-scrolling fields region. */
+.formCol { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.formStatic { display: flex; flex-direction: column; gap: 14px; flex: 0 0 auto; }
+.scrollFields {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    margin-top: 14px;
+    padding: 2px 12px 24px 2px;
+}
 
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field :global(.tui-textfield), .field :global(.tahoe-select) { width: 100%; border-radius: var(--tahoe-radius-lg); min-height: 42px; font-size: 14px; }
@@ -36,9 +50,11 @@
     box-shadow: var(--tahoe-focus-ring-shadow);
 }
 
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+/* minmax(0, …) lets columns shrink below the controls' intrinsic width so the
+   last column (Interval) never bleeds past the form's right border. */
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.grid4 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.85fr) minmax(0, 0.95fr); gap: 12px; }
 @media (max-width: 640px) { .grid2, .grid3, .grid4 { grid-template-columns: 1fr; } }
 
 .checkRow { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--tahoe-color-text-secondary); align-self: end; padding-bottom: 8px; }
@@ -64,8 +80,11 @@
 .actions { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
 .dirtyHint { font-size: 12px; color: var(--tahoe-color-text-tertiary); }
 
-.previewCol { position: sticky; top: 12px; }
+/* Static preview: stays put while the fields scroll; scrolls internally only if
+   its own content is taller than the column. */
+.previewCol { min-height: 0; overflow-y: auto; padding-right: 2px; }
 .previewCard { border: 1px solid var(--tahoe-color-border-subtle); border-radius: var(--tahoe-radius-md); padding: 18px; background: var(--tahoe-color-canvas); }
+@media (max-width: 900px) { .previewCol { overflow: visible; } }
 .previewTitle { font-family: var(--tahoe-font-display); font-size: 20px; font-weight: 500; margin: 0 0 4px; color: var(--tahoe-color-text-primary); }
 .previewMeta { color: var(--tahoe-color-text-tertiary); font-size: 13px; margin: 0 0 6px; }
 .previewComp { font-size: 14px; font-weight: 500; margin: 0 0 10px; }
