@@ -1,23 +1,29 @@
-.page { display: flex; flex-direction: column; gap: 16px; padding: 4px 2px 40px; max-width: 720px; }
-.head { display: flex; flex-direction: column; gap: 2px; }
-.breadcrumb { font-size: 13px; color: var(--gray-10, #70707a); margin: 0; }
-.title { font-size: 22px; font-weight: 700; margin: 0; }
-.subtle { color: var(--gray-10, #70707a); font-size: 13px; margin: 0; }
-.loading { padding: 40px; text-align: center; color: var(--gray-10, #70707a); }
+/* Shared by Settings + Career Page. Brand tokens, regular weight (no bold). */
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field :global(.tui-textfield) { border-radius: var(--tahoe-radius-lg); min-height: 42px; font-size: 14px; }
+.fieldLabel { font-size: 13px; font-weight: 500; color: var(--tahoe-color-text-secondary); }
 
-.card { border: 1px solid var(--gray-5, #e6e6ea); border-radius: 12px; padding: 18px; background: #fff; display: flex; flex-direction: column; gap: 12px; }
-.sectionH { font-size: 14px; font-weight: 700; margin: 8px 0 0; }
-.field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; }
-.input, .textarea, .numInput { border: 1px solid var(--gray-6, #d8d8de); border-radius: 8px; padding: 9px 11px; font: inherit; font-weight: 400; }
-.textarea { resize: vertical; }
-.numInput { width: 120px; }
+.textarea {
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: var(--tahoe-radius-lg);
+    padding: 10px 14px;
+    font: inherit;
+    font-size: 14px;
+    resize: vertical;
+    width: 100%;
+}
+.textarea:focus { outline: none; border-color: var(--tahoe-color-accent); box-shadow: var(--tahoe-focus-ring-shadow); }
+.numField { max-width: 160px; }
+.numField :global(.tui-textfield) { border-radius: var(--tahoe-radius-lg); min-height: 42px; }
+
 .colorRow { display: flex; gap: 8px; align-items: center; }
-.colorRow input[type="color"] { width: 42px; height: 36px; border: 1px solid var(--gray-6, #d8d8de); border-radius: 8px; padding: 2px; background: #fff; }
+.colorRow input[type="color"] { width: 44px; height: 40px; border: 1px solid var(--tahoe-color-border-subtle); border-radius: var(--tahoe-radius-sm); padding: 2px; background: var(--tahoe-color-canvas); flex: 0 0 auto; }
 
 .weights { display: flex; flex-direction: column; gap: 10px; }
-.weightField { display: grid; grid-template-columns: 160px 1fr 90px; align-items: center; gap: 10px; font-size: 13px; text-transform: capitalize; }
-.weightField input[type="range"] { width: 100%; }
+.weightField { display: grid; grid-template-columns: 170px 1fr 90px; align-items: center; gap: 10px; font-size: 13px; }
+.weightName { text-transform: capitalize; color: var(--tahoe-color-text-secondary); }
+.weightPct { color: var(--tahoe-color-text-primary); font-weight: 500; }
+.weightField input[type="range"] { width: 100%; accent-color: var(--tahoe-color-accent); }
+.numInput { width: 90px; border: 1px solid var(--tahoe-color-border-subtle); border-radius: var(--tahoe-radius-sm); padding: 7px 9px; font: inherit; font-size: 14px; }
 
-.actions { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
-.ok { color: #1a7f43; font-size: 13px; }
-.error { color: #d4351c; font-size: 13px; }
+.actions { display: flex; gap: 10px; align-items: center; margin-top: 8px; }

@@ -3,10 +3,16 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { Badge, Button } from '@/components/ui/tahoe-ui';
 import { ApiError } from '@/lib/api';
 import { type Job, type JobInput, getJob, updateJob } from '@/lib/jobs';
 import JobForm from '../../_components/JobForm';
-import styles from '../../postings.module.css';
+import JobsBreadcrumb from '../../../_components/JobsBreadcrumb';
+import shared from '../../../_components/jobs-shared.module.css';
+
+const STATUS_COLOR: Record<string, string> = {
+    draft: 'gray', scheduled: 'amber', published: 'green', closed: 'red', archived: 'gray',
+};
 
 export default function EditJobPage() {
     const params = useParams<{ jobId: string }>();
@@ -47,32 +53,24 @@ export default function EditJobPage() {
         }
     };
 
-    if (loadError) return <div className={styles.page}><p className={styles.errorText}>{loadError}</p></div>;
-    if (!job) return <div className={styles.page}><div className={styles.loading}>Loading…</div></div>;
+    if (loadError) return <div className={shared.page}><p className={shared.error}>{loadError}</p></div>;
+    if (!job) return <div className={shared.page}><div className={shared.loading}>Loading…</div></div>;
 
     const header = (
-        <div className={styles.editHeader}>
-            <div>
-                <span className={`${styles.statusBadge} ${styles[`status_${job.status}`]}`}>{job.status}</span>
-                {job.status === 'published' && job.slug && (
-                    <a className={styles.viewLink} href={`/jobs/${job.slug}`} target="_blank" rel="noreferrer">View public ↗</a>
-                )}
-            </div>
-            <div className={styles.editLinks}>
-                <Link href={`/dashboard/jobs/postings/${jobId}/form`}>Application form →</Link>
-                <Link href={`/dashboard/jobs/postings/${jobId}/publish`}>Publish / schedule →</Link>
-            </div>
+        <div className={shared.toolbar}>
+            <Badge variant="soft" color={STATUS_COLOR[job.status] ?? 'gray'}>{job.status}</Badge>
+            {job.status === 'published' && job.slug && (
+                <a href={`/jobs/${job.slug}`} target="_blank" rel="noreferrer"><Button variant="ghost" size="1">View public ↗</Button></a>
+            )}
+            <span className={shared.spacer} />
+            <Link href={`/dashboard/jobs/postings/${jobId}/form`}><Button variant="soft" size="2">Application form →</Button></Link>
+            <Link href={`/dashboard/jobs/postings/${jobId}/publish`}><Button variant="soft" size="2">Publish / schedule →</Button></Link>
         </div>
     );
 
     return (
-        <div className={styles.page}>
-            <header className={styles.pageHead}>
-                <div>
-                    <p className={styles.breadcrumb}><Link href="/dashboard/jobs/postings">Job Postings</Link> › Edit</p>
-                    <h1 className={styles.pageTitle}>Edit Job</h1>
-                </div>
-            </header>
+        <div className={shared.page}>
+            <JobsBreadcrumb items={[{ label: 'Job Postings', href: '/dashboard/jobs/postings' }, { label: job.title || 'Edit' }]} />
             <JobForm
                 jobId={jobId}
                 initial={job}

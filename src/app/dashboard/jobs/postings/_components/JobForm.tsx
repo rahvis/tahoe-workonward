@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button } from '@/components/ui/tahoe-ui';
+import { Button, TahoeSelect, TextField } from '@/components/ui/tahoe-ui';
 import {
     type CheckSuggestion,
     type Job,
@@ -119,7 +119,6 @@ export default function JobForm({ jobId, initial, submitLabel, saving, error, on
     const [suggestions, setSuggestions] = useState<CheckSuggestion[] | null>(null);
     const draftAbort = useRef<AbortController | null>(null);
 
-    // Re-seed when the loaded job arrives (edit mode).
     useEffect(() => {
         if (initial) {
             const seeded = fromJob(initial);
@@ -130,7 +129,6 @@ export default function JobForm({ jobId, initial, submitLabel, saving, error, on
 
     const dirty = JSON.stringify(form) !== initialRef.current;
 
-    // Warn before leaving with unsaved edits (browser navigation).
     useEffect(() => {
         if (!dirty) return;
         const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
@@ -185,7 +183,7 @@ export default function JobForm({ jobId, initial, submitLabel, saving, error, on
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.title.trim()) return;
-        initialRef.current = JSON.stringify(form); // accept current as the new baseline
+        initialRef.current = JSON.stringify(form);
         onSubmit(toInput(form));
     };
 
@@ -195,7 +193,7 @@ export default function JobForm({ jobId, initial, submitLabel, saving, error, on
                 {headerExtra}
 
                 <section className={styles.aiBox} aria-label="Draft with AI">
-                    <label className={styles.label} htmlFor="ai-prompt">Draft with AI ✨</label>
+                    <label className={styles.aiLabel} htmlFor="ai-prompt">Draft with AI ✨</label>
                     <textarea
                         id="ai-prompt"
                         className={styles.textarea}
@@ -232,53 +230,53 @@ export default function JobForm({ jobId, initial, submitLabel, saving, error, on
                 </section>
 
                 <Field label="Title" required>
-                    <input className={styles.input} value={form.title} onChange={(e) => set('title', e.target.value)} required />
+                    <TextField.Root value={form.title} onChange={(e) => set('title', e.target.value)} required />
                 </Field>
                 <div className={styles.grid2}>
                     <Field label="Department">
-                        <input className={styles.input} value={form.department} onChange={(e) => set('department', e.target.value)} />
+                        <TextField.Root value={form.department} onChange={(e) => set('department', e.target.value)} />
                     </Field>
                     <Field label="Team">
-                        <input className={styles.input} value={form.team} onChange={(e) => set('team', e.target.value)} />
+                        <TextField.Root value={form.team} onChange={(e) => set('team', e.target.value)} />
                     </Field>
                 </div>
                 <div className={styles.grid3}>
                     <Field label="Employment type">
-                        <select className={styles.select} value={form.employment_type} onChange={(e) => set('employment_type', e.target.value)}>
+                        <TahoeSelect value={form.employment_type} onChange={(e) => set('employment_type', e.target.value)}>
                             <option value="">—</option>
                             {['full_time', 'part_time', 'contract', 'intern', 'temp'].map((v) => <option key={v} value={v}>{v.replace('_', ' ')}</option>)}
-                        </select>
+                        </TahoeSelect>
                     </Field>
                     <Field label="Location type">
-                        <select className={styles.select} value={form.location_type} onChange={(e) => set('location_type', e.target.value)}>
+                        <TahoeSelect value={form.location_type} onChange={(e) => set('location_type', e.target.value)}>
                             <option value="">—</option>
                             {['remote', 'hybrid', 'onsite'].map((v) => <option key={v} value={v}>{v}</option>)}
-                        </select>
+                        </TahoeSelect>
                     </Field>
                     <Field label="Experience level">
-                        <select className={styles.select} value={form.experience_level} onChange={(e) => set('experience_level', e.target.value)}>
+                        <TahoeSelect value={form.experience_level} onChange={(e) => set('experience_level', e.target.value)}>
                             <option value="">—</option>
                             {['intern', 'junior', 'mid', 'senior', 'lead', 'principal'].map((v) => <option key={v} value={v}>{v}</option>)}
-                        </select>
+                        </TahoeSelect>
                     </Field>
                 </div>
                 <Field label="Locations (comma-separated)">
-                    <input className={styles.input} placeholder="Remote - US, Remote - Canada" value={form.locations} onChange={(e) => set('locations', e.target.value)} />
+                    <TextField.Root placeholder="Remote - US, Remote - Canada" value={form.locations} onChange={(e) => set('locations', e.target.value)} />
                 </Field>
                 <div className={styles.grid4}>
                     <Field label="Salary min">
-                        <input className={styles.input} type="number" value={form.salary_min} onChange={(e) => set('salary_min', e.target.value)} />
+                        <TextField.Root type="number" value={form.salary_min} onChange={(e) => set('salary_min', e.target.value)} />
                     </Field>
                     <Field label="Salary max">
-                        <input className={styles.input} type="number" value={form.salary_max} onChange={(e) => set('salary_max', e.target.value)} />
+                        <TextField.Root type="number" value={form.salary_max} onChange={(e) => set('salary_max', e.target.value)} />
                     </Field>
                     <Field label="Currency">
-                        <input className={styles.input} value={form.salary_currency} onChange={(e) => set('salary_currency', e.target.value)} />
+                        <TextField.Root value={form.salary_currency} onChange={(e) => set('salary_currency', e.target.value)} />
                     </Field>
                     <Field label="Interval">
-                        <select className={styles.select} value={form.salary_interval} onChange={(e) => set('salary_interval', e.target.value)}>
+                        <TahoeSelect value={form.salary_interval} onChange={(e) => set('salary_interval', e.target.value)}>
                             {['annual', 'monthly', 'hourly'].map((v) => <option key={v} value={v}>{v}</option>)}
-                        </select>
+                        </TahoeSelect>
                     </Field>
                 </div>
                 <Field label="Summary">
@@ -295,18 +293,18 @@ export default function JobForm({ jobId, initial, submitLabel, saving, error, on
                 </Field>
                 <div className={styles.grid2}>
                     <Field label="Required skills (comma-separated)">
-                        <input className={styles.input} value={form.skills_required} onChange={(e) => set('skills_required', e.target.value)} />
+                        <TextField.Root value={form.skills_required} onChange={(e) => set('skills_required', e.target.value)} />
                     </Field>
                     <Field label="Preferred skills (comma-separated)">
-                        <input className={styles.input} value={form.skills_preferred} onChange={(e) => set('skills_preferred', e.target.value)} />
+                        <TextField.Root value={form.skills_preferred} onChange={(e) => set('skills_preferred', e.target.value)} />
                     </Field>
                 </div>
                 <Field label="Benefits (comma-separated)">
-                    <input className={styles.input} value={form.benefits} onChange={(e) => set('benefits', e.target.value)} />
+                    <TextField.Root value={form.benefits} onChange={(e) => set('benefits', e.target.value)} />
                 </Field>
                 <div className={styles.grid2}>
                     <Field label="Equity">
-                        <input className={styles.input} value={form.equity} onChange={(e) => set('equity', e.target.value)} />
+                        <TextField.Root value={form.equity} onChange={(e) => set('equity', e.target.value)} />
                     </Field>
                     <label className={styles.checkRow}>
                         <input type="checkbox" checked={form.commission} onChange={(e) => set('commission', e.target.checked)} />
@@ -316,7 +314,7 @@ export default function JobForm({ jobId, initial, submitLabel, saving, error, on
 
                 {error && <p className={styles.errorText} role="alert">{error}</p>}
                 <div className={styles.actions}>
-                    <Button type="submit" disabled={saving || !form.title.trim()}>{saving ? 'Saving…' : submitLabel}</Button>
+                    <Button type="submit" size="3" disabled={saving || !form.title.trim()}>{saving ? 'Saving…' : submitLabel}</Button>
                     {dirty && <span className={styles.dirtyHint}>Unsaved changes</span>}
                 </div>
             </div>
@@ -342,10 +340,10 @@ export default function JobForm({ jobId, initial, submitLabel, saving, error, on
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
     return (
-        <label className={styles.field}>
+        <div className={styles.field}>
             <span className={styles.label}>{label}{required && <span className={styles.req}> *</span>}</span>
             {children}
-        </label>
+        </div>
     );
 }
 

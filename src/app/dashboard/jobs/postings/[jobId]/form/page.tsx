@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { Button } from '@/components/ui/tahoe-ui';
+import { Button, TahoeSelect, TextField } from '@/components/ui/tahoe-ui';
 import { ApiError } from '@/lib/api';
 import {
     type FormFieldDef,
@@ -24,6 +23,8 @@ import {
     withDiversity,
     withoutDiversity,
 } from './formFields';
+import JobsBreadcrumb from '../../../_components/JobsBreadcrumb';
+import shared from '../../../_components/jobs-shared.module.css';
 import styles from './form.module.css';
 
 interface Limits { enabled: boolean; maxPer60d: string; noReapplyDays: string; }
@@ -73,7 +74,6 @@ export default function FormBuilderPage() {
         try {
             const normalized = normalizeFields(fields);
             await putJobForm(jobId, normalized);
-            // Persist application-limits on the job (separate aggregate).
             if (job) {
                 const nextLimits = limits.enabled
                     ? { max_per_60d: Number(limits.maxPer60d) || 3, no_reapply_days: Number(limits.noReapplyDays) || 90 }
@@ -95,25 +95,23 @@ export default function FormBuilderPage() {
         }
     };
 
-    if (loading) return <div className={styles.page}><div className={styles.loading}>Loading…</div></div>;
+    if (loading) return <div className={shared.page}><div className={shared.loading}>Loading…</div></div>;
 
     return (
-        <div className={styles.page}>
-            <header className={styles.head}>
-                <div>
-                    <p className={styles.breadcrumb}>
-                        <Link href="/dashboard/jobs/postings">Job Postings</Link> ›{' '}
-                        <Link href={`/dashboard/jobs/postings/${jobId}/edit`}>{job?.title ?? 'Job'}</Link> › Application Form
-                    </p>
-                    <h1 className={styles.title}>Application Form</h1>
-                </div>
-                <div className={styles.headActions}>
-                    {savedAt && <span className={styles.savedHint}>Saved {savedAt}</span>}
-                    <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save form'}</Button>
-                </div>
-            </header>
+        <div className={shared.page}>
+            <JobsBreadcrumb items={[
+                { label: 'Job Postings', href: '/dashboard/jobs/postings' },
+                { label: job?.title ?? 'Job', href: `/dashboard/jobs/postings/${jobId}/edit` },
+                { label: 'Application form' },
+            ]} />
 
-            {error && <p className={styles.errorText} role="alert">{error}</p>}
+            <div className={shared.toolbar}>
+                <span className={shared.spacer} />
+                {savedAt && <span className={shared.ok}>Saved {savedAt}</span>}
+                <Button size="3" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save form'}</Button>
+            </div>
+
+            {error && <p className={shared.error} role="alert">{error}</p>}
 
             <div className={styles.layout}>
                 <div className={styles.builder}>
@@ -126,25 +124,24 @@ export default function FormBuilderPage() {
                                 </div>
                                 <div className={styles.fieldBody}>
                                     <div className={styles.fieldTop}>
-                                        <input className={styles.input} aria-label="Field label" value={f.label} onChange={(e) => update(i, { label: e.target.value })} />
-                                        <select className={styles.select} aria-label="Field type" value={f.type} onChange={(e) => update(i, { type: e.target.value as FormFieldDef['type'] })}>
+                                        <TextField.Root rootClassName={styles.grow} aria-label="Field label" value={f.label} onChange={(e) => update(i, { label: e.target.value })} />
+                                        <TahoeSelect aria-label="Field type" value={f.type} onChange={(e) => update(i, { type: e.target.value as FormFieldDef['type'] })}>
                                             {FIELD_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                                        </select>
+                                        </TahoeSelect>
                                         <label className={styles.reqToggle}>
                                             <input type="checkbox" checked={f.required} onChange={(e) => update(i, { required: e.target.checked })} /> required
                                         </label>
-                                        <button type="button" className={styles.removeBtn} aria-label={`Remove ${f.label}`} onClick={() => setFields(normalizeFields(fields.filter((_, j) => j !== i)))}>✕</button>
+                                        <Button type="button" variant="ghost" size="1" color="red" aria-label={`Remove ${f.label}`} onClick={() => setFields(normalizeFields(fields.filter((_, j) => j !== i)))}>✕</Button>
                                     </div>
                                     {TYPES_WITH_OPTIONS.includes(f.type) && (
-                                        <input
-                                            className={styles.input}
+                                        <TextField.Root
                                             aria-label="Options (comma-separated)"
                                             placeholder="Options, comma-separated"
                                             value={(f.options ?? []).join(', ')}
                                             onChange={(e) => update(i, { options: e.target.value.split(',').map((o) => o.trim()) })}
                                         />
                                     )}
-                                    <input className={styles.inputSm} aria-label="Help text" placeholder="Help text (optional)" value={f.help_text ?? ''} onChange={(e) => update(i, { help_text: e.target.value || null })} />
+                                    <TextField.Root aria-label="Help text" placeholder="Help text (optional)" value={f.help_text ?? ''} onChange={(e) => update(i, { help_text: e.target.value || null })} />
                                 </div>
                             </li>
                         ))}
@@ -153,10 +150,7 @@ export default function FormBuilderPage() {
                     <div className={styles.addRow}>
                         <Button variant="soft" onClick={() => setFields(normalizeFields([...fields, blankField()]))}>+ Add field</Button>
                         <Button variant="soft" onClick={() => setFields(normalizeFields([...fields, screeningQuestion()]))}>+ Screening question</Button>
-                        <Button
-                            variant="ghost"
-                            onClick={() => setFields(hasDiversity(fields) ? withoutDiversity(fields) : withDiversity(fields))}
-                        >
+                        <Button variant="ghost" onClick={() => setFields(hasDiversity(fields) ? withoutDiversity(fields) : withDiversity(fields))}>
                             {hasDiversity(fields) ? 'Remove diversity survey' : '+ Diversity survey'}
                         </Button>
                     </div>
@@ -169,11 +163,11 @@ export default function FormBuilderPage() {
                         </label>
                         {limits.enabled && (
                             <div className={styles.limitGrid}>
-                                <label>Max applications / 60 days
-                                    <input className={styles.inputSm} type="number" value={limits.maxPer60d} onChange={(e) => setLimits({ ...limits, maxPer60d: e.target.value })} />
+                                <label className={styles.limitField}>Max applications / 60 days
+                                    <TextField.Root type="number" value={limits.maxPer60d} onChange={(e) => setLimits({ ...limits, maxPer60d: e.target.value })} />
                                 </label>
-                                <label>No re-apply within (days)
-                                    <input className={styles.inputSm} type="number" value={limits.noReapplyDays} onChange={(e) => setLimits({ ...limits, noReapplyDays: e.target.value })} />
+                                <label className={styles.limitField}>No re-apply within (days)
+                                    <TextField.Root type="number" value={limits.noReapplyDays} onChange={(e) => setLimits({ ...limits, noReapplyDays: e.target.value })} />
                                 </label>
                             </div>
                         )}

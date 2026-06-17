@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { Button } from '@/components/ui/tahoe-ui';
+import { Button, TahoeSelect, TextField } from '@/components/ui/tahoe-ui';
 import { ApiError } from '@/lib/api';
 import {
     type Activity,
@@ -23,6 +23,8 @@ import {
     patchApplication,
     patchProfile,
 } from '@/lib/jobs';
+import JobsBreadcrumb from '../../../_components/JobsBreadcrumb';
+import shared from '../../../_components/jobs-shared.module.css';
 import styles from '../../pipeline.module.css';
 
 type Tab = 'profile' | 'resume' | 'match' | 'notes' | 'scorecard' | 'activity' | 'email';
@@ -47,7 +49,6 @@ export default function CandidateDetailPage() {
         }
     }, [appId, jobId]);
 
-    // Load on mount; setState happens after the await (not synchronously in the effect).
     useEffect(() => {
         let active = true;
         (async () => {
@@ -72,39 +73,41 @@ export default function CandidateDetailPage() {
         }
     };
 
-    if (error && !detail) return <div className={styles.page}><p className={styles.error}>{error}</p></div>;
-    if (!detail) return <div className={styles.page}><div className={styles.loading}>Loading…</div></div>;
+    if (error && !detail) return <div className={shared.page}><p className={shared.error}>{error}</p></div>;
+    if (!detail) return <div className={shared.page}><div className={shared.loading}>Loading…</div></div>;
 
     const { application, candidate, score } = detail;
+    const name = candidate?.full_name || candidate?.email || 'Candidate';
 
     return (
-        <div className={styles.page}>
-            <p className={styles.breadcrumb}>
-                <Link href="/dashboard/jobs/pipeline">Candidates</Link> ›{' '}
-                <Link href={`/dashboard/jobs/pipeline/${jobId}`}>Pipeline</Link> › {candidate?.full_name || candidate?.email}
-            </p>
+        <div className={shared.page}>
+            <JobsBreadcrumb items={[
+                { label: 'Candidates', href: '/dashboard/jobs/pipeline' },
+                { label: 'Pipeline', href: `/dashboard/jobs/pipeline/${jobId}` },
+                { label: name },
+            ]} />
 
             <header className={styles.detailHeader}>
                 <div>
-                    <h1 className={styles.title}>{candidate?.full_name || candidate?.email}</h1>
-                    <p className={styles.subtle}>{candidate?.email}{candidate?.location ? ` · ${candidate.location}` : ''}</p>
+                    <h1 className={styles.detailName}>{name}</h1>
+                    <p className={shared.subtle}>{candidate?.email}{candidate?.location ? ` · ${candidate.location}` : ''}</p>
                 </div>
                 <div className={styles.detailControls}>
                     <span className={styles.matchBig}>{score?.match_pct != null ? `${Math.round(score.match_pct)}%` : '—'}</span>
-                    <label>Stage{' '}
-                        <select className={styles.select} value={application.stage_id ?? ''} onChange={(e) => patchApp({ stage_id: e.target.value })}>
+                    <label className={shared.controlLabel}>Stage
+                        <TahoeSelect value={application.stage_id ?? ''} onChange={(e) => patchApp({ stage_id: e.target.value })}>
                             {stages.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                        </select>
+                        </TahoeSelect>
                     </label>
-                    <label>Status{' '}
-                        <select className={styles.select} value={application.status} onChange={(e) => patchApp({ status: e.target.value as ApplicationStatus })}>
+                    <label className={shared.controlLabel}>Status
+                        <TahoeSelect value={application.status} onChange={(e) => patchApp({ status: e.target.value as ApplicationStatus })}>
                             {STATUSES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
-                        </select>
+                        </TahoeSelect>
                     </label>
                 </div>
             </header>
 
-            {error && <p className={styles.error} role="alert">{error}</p>}
+            {error && <p className={shared.error} role="alert">{error}</p>}
 
             <nav className={styles.tabs} aria-label="Candidate sections">
                 {TABS.map((t) => (
@@ -122,7 +125,7 @@ export default function CandidateDetailPage() {
                 {tab === 'scorecard' && <ScorecardTab appId={appId} />}
                 {tab === 'activity' && <ActivityTab appId={appId} />}
                 {tab === 'email' && (
-                    <p className={styles.subtle}>
+                    <p className={shared.subtle}>
                         Send-only candidate email. <Link
                             href={`/dashboard/jobs/messages?candidate_id=${candidate?.id ?? ''}&application_id=${application.id}&job_id=${jobId}&email=${encodeURIComponent(candidate?.email ?? '')}&name=${encodeURIComponent(candidate?.full_name ?? '')}`}
                         >Open Messages →</Link> Replies go to your real mailbox.
@@ -159,14 +162,14 @@ function ProfileTab({ detail, appId, onSaved }: { detail: ApplicationDetail; app
             <label className={styles.fieldLabel}>Summary</label>
             <textarea className={styles.textarea} rows={3} value={summary} onChange={(e) => setSummary(e.target.value)} />
             <label className={styles.fieldLabel}>Skills (comma-separated)</label>
-            <input className={styles.select} style={{ width: '100%' }} value={skills} onChange={(e) => setSkills(e.target.value)} />
+            <TextField.Root rootClassName={shared.grow} value={skills} onChange={(e) => setSkills(e.target.value)} />
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 8 }}>
                 <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save profile'}</Button>
-                {msg && <span className={styles.subtle}>{msg}</span>}
+                {msg && <span className={shared.subtle}>{msg}</span>}
             </div>
 
             {experience.length > 0 && <><h3 className={styles.sectionH}>Experience</h3><ul className={styles.list}>
-                {experience.map((e, i) => <li key={i}><strong>{String(e.title ?? '')}</strong>{e.company ? ` @ ${String(e.company)}` : ''}</li>)}
+                {experience.map((e, i) => <li key={i}>{String(e.title ?? '')}{e.company ? ` @ ${String(e.company)}` : ''}</li>)}
             </ul></>}
             {education.length > 0 && <><h3 className={styles.sectionH}>Education</h3><ul className={styles.list}>
                 {education.map((e, i) => <li key={i}>{String(e.degree ?? '')} — {String(e.institution ?? '')}</li>)}
@@ -184,15 +187,15 @@ function ResumeTab({ appId, filename, parseStatus }: { appId: string; filename: 
     };
     return (
         <div className={styles.tabBody}>
-            <p className={styles.subtle}>{filename || 'resume'} · parse status: {parseStatus}</p>
+            <p className={shared.subtle}>{filename || 'resume'} · parse status: {parseStatus}</p>
             <Button variant="soft" onClick={open}>Open original resume ↗</Button>
-            {error && <p className={styles.error}>{error}</p>}
+            {error && <p className={shared.error}>{error}</p>}
         </div>
     );
 }
 
 function MatchTab({ score }: { score: ApplicationDetail['score'] }) {
-    if (!score) return <p className={styles.subtle}>Not scored yet.</p>;
+    if (!score) return <p className={shared.subtle}>Not scored yet.</p>;
     return (
         <div className={styles.tabBody}>
             <p className={styles.matchLine}>
@@ -201,10 +204,10 @@ function MatchTab({ score }: { score: ApplicationDetail['score'] }) {
             </p>
             {(score.rationale ?? []).map((r, i) => (
                 <div key={i} className={styles.rationale}>
-                    <span className={styles.rcrit}>{r.criterion}</span> — {r.evidence} <span className={styles.muted}>[{r.confidence}]</span>
+                    <span className={styles.rcrit}>{r.criterion}</span> — {r.evidence} <span className={shared.muted}>[{r.confidence}]</span>
                 </div>
             ))}
-            {score.gaps.length > 0 && <p className={styles.subtle}>Gaps: {score.gaps.join(', ')}</p>}
+            {score.gaps.length > 0 && <p className={shared.subtle}>Gaps: {score.gaps.join(', ')}</p>}
         </div>
     );
 }
@@ -225,7 +228,7 @@ function NotesTab({ appId }: { appId: string }) {
             <textarea className={styles.textarea} rows={2} placeholder="Add a private note…" value={body} onChange={(e) => setBody(e.target.value)} />
             <Button onClick={add} disabled={busy || !body.trim()}>Add note</Button>
             <ul className={styles.list}>
-                {notes.map((n) => <li key={n.id}><span className={styles.muted}>{new Date(n.created_at).toLocaleString()}</span> — {n.body}</li>)}
+                {notes.map((n) => <li key={n.id}><span className={shared.muted}>{new Date(n.created_at).toLocaleString()}</span> — {n.body}</li>)}
             </ul>
         </div>
     );
@@ -241,14 +244,14 @@ function ScorecardTab({ appId }: { appId: string }) {
     return (
         <div className={styles.tabBody}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <select className={styles.select} value={overall} onChange={(e) => setOverall(e.target.value)}>
+                <TahoeSelect value={overall} onChange={(e) => setOverall(e.target.value)}>
                     {['strong_yes', 'yes', 'no', 'strong_no'].map((o) => <option key={o} value={o}>{o.replace('_', ' ')}</option>)}
-                </select>
-                <input className={styles.select} style={{ flex: 1 }} placeholder="Comment" value={comment} onChange={(e) => setComment(e.target.value)} />
+                </TahoeSelect>
+                <TextField.Root rootClassName={shared.grow} placeholder="Comment" value={comment} onChange={(e) => setComment(e.target.value)} />
                 <Button onClick={add}>Add</Button>
             </div>
             <ul className={styles.list}>
-                {cards.map((c) => <li key={c.id}><strong>{c.overall}</strong> {c.comment ? `— ${c.comment}` : ''} <span className={styles.muted}>{new Date(c.created_at).toLocaleDateString()}</span></li>)}
+                {cards.map((c) => <li key={c.id}><strong>{c.overall}</strong> {c.comment ? `— ${c.comment}` : ''} <span className={shared.muted}>{new Date(c.created_at).toLocaleDateString()}</span></li>)}
             </ul>
         </div>
     );
@@ -259,8 +262,8 @@ function ActivityTab({ appId }: { appId: string }) {
     useEffect(() => { listActivity(appId).then(setActs).catch(() => undefined); }, [appId]);
     return (
         <ul className={styles.list}>
-            {acts.length === 0 && <li className={styles.subtle}>No activity yet.</li>}
-            {acts.map((a) => <li key={a.id}><span className={styles.muted}>{new Date(a.created_at).toLocaleString()}</span> — {a.kind}</li>)}
+            {acts.length === 0 && <li className={shared.subtle}>No activity yet.</li>}
+            {acts.map((a) => <li key={a.id}><span className={shared.muted}>{new Date(a.created_at).toLocaleString()}</span> — {a.kind}</li>)}
         </ul>
     );
 }

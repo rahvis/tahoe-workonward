@@ -1,48 +1,38 @@
-.page { display: flex; flex-direction: column; gap: 16px; padding: 4px 2px 40px; }
-.head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.headActions { display: flex; align-items: center; gap: 12px; }
-.savedHint { font-size: 12px; color: var(--gray-10, #8b8b94); }
-.breadcrumb { font-size: 13px; color: var(--gray-10, #70707a); margin: 0 0 2px; }
-.breadcrumb a { color: inherit; text-decoration: none; }
-.title { font-size: 22px; font-weight: 700; margin: 0; }
-.errorText { color: #d4351c; font-size: 14px; }
-.loading { padding: 40px; text-align: center; color: var(--gray-10, #70707a); }
-
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr); gap: 24px; align-items: start; }
 @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
 
 .builder { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .fieldList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.fieldRow { display: flex; gap: 10px; border: 1px solid var(--gray-5, #e6e6ea); border-radius: 10px; padding: 10px; background: #fff; }
+.fieldRow { display: flex; gap: 10px; border: 1px solid var(--tahoe-color-border-subtle); border-radius: var(--tahoe-radius-md); padding: 10px; background: var(--tahoe-color-canvas); }
 .reorder { display: flex; flex-direction: column; gap: 4px; }
-.reorder button { border: 1px solid var(--gray-6, #d8d8de); background: #fff; border-radius: 6px; width: 26px; height: 22px; cursor: pointer; line-height: 1; }
+.reorder button { border: 1px solid var(--tahoe-color-border-subtle); background: var(--tahoe-color-canvas); border-radius: var(--tahoe-radius-sm); width: 26px; height: 22px; cursor: pointer; line-height: 1; color: var(--tahoe-color-text-secondary); }
 .reorder button:disabled { opacity: .4; cursor: default; }
 .fieldBody { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .fieldTop { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.fieldBody :global(.tui-textfield), .fieldBody :global(.tahoe-select) { border-radius: var(--tahoe-radius-lg); min-height: 38px; font-size: 14px; }
+.grow { flex: 1; min-width: 160px; }
 
-.input, .select { border: 1px solid var(--gray-6, #d8d8de); border-radius: 8px; padding: 7px 9px; font: inherit; background: #fff; }
-.input { flex: 1; min-width: 160px; }
-.inputSm { border: 1px solid var(--gray-6, #d8d8de); border-radius: 8px; padding: 6px 8px; font: inherit; width: 100%; }
-.reqToggle { display: flex; align-items: center; gap: 5px; font-size: 13px; white-space: nowrap; }
-.removeBtn { border: none; background: none; color: #c0271f; cursor: pointer; font-size: 14px; }
+.reqToggle { display: flex; align-items: center; gap: 5px; font-size: 13px; white-space: nowrap; color: var(--tahoe-color-text-secondary); }
+.reqToggle input, .limitToggle input { accent-color: var(--tahoe-color-accent); }
 
 .addRow { display: flex; gap: 8px; flex-wrap: wrap; }
-.limits { border: 1px solid var(--gray-5, #e6e6ea); border-radius: 10px; padding: 12px; }
-.limits legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
-.limitToggle { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.limits { border: 1px solid var(--tahoe-color-border-subtle); border-radius: var(--tahoe-radius-md); padding: 14px; }
+.limits legend { font-size: 13px; font-weight: 500; padding: 0 4px; color: var(--tahoe-color-text-secondary); }
+.limitToggle { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--tahoe-color-text-secondary); }
 .limitGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; font-size: 13px; }
-.limitGrid label { display: flex; flex-direction: column; gap: 4px; }
+.limitField { display: flex; flex-direction: column; gap: 4px; color: var(--tahoe-color-text-secondary); }
+.limitField :global(.tui-textfield) { border-radius: var(--tahoe-radius-lg); min-height: 38px; }
 
 .preview { position: sticky; top: 12px; }
-.previewCard { border: 1px solid var(--gray-5, #e6e6ea); border-radius: 12px; padding: 18px; background: #fff; }
-.previewTitle { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--gray-10, #70707a); margin: 0 0 12px; }
-.previewSection { font-size: 15px; font-weight: 700; margin: 16px 0 4px; }
+.previewCard { border: 1px solid var(--tahoe-color-border-subtle); border-radius: var(--tahoe-radius-md); padding: 18px; background: var(--tahoe-color-canvas); }
+.previewTitle { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--tahoe-color-text-tertiary); font-weight: 500; margin: 0 0 12px; }
+.previewSection { font-family: var(--tahoe-font-display); font-size: 15px; font-weight: 500; margin: 16px 0 4px; color: var(--tahoe-color-text-primary); }
 .previewField { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
-.previewLabel { font-size: 13px; font-weight: 600; }
-.req { color: #d4351c; }
-.previewHelp { font-size: 12px; color: var(--gray-10, #70707a); }
-.previewInput { border: 1px solid var(--gray-6, #d8d8de); border-radius: 8px; padding: 7px 9px; background: #f7f7f9; }
-.previewFile { border: 1px dashed var(--gray-7, #c8c8d0); border-radius: 8px; padding: 10px; text-align: center; color: var(--gray-10, #70707a); font-size: 13px; }
-.previewRadios { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
-.previewConsent { font-size: 13px; display: flex; gap: 6px; align-items: center; }
-.limitNotice { background: #eef2ff; color: #34408a; font-size: 13px; border-radius: 8px; padding: 8px 10px; }
+.previewLabel { font-size: 13px; font-weight: 500; color: var(--tahoe-color-text-secondary); }
+.req { color: var(--tahoe-color-danger); }
+.previewHelp { font-size: 12px; color: var(--tahoe-color-text-tertiary); }
+.previewInput { border: 1px solid var(--tahoe-color-border-subtle); border-radius: var(--tahoe-radius-lg); padding: 8px 12px; background: var(--tahoe-color-surface-subtle); font: inherit; font-size: 14px; }
+.previewFile { border: 1px dashed var(--tahoe-color-border-subtle); border-radius: var(--tahoe-radius-lg); padding: 10px; text-align: center; color: var(--tahoe-color-text-tertiary); font-size: 13px; }
+.previewRadios { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--tahoe-color-text-secondary); }
+.previewConsent { font-size: 13px; display: flex; gap: 6px; align-items: center; color: var(--tahoe-color-text-secondary); }
+.limitNotice { background: var(--tahoe-color-surface-muted); color: var(--tahoe-color-text-secondary); font-size: 13px; border-radius: var(--tahoe-radius-sm); padding: 8px 10px; }

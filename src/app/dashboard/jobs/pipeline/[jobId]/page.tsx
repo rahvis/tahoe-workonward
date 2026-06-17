@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button } from '@/components/ui/tahoe-ui';
+import { Button, TahoeSelect } from '@/components/ui/tahoe-ui';
 import { ApiError } from '@/lib/api';
 import {
     type ApplicationListItem,
@@ -13,6 +13,8 @@ import {
     listStages,
     patchApplication,
 } from '@/lib/jobs';
+import JobsBreadcrumb from '../../_components/JobsBreadcrumb';
+import shared from '../../_components/jobs-shared.module.css';
 import styles from '../pipeline.module.css';
 
 export default function JobPipelinePage() {
@@ -107,51 +109,47 @@ export default function JobPipelinePage() {
     }, [stages, items]);
 
     return (
-        <div className={styles.page}>
-            <header className={styles.head}>
-                <p className={styles.breadcrumb}><Link href="/dashboard/jobs/pipeline">Candidates</Link> › Pipeline</p>
-                <h1 className={styles.title}>Pipeline</h1>
-            </header>
+        <div className={shared.page}>
+            <JobsBreadcrumb items={[{ label: 'Candidates', href: '/dashboard/jobs/pipeline' }, { label: 'Pipeline' }]} />
 
-            <div className={styles.toolbar}>
+            <div className={shared.toolbar}>
                 <div className={styles.viewToggle} role="tablist" aria-label="View">
-                    <button role="tab" aria-selected={view === 'table'} className={`${styles.viewBtn} ${view === 'table' ? styles.viewBtnActive : ''}`} onClick={() => setParam('view', 'table')}>Table</button>
-                    <button role="tab" aria-selected={view === 'kanban'} className={`${styles.viewBtn} ${view === 'kanban' ? styles.viewBtnActive : ''}`} onClick={() => setParam('view', 'kanban')}>Kanban</button>
+                    <Button role="tab" aria-selected={view === 'table'} variant={view === 'table' ? 'solid' : 'ghost'} size="2" onClick={() => setParam('view', 'table')}>Table</Button>
+                    <Button role="tab" aria-selected={view === 'kanban'} variant={view === 'kanban' ? 'solid' : 'ghost'} size="2" onClick={() => setParam('view', 'kanban')}>Kanban</Button>
                 </div>
-                <div className={styles.controls}>
-                    <label>Sort{' '}
-                        <select className={styles.select} value={sort} onChange={(e) => setParam('sort', e.target.value)}>
-                            <option value="match">Match %</option>
-                            <option value="recent">Most recent</option>
-                        </select>
-                    </label>
-                    <label>Status{' '}
-                        <select className={styles.select} value={statusFilter} onChange={(e) => setParam('status', e.target.value)}>
-                            <option value="">All</option>
-                            {['new', 'in_review', 'advanced', 'rejected', 'hired', 'withdrawn'].map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
-                        </select>
-                    </label>
-                </div>
+                <span className={shared.spacer} />
+                <label className={shared.controlLabel}>Sort
+                    <TahoeSelect value={sort} onChange={(e) => setParam('sort', e.target.value)}>
+                        <option value="match">Match %</option>
+                        <option value="recent">Most recent</option>
+                    </TahoeSelect>
+                </label>
+                <label className={shared.controlLabel}>Status
+                    <TahoeSelect value={statusFilter} onChange={(e) => setParam('status', e.target.value)}>
+                        <option value="">All</option>
+                        {['new', 'in_review', 'advanced', 'rejected', 'hired', 'withdrawn'].map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+                    </TahoeSelect>
+                </label>
             </div>
 
             {selected.size > 0 && (
-                <div className={styles.bulkBar}>
+                <div className={shared.bulkBar}>
                     <span>{selected.size} selected</span>
-                    <label>Move to{' '}
-                        <select className={styles.select} defaultValue="" onChange={(e) => { if (e.target.value) bulk('move_stage', e.target.value); e.target.value = ''; }}>
+                    <label className={shared.controlLabel}>Move to
+                        <TahoeSelect value="" onChange={(e) => { if (e.target.value) bulk('move_stage', e.target.value); }}>
                             <option value="">stage…</option>
                             {stages.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                        </select>
+                        </TahoeSelect>
                     </label>
-                    <Button variant="soft" color="red" onClick={() => bulk('reject')}>Reject</Button>
-                    <button className={styles.viewBtn} onClick={() => setSelected(new Set())}>Clear</button>
+                    <Button variant="soft" color="red" size="2" onClick={() => bulk('reject')}>Reject</Button>
+                    <Button variant="ghost" size="2" onClick={() => setSelected(new Set())}>Clear</Button>
                 </div>
             )}
 
-            {error && <p className={styles.error} role="alert">{error}</p>}
+            {error && <p className={shared.error} role="alert">{error}</p>}
 
             {loading ? (
-                <div className={styles.loading}>Loading…</div>
+                <div className={shared.loading}>Loading…</div>
             ) : view === 'table' ? (
                 <TableView items={items} stages={stages} selected={selected} toggle={toggle} jobId={jobId} onMove={move} />
             ) : (
@@ -179,14 +177,15 @@ function StageSelect({ app, stages, onMove, className }: {
     app: ApplicationListItem; stages: PipelineStage[]; onMove: (a: ApplicationListItem, s: string) => void; className?: string;
 }) {
     return (
-        <select
-            className={className ?? styles.select}
+        <TahoeSelect
+            className={className}
+            size="1"
             value={app.stage_id ?? ''}
             aria-label={`Stage for ${app.candidate_name ?? app.candidate_email}`}
             onChange={(e) => onMove(app, e.target.value)}
         >
             {stages.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
+        </TahoeSelect>
     );
 }
 
@@ -194,9 +193,9 @@ function TableView({ items, stages, selected, toggle, jobId, onMove }: {
     items: ApplicationListItem[]; stages: PipelineStage[]; selected: Set<string>;
     toggle: (id: string) => void; jobId: string; onMove: (a: ApplicationListItem, s: string) => void;
 }) {
-    if (items.length === 0) return <div className={styles.empty}>No applicants yet.</div>;
+    if (items.length === 0) return <div className={shared.empty}>No applicants yet.</div>;
     return (
-        <table className={styles.table}>
+        <table className={shared.table}>
             <thead>
                 <tr>
                     <th aria-label="select" /><th>Candidate</th><th>Match</th><th>Years</th><th>Location</th><th>Top evidence</th><th>Stage</th>
@@ -206,14 +205,14 @@ function TableView({ items, stages, selected, toggle, jobId, onMove }: {
                 {items.map((a) => (
                     <tr key={a.id}>
                         <td><input type="checkbox" checked={selected.has(a.id)} onChange={() => toggle(a.id)} aria-label={`Select ${a.candidate_email}`} /></td>
-                        <td className={styles.cand}>
+                        <td>
                             <Link href={`/dashboard/jobs/pipeline/${jobId}/${a.id}`}>{a.candidate_name || a.candidate_email}</Link>
-                            {a.parse_status === 'failed' && <span className={styles.muted}> · needs review</span>}
-                            {a.parse_status === 'pending' && <span className={styles.muted}> · parsing…</span>}
+                            {a.parse_status === 'failed' && <span className={shared.muted}> · needs review</span>}
+                            {a.parse_status === 'pending' && <span className={shared.muted}> · parsing…</span>}
                         </td>
                         <td className={styles.matchPill}>{a.match_pct != null ? `${Math.round(a.match_pct)}%` : '—'}</td>
-                        <td className={styles.muted}>{a.years != null ? a.years : '—'}</td>
-                        <td className={styles.muted}>{[a.city, a.country].filter(Boolean).join(', ') || '—'}</td>
+                        <td className={shared.muted}>{a.years != null ? a.years : '—'}</td>
+                        <td className={shared.muted}>{[a.city, a.country].filter(Boolean).join(', ') || '—'}</td>
                         <td className={styles.evidence}>{a.top_evidence || '—'}</td>
                         <td><StageSelect app={a} stages={stages} onMove={onMove} /></td>
                     </tr>

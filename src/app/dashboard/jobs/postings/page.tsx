@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/tahoe-ui';
+import { Badge, Button, TahoeSelect, TextField } from '@/components/ui/tahoe-ui';
 import {
     type Job,
     type JobStatus,
@@ -14,15 +14,21 @@ import {
     listJobs,
     reopenJob,
 } from '@/lib/jobs';
+import JobsBreadcrumb from '../_components/JobsBreadcrumb';
+import shared from '../_components/jobs-shared.module.css';
 import styles from './postings.module.css';
 
-const STATUS_TABS: Array<{ value: string; label: string }> = [
-    { value: '', label: 'All' },
+const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
+    { value: '', label: 'All statuses' },
     { value: 'draft', label: 'Draft' },
     { value: 'scheduled', label: 'Scheduled' },
     { value: 'published', label: 'Published' },
     { value: 'closed', label: 'Closed' },
 ];
+
+const STATUS_COLOR: Record<string, string> = {
+    draft: 'gray', scheduled: 'amber', published: 'green', closed: 'red', archived: 'gray',
+};
 
 function fmtDate(value?: string | null) {
     if (!value) return '—';
@@ -46,14 +52,12 @@ function JobPostingsInner() {
     const [busyId, setBusyId] = useState<string | null>(null);
     const requestIdRef = useRef(0);
 
-    // Keep the URL query string in sync (shareable, back-button safe).
     const setParam = useCallback((key: string, value: string) => {
         const params = new URLSearchParams(searchParams.toString());
         if (value) params.set(key, value); else params.delete(key);
         router.replace(`${pathname}?${params.toString()}`);
     }, [pathname, router, searchParams]);
 
-    // Debounce the search box → URL.
     useEffect(() => {
         const handle = setTimeout(() => { if (searchInput !== q) setParam('q', searchInput); }, 300);
         return () => clearTimeout(handle);
@@ -65,7 +69,7 @@ function JobPostingsInner() {
         setError('');
         try {
             const page = await listJobs({ status: status || undefined, q: q || undefined, limit: 20 });
-            if (id !== requestIdRef.current) return; // stale response
+            if (id !== requestIdRef.current) return;
             setItems(page.items);
             setNextCursor(page.next_cursor);
         } catch (e) {
@@ -108,90 +112,72 @@ function JobPostingsInner() {
     };
 
     return (
-        <div className={styles.page}>
-            <header className={styles.pageHead}>
-                <div>
-                    <p className={styles.breadcrumb}>Jobs › Job Postings</p>
-                    <h1 className={styles.pageTitle}>Job Postings</h1>
-                </div>
-                <Link href="/dashboard/jobs/postings/new"><Button>+ New Job</Button></Link>
-            </header>
+        <div className={shared.page}>
+            <JobsBreadcrumb items={[{ label: 'Job Postings' }]} />
 
-            <div className={styles.toolbar}>
-                <div className={styles.chips} role="tablist" aria-label="Filter by status">
-                    {STATUS_TABS.map((tab) => (
-                        <button
-                            key={tab.value}
-                            role="tab"
-                            aria-selected={status === tab.value}
-                            className={`${styles.chip} ${status === tab.value ? styles.chipActive : ''}`}
-                            onClick={() => setParam('status', tab.value)}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
-                <input
-                    className={styles.search}
+            <div className={shared.toolbar}>
+                <TextField.Root
                     type="search"
                     placeholder="Search jobs…"
                     aria-label="Search jobs"
+                    rootClassName={shared.grow}
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                 />
+                <TahoeSelect value={status} aria-label="Filter by status" onChange={(e) => setParam('status', e.target.value)}>
+                    {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </TahoeSelect>
+                <span className={shared.spacer} />
+                <Link href="/dashboard/jobs/postings/new"><Button size="3">Create job</Button></Link>
             </div>
 
-            {error && <p className={styles.errorText} role="alert">{error}</p>}
+            {error && <p className={shared.error} role="alert">{error}</p>}
 
-            <div className={styles.tableWrap}>
-                <table className={styles.table}>
+            {loading ? (
+                <div className={shared.loading}>Loading…</div>
+            ) : items.length === 0 ? (
+                <div className={shared.empty}>No jobs yet. Create your first posting.</div>
+            ) : (
+                <table className={shared.table}>
                     <thead>
-                        <tr>
-                            <th>Title</th><th>Status</th><th>Department</th><th>Published</th><th aria-label="Actions" />
-                        </tr>
+                        <tr><th>Title</th><th>Status</th><th>Department</th><th>Published</th><th aria-label="Actions" /></tr>
                     </thead>
                     <tbody>
-                        {loading ? (
-                            <tr><td colSpan={5}><div className={styles.loading}>Loading…</div></td></tr>
-                        ) : items.length === 0 ? (
-                            <tr><td colSpan={5}><div className={styles.empty}>No jobs yet. Create your first posting.</div></td></tr>
-                        ) : (
-                            items.map((job) => (
-                                <tr key={job.id}>
-                                    <td className={styles.titleCell}>
-                                        <Link href={`/dashboard/jobs/postings/${job.id}/edit`}>{job.title}</Link>
-                                    </td>
-                                    <td>
-                                        <span className={`${styles.statusBadge} ${styles[`status_${job.status}`]}`}>
-                                            {STATUS_LABELS[job.status as JobStatus]}
-                                        </span>
-                                    </td>
-                                    <td className={styles.muted}>{job.department || '—'}</td>
-                                    <td className={styles.muted}>{fmtDate(job.published_at)}</td>
-                                    <td>
-                                        <div className={styles.actions}>
-                                            <Link className={styles.actionBtn} href={`/dashboard/jobs/postings/${job.id}/edit`}>Edit</Link>
-                                            <Link className={styles.actionBtn} href={`/dashboard/jobs/postings/${job.id}/form`}>Form</Link>
-                                            <Link className={styles.actionBtn} href={`/dashboard/jobs/postings/${job.id}/publish`}>Publish</Link>
-                                            {job.status === 'published' && job.slug && (
-                                                <a className={styles.actionBtn} href={`/jobs/${job.slug}`} target="_blank" rel="noreferrer">View ↗</a>
-                                            )}
-                                            <button className={styles.actionBtn} disabled={busyId === job.id} onClick={() => onDuplicate(job)}>Duplicate</button>
-                                            {job.status === 'published' && (
-                                                <button className={styles.actionBtn} disabled={busyId === job.id} onClick={() => withBusy(job.id, () => closeJob(job.id))}>Close</button>
-                                            )}
-                                            {job.status === 'closed' && (
-                                                <button className={styles.actionBtn} disabled={busyId === job.id} onClick={() => withBusy(job.id, () => reopenJob(job.id))}>Reopen</button>
-                                            )}
-                                            <button className={`${styles.actionBtn} ${styles.danger}`} disabled={busyId === job.id} onClick={() => onDelete(job)}>Delete</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
+                        {items.map((job) => (
+                            <tr key={job.id}>
+                                <td>
+                                    <Link href={`/dashboard/jobs/postings/${job.id}/edit`}>{job.title}</Link>
+                                </td>
+                                <td>
+                                    <Badge variant="soft" color={STATUS_COLOR[job.status] ?? 'gray'}>
+                                        {STATUS_LABELS[job.status as JobStatus]}
+                                    </Badge>
+                                </td>
+                                <td className={shared.muted}>{job.department || '—'}</td>
+                                <td className={shared.muted}>{fmtDate(job.published_at)}</td>
+                                <td>
+                                    <div className={shared.actionsRow}>
+                                        <Link href={`/dashboard/jobs/postings/${job.id}/edit`}><Button variant="ghost" size="1">Edit</Button></Link>
+                                        <Link href={`/dashboard/jobs/postings/${job.id}/form`}><Button variant="ghost" size="1">Form</Button></Link>
+                                        <Link href={`/dashboard/jobs/postings/${job.id}/publish`}><Button variant="ghost" size="1">Publish</Button></Link>
+                                        {job.status === 'published' && job.slug && (
+                                            <a href={`/jobs/${job.slug}`} target="_blank" rel="noreferrer"><Button variant="ghost" size="1">View ↗</Button></a>
+                                        )}
+                                        <Button variant="ghost" size="1" disabled={busyId === job.id} onClick={() => onDuplicate(job)}>Duplicate</Button>
+                                        {job.status === 'published' && (
+                                            <Button variant="ghost" size="1" disabled={busyId === job.id} onClick={() => withBusy(job.id, () => closeJob(job.id))}>Close</Button>
+                                        )}
+                                        {job.status === 'closed' && (
+                                            <Button variant="ghost" size="1" disabled={busyId === job.id} onClick={() => withBusy(job.id, () => reopenJob(job.id))}>Reopen</Button>
+                                        )}
+                                        <Button variant="ghost" size="1" color="red" disabled={busyId === job.id} onClick={() => onDelete(job)}>Delete</Button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
-            </div>
+            )}
 
             {nextCursor && (
                 <div className={styles.loadMore}>
@@ -204,7 +190,7 @@ function JobPostingsInner() {
 
 export default function JobPostingsPage() {
     return (
-        <Suspense fallback={<div className={styles.page}><div className={styles.loading}>Loading…</div></div>}>
+        <Suspense fallback={<div className={shared.page}><div className={shared.loading}>Loading…</div></div>}>
             <JobPostingsInner />
         </Suspense>
     );

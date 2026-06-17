@@ -91,7 +91,9 @@ export function PublicSiteHeader({ placement = 'blog' }: { placement?: string } 
                     </nav>
 
                     <div className={styles.headerActions}>
-                        <LanguageSwitcher />
+                        {/* The careers board lives at un-localized /jobs/*, so the locale
+                            switcher (which would point at /{locale}/jobs) is hidden there. */}
+                        {placement !== 'jobs' && <LanguageSwitcher />}
                         <Link href={L('/login')} className={styles.textAction} onClick={() => trackAuthCta('sign_in', `${placement}_header_desktop`)}>
                             {t.nav.signIn}
                         </Link>
@@ -122,7 +124,7 @@ export function PublicSiteHeader({ placement = 'blog' }: { placement?: string } 
                         <Link href={L('/our-story')} onClick={() => { trackSectionNav('our_story', `${placement}_header_mobile`); setMobileNavOpen(false); }}>{t.nav.ourStory}</Link>
                         <Link href={L('/blogs')} onClick={() => { trackBlogNav(`${placement}_header_mobile`); setMobileNavOpen(false); }}>{t.nav.blog}</Link>
                         <div className={styles.mobileAuthActions}>
-                            <LanguageSwitcher />
+                            {placement !== 'jobs' && <LanguageSwitcher />}
                             <Link href={L('/login')} className={styles.textAction} onClick={() => trackAuthCta('sign_in', `${placement}_header_mobile`)}>{t.nav.signIn}</Link>
                             <Link href={L('/signup')} className={styles.secondaryAction} onClick={() => trackAuthCta('start_free_trial', `${placement}_header_mobile`)}>{t.nav.startFree}</Link>
                         </div>

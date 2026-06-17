@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/tahoe-ui';
+import { Button, TextField } from '@/components/ui/tahoe-ui';
 import { ApiError } from '@/lib/api';
 import { type JobsSettings, getJobsSettings, putJobsSettings } from '@/lib/jobs';
+import JobsBreadcrumb from '../_components/JobsBreadcrumb';
+import shared from '../_components/jobs-shared.module.css';
 import styles from './settings.module.css';
 
 const DEFAULT_WEIGHTS = { semantic: 0.5, structured: 0.3, llm: 0.2 };
@@ -46,42 +48,39 @@ export default function JobsSettingsPage() {
     const setW = (k: keyof typeof weights) => (e: React.ChangeEvent<HTMLInputElement>) =>
         setWeights((prev) => ({ ...prev, [k]: Number(e.target.value) }));
 
-    if (loading) return <div className={styles.page}><div className={styles.loading}>Loading…</div></div>;
+    if (loading) return <div className={shared.page}><div className={shared.loading}>Loading…</div></div>;
 
     return (
-        <div className={styles.page}>
-            <header className={styles.head}>
-                <p className={styles.breadcrumb}>Jobs › Settings</p>
-                <h1 className={styles.title}>Settings</h1>
-            </header>
+        <div className={shared.page}>
+            <JobsBreadcrumb items={[{ label: 'Settings' }]} />
 
-            <div className={styles.card}>
-                <h2 className={styles.sectionH}>Ranking weights</h2>
-                <p className={styles.subtle}>How match % blends the three signals. They are normalized, so only the ratio matters (sum must be &gt; 0).</p>
+            <div className={shared.card}>
+                <p className={shared.sectionLabel}>Ranking weights</p>
+                <p className={shared.subtle}>How match % blends the three signals. They are normalized, so only the ratio matters (sum must be &gt; 0).</p>
                 <div className={styles.weights}>
                     {(['semantic', 'structured', 'llm'] as const).map((k) => (
                         <label key={k} className={styles.weightField}>
-                            <span>{k} <strong>{sum > 0 ? `${Math.round((weights[k] / sum) * 100)}%` : '—'}</strong></span>
+                            <span className={styles.weightName}>{k} <span className={styles.weightPct}>{sum > 0 ? `${Math.round((weights[k] / sum) * 100)}%` : '—'}</span></span>
                             <input type="range" min={0} max={1} step={0.05} value={weights[k]} onChange={setW(k)} aria-label={`${k} weight`} />
                             <input className={styles.numInput} type="number" min={0} max={1} step={0.05} value={weights[k]} onChange={setW(k)} />
                         </label>
                     ))}
                 </div>
-                {sum <= 0 && <p className={styles.error}>Weights must sum to a positive value.</p>}
+                {sum <= 0 && <p className={shared.error}>Weights must sum to a positive value.</p>}
 
-                <h2 className={styles.sectionH}>Rejection reasons</h2>
-                <p className={styles.subtle}>One per line — offered when rejecting a candidate.</p>
+                <p className={shared.sectionLabel} style={{ marginTop: 8 }}>Rejection reasons</p>
+                <p className={shared.subtle}>One per line — offered when rejecting a candidate.</p>
                 <textarea className={styles.textarea} rows={4} value={reasons} onChange={(e) => setReasons(e.target.value)} placeholder={'Not enough experience\nLocation mismatch'} />
 
-                <h2 className={styles.sectionH}>Application limit</h2>
-                <label className={styles.field}><span>Max applications per email address (blank = default)</span>
-                    <input className={styles.numInput} type="number" min={1} max={100} value={limit} onChange={(e) => setLimit(e.target.value)} />
-                </label>
+                <p className={shared.sectionLabel} style={{ marginTop: 8 }}>Application limit</p>
+                <div className={styles.field}><span className={styles.fieldLabel}>Max applications per email address (blank = default)</span>
+                    <TextField.Root rootClassName={styles.numField} type="number" min={1} max={100} value={limit} onChange={(e) => setLimit(e.target.value)} />
+                </div>
 
                 <div className={styles.actions}>
-                    <Button onClick={save} disabled={saving || sum <= 0}>{saving ? 'Saving…' : 'Save settings'}</Button>
-                    {msg && <span className={styles.ok}>{msg}</span>}
-                    {error && <span className={styles.error}>{error}</span>}
+                    <Button size="3" onClick={save} disabled={saving || sum <= 0}>{saving ? 'Saving…' : 'Save settings'}</Button>
+                    {msg && <span className={shared.ok}>{msg}</span>}
+                    {error && <span className={shared.error}>{error}</span>}
                 </div>
             </div>
         </div>

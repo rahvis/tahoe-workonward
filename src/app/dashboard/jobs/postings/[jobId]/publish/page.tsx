@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/tahoe-ui';
+import { Badge, Button, TextField } from '@/components/ui/tahoe-ui';
 import {
     type Job,
     closeJob,
@@ -12,10 +11,15 @@ import {
     reopenJob,
     unpublishJob,
 } from '@/lib/jobs';
+import JobsBreadcrumb from '../../../_components/JobsBreadcrumb';
+import shared from '../../../_components/jobs-shared.module.css';
 import styles from './publish.module.css';
 
 const CAN_PUBLISH_NOW = new Set(['draft', 'scheduled', 'closed']);
 const CAN_SCHEDULE = new Set(['draft', 'scheduled']);
+const STATUS_COLOR: Record<string, string> = {
+    draft: 'gray', scheduled: 'amber', published: 'green', closed: 'red', archived: 'gray',
+};
 
 function toIso(local: string): string | null {
     if (!local) return null;
@@ -61,8 +65,8 @@ export default function PublishPage() {
         return `${origin}/jobs/${job.slug}`;
     }, [job?.slug]);
 
-    if (loading) return <div className={styles.page}><div className={styles.loading}>Loading…</div></div>;
-    if (!job) return <div className={styles.page}><p className={styles.errorText}>{error || 'Not found'}</p></div>;
+    if (loading) return <div className={shared.page}><div className={shared.loading}>Loading…</div></div>;
+    if (!job) return <div className={shared.page}><p className={shared.error}>{error || 'Not found'}</p></div>;
 
     const jsonLd = {
         '@context': 'https://schema.org/',
@@ -78,29 +82,28 @@ export default function PublishPage() {
     };
 
     return (
-        <div className={styles.page}>
-            <header className={styles.head}>
-                <div>
-                    <p className={styles.breadcrumb}>
-                        <Link href="/dashboard/jobs/postings">Job Postings</Link> ›{' '}
-                        <Link href={`/dashboard/jobs/postings/${jobId}/edit`}>{job.title}</Link> › Publish
-                    </p>
-                    <h1 className={styles.title}>Publish / Schedule</h1>
-                </div>
-                <span className={`${styles.statusBadge} ${styles[`status_${job.status}`]}`}>{job.status}</span>
-            </header>
+        <div className={shared.page}>
+            <JobsBreadcrumb items={[
+                { label: 'Job Postings', href: '/dashboard/jobs/postings' },
+                { label: job.title, href: `/dashboard/jobs/postings/${jobId}/edit` },
+                { label: 'Publish' },
+            ]} />
 
-            {error && <p className={styles.errorText} role="alert">{error}</p>}
+            <div className={shared.toolbar}>
+                <Badge variant="soft" color={STATUS_COLOR[job.status] ?? 'gray'}>{job.status}</Badge>
+            </div>
+
+            {error && <p className={shared.error} role="alert">{error}</p>}
 
             <div className={styles.grid}>
-                <section className={styles.card}>
-                    <h2 className={styles.cardTitle}>Status & actions</h2>
+                <section className={shared.card}>
+                    <p className={shared.sectionLabel}>Status &amp; actions</p>
 
                     {job.status === 'published' && job.slug && (
                         <p className={styles.live}>● Live at <a href={publicUrl} target="_blank" rel="noreferrer">{publicUrl}</a></p>
                     )}
                     {job.status === 'scheduled' && job.publish_at && (
-                        <p className={styles.muted}>◷ Scheduled to publish {new Date(job.publish_at).toLocaleString()}</p>
+                        <p className={shared.muted}>◷ Scheduled to publish {new Date(job.publish_at).toLocaleString()}</p>
                     )}
 
                     <div className={styles.actionRow}>
@@ -123,26 +126,26 @@ export default function PublishPage() {
 
                     {CAN_SCHEDULE.has(job.status) && (
                         <div className={styles.schedule}>
-                            <h3 className={styles.scheduleTitle}>Schedule for later</h3>
+                            <p className={shared.sectionLabel}>Schedule for later</p>
                             <label className={styles.field}>Publish at
-                                <input className={styles.input} type="datetime-local" value={publishAt} onChange={(e) => setPublishAt(e.target.value)} />
+                                <TextField.Root type="datetime-local" value={publishAt} onChange={(e) => setPublishAt(e.target.value)} />
                             </label>
                             <label className={styles.field}>Auto-close at (optional)
-                                <input className={styles.input} type="datetime-local" value={closeAt} onChange={(e) => setCloseAt(e.target.value)} />
+                                <TextField.Root type="datetime-local" value={closeAt} onChange={(e) => setCloseAt(e.target.value)} />
                             </label>
                             <Button variant="soft" disabled={busy} onClick={onSchedule}>Schedule</Button>
                         </div>
                     )}
                 </section>
 
-                <section className={styles.card}>
-                    <h2 className={styles.cardTitle}>SEO preview</h2>
+                <section className={shared.card}>
+                    <p className={shared.sectionLabel}>SEO preview</p>
                     <div className={styles.seoPreview}>
                         <p className={styles.seoUrl}>{publicUrl || `…/jobs/${'<slug minted on publish>'}`}</p>
                         <p className={styles.seoTitle}>{job.title} — Careers</p>
                         <p className={styles.seoDesc}>{job.summary || 'Add a summary to improve search snippets.'}</p>
                     </div>
-                    <h3 className={styles.scheduleTitle}>JSON-LD (JobPosting)</h3>
+                    <p className={shared.sectionLabel} style={{ marginTop: 12 }}>JSON-LD (JobPosting)</p>
                     <pre className={styles.jsonLd}>{JSON.stringify(jsonLd, null, 2)}</pre>
                 </section>
             </div>

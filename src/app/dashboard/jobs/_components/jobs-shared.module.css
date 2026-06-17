@@ -1,0 +1,71 @@
+/* Shared Jobs dashboard layout + control normalization.
+   Mirrors the Projects directory design: tahoe-ui controls, brand tokens, no
+   bold redundant titles. Import alongside a page's own module for unique layout. */
+
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px 24px 48px;
+    font-family: var(--tahoe-font-body);
+    color: var(--tahoe-color-text-primary);
+}
+
+/* Match the Projects control treatment (pill radius, 40px height, 14px). */
+.page :global(.tui-textfield),
+.page :global(.tahoe-select) {
+    min-height: 40px;
+    font-size: 14px;
+    line-height: 1.25;
+    border-radius: var(--tahoe-radius-lg);
+    font-family: var(--tahoe-font-body);
+}
+
+.page :global(.tui-button) {
+    border-radius: var(--tahoe-radius-lg);
+    font-family: var(--tahoe-font-body);
+}
+
+/* ── breadcrumb ── */
+.crumbs { display: flex; align-items: center; gap: 6px; font-size: 13px; flex-wrap: wrap; }
+.crumbItem { display: inline-flex; align-items: center; gap: 6px; }
+.crumbLink { color: var(--tahoe-color-text-tertiary); text-decoration: none; }
+.crumbLink:hover { color: var(--tahoe-color-text-primary); }
+.crumbCurrent { color: var(--tahoe-color-text-primary); font-weight: 500; }
+.crumbSep { color: var(--tahoe-color-text-tertiary); }
+
+/* ── common building blocks ── */
+.toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.spacer { flex: 1 1 auto; }
+.grow { flex: 1 1 260px; min-width: 200px; }
+.actionsRow { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.bulkBar { display: flex; align-items: center; gap: 10px; background: var(--tahoe-color-surface-subtle); border: 1px solid var(--tahoe-color-border-subtle); border-radius: var(--tahoe-radius-md); padding: 8px 12px; font-size: 14px; }
+.card { border: 1px solid var(--tahoe-color-border-subtle); border-radius: var(--tahoe-radius-md); padding: 18px; background: var(--tahoe-color-canvas); display: flex; flex-direction: column; gap: 12px; }
+.controlLabel { font-size: 13px; color: var(--tahoe-color-text-secondary); display: inline-flex; align-items: center; gap: 6px; }
+.subtle { color: var(--tahoe-color-text-secondary); font-size: 14px; margin: 0; }
+.error { color: var(--tahoe-color-danger); font-size: 14px; }
+.ok { color: var(--tahoe-color-success); font-size: 13px; }
+.loading, .empty {
+    padding: 40px;
+    text-align: center;
+    color: var(--tahoe-color-text-tertiary);
+    border: 1px dashed var(--tahoe-color-border-subtle);
+    border-radius: var(--tahoe-radius-md);
+    background: var(--tahoe-color-surface-subtle);
+}
+.sectionLabel {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--tahoe-color-text-tertiary);
+    font-weight: 500;
+    margin: 0;
+}
+
+/* ── shared table look (tokens; matches product tables) ── */
+.table { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--tahoe-color-canvas); border: 1px solid var(--tahoe-color-border-subtle); border-radius: var(--tahoe-radius-md); overflow: hidden; }
+.table th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--tahoe-color-text-tertiary); font-weight: 500; padding: 11px 14px; background: var(--tahoe-color-surface-subtle); }
+.table td { padding: 11px 14px; border-top: 1px solid var(--tahoe-color-border-subtle); vertical-align: middle; }
+.table a { color: var(--tahoe-color-text-primary); text-decoration: none; font-weight: 500; }
+.table a:hover { color: var(--tahoe-color-accent); }
+.muted { color: var(--tahoe-color-text-tertiary); }

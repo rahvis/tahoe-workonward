@@ -2,10 +2,16 @@
 
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/tahoe-ui';
+import { Badge, Button, Callout, TextField } from '@/components/ui/tahoe-ui';
 import { ApiError } from '@/lib/api';
 import { type SentEmail, draftMessage, listMessages, sendMessage } from '@/lib/jobs';
+import JobsBreadcrumb from '../_components/JobsBreadcrumb';
+import shared from '../_components/jobs-shared.module.css';
 import styles from './messages.module.css';
+
+const STATUS_COLOR: Record<string, string> = {
+    sent: 'green', queued: 'amber', failed: 'red', skipped_unsubscribed: 'red',
+};
 
 function MessagesInner() {
     const params = useSearchParams();
@@ -69,52 +75,51 @@ function MessagesInner() {
 
     if (!candidateId) {
         return (
-            <div className={styles.page}>
-                <h1 className={styles.title}>Messages</h1>
-                <div className={styles.empty}>Open a candidate from the pipeline and use the <strong>Email</strong> tab to message them.</div>
+            <div className={shared.page}>
+                <JobsBreadcrumb items={[{ label: 'Messages' }]} />
+                <div className={shared.empty}>Open a candidate from the pipeline and use the <strong>Email</strong> tab to message them.</div>
             </div>
         );
     }
 
     return (
-        <div className={styles.page}>
-            <header className={styles.head}>
-                <p className={styles.breadcrumb}>Jobs › Messages</p>
-                <h1 className={styles.title}>{name || email || 'Candidate'}</h1>
-                <p className={styles.subtle}>{email}</p>
-            </header>
+        <div className={shared.page}>
+            <JobsBreadcrumb items={[{ label: 'Messages' }, { label: name || email || 'Candidate' }]} />
+            <p className={shared.subtle}>{email}</p>
 
-            <div className={styles.notice}>
-                ✉️ <strong>Send-only.</strong> Tahoe sends from a platform address with <em>Reply-To</em> set to your real email — replies land in your own mailbox. There is no inbox here.
-            </div>
+            <Callout.Root>
+                <Callout.Text>
+                    ✉️ <strong>Send-only.</strong> Tahoe sends from a platform address with <em>Reply-To</em> set to your real email — replies land in your own mailbox. There is no inbox here.
+                </Callout.Text>
+            </Callout.Root>
 
             <div className={styles.grid}>
-                <section className={styles.compose}>
-                    <h2 className={styles.sectionH}>Compose</h2>
+                <section className={shared.card}>
+                    <p className={shared.sectionLabel}>Compose</p>
                     <div className={styles.draftRow}>
-                        <input className={styles.input} placeholder="What's this email about? (AI draft)" value={intent} onChange={(e) => setIntent(e.target.value)} />
+                        <TextField.Root rootClassName={shared.grow} placeholder="What's this email about? (AI draft)" value={intent} onChange={(e) => setIntent(e.target.value)} />
                         <Button variant="soft" onClick={draft} disabled={drafting || intent.trim().length < 2}>{drafting ? 'Drafting…' : 'Draft with AI'}</Button>
                     </div>
-                    <input className={styles.input} placeholder="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
+                    <TextField.Root placeholder="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
                     <textarea className={styles.textarea} rows={10} placeholder="Write your message…" value={body} onChange={(e) => setBody(e.target.value)} />
                     <div className={styles.actions}>
-                        <Button onClick={send} disabled={sending || !subject.trim() || !body.trim()}>{sending ? 'Sending…' : 'Send'}</Button>
-                        {notice && <span className={styles.ok}>{notice}</span>}
-                        {error && <span className={styles.error}>{error}</span>}
+                        <Button size="3" onClick={send} disabled={sending || !subject.trim() || !body.trim()}>{sending ? 'Sending…' : 'Send'}</Button>
+                        {notice && <span className={shared.ok}>{notice}</span>}
+                        {error && <span className={shared.error}>{error}</span>}
                     </div>
                 </section>
 
-                <section className={styles.history}>
-                    <h2 className={styles.sectionH}>Sent history</h2>
+                <section className={shared.card}>
+                    <p className={shared.sectionLabel}>Sent history</p>
                     {log.length === 0 ? (
-                        <p className={styles.subtle}>No messages sent yet.</p>
+                        <p className={shared.subtle}>No messages sent yet.</p>
                     ) : (
                         <ul className={styles.log}>
                             {log.map((m) => (
                                 <li key={m.id} className={styles.logItem}>
                                     <div className={styles.logTop}>
                                         <span className={styles.logSubject}>{m.subject}</span>
-                                        <span className={`${styles.status} ${styles[`s_${m.status ?? 'sent'}`] ?? ''}`}>{m.status}</span>
+                                        <Badge variant="soft" color={STATUS_COLOR[m.status ?? 'sent'] ?? 'gray'}>{m.status}</Badge>
                                     </div>
                                     <div className={styles.logMeta}>
                                         {m.scheduled_at && m.status === 'queued'
@@ -134,7 +139,7 @@ function MessagesInner() {
 
 export default function MessagesPage() {
     return (
-        <Suspense fallback={<div className={styles.page}><div className={styles.empty}>Loading…</div></div>}>
+        <Suspense fallback={<div className={shared.page}><div className={shared.empty}>Loading…</div></div>}>
             <MessagesInner />
         </Suspense>
     );

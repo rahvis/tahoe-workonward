@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { TahoeSelect } from '@/components/ui/tahoe-ui';
 import { ApiError } from '@/lib/api';
 import {
     type AnalyticsOverview,
@@ -10,6 +11,8 @@ import {
     getEeo,
     listJobs,
 } from '@/lib/jobs';
+import JobsBreadcrumb from '../_components/JobsBreadcrumb';
+import shared from '../_components/jobs-shared.module.css';
 import styles from './analytics.module.css';
 
 const STATUS_ORDER = ['new', 'in_review', 'advanced', 'hired', 'rejected', 'withdrawn'];
@@ -75,24 +78,21 @@ export default function AnalyticsPage() {
     useEffect(() => { load(); }, [load]);
 
     return (
-        <div className={styles.page}>
-            <header className={styles.head}>
-                <p className={styles.breadcrumb}>Jobs › Analytics</p>
-                <h1 className={styles.title}>Analytics</h1>
-            </header>
+        <div className={shared.page}>
+            <JobsBreadcrumb items={[{ label: 'Analytics' }]} />
 
-            <label className={styles.scopeLabel}>Scope{' '}
-                <select className={styles.scope} value={scope} onChange={(e) => setScope(e.target.value)}>
+            <label className={shared.controlLabel}>Scope
+                <TahoeSelect value={scope} onChange={(e) => setScope(e.target.value)}>
                     <option value="">All jobs</option>
                     {jobs.map((j) => <option key={j.id} value={j.id}>{j.title}</option>)}
-                </select>
+                </TahoeSelect>
             </label>
 
-            {error && <p className={styles.error} role="alert">{error}</p>}
+            {error && <p className={shared.error} role="alert">{error}</p>}
             {loading && !data ? (
-                <div className={styles.loading}>Loading…</div>
+                <div className={shared.loading}>Loading…</div>
             ) : !data || data.total_applications === 0 ? (
-                <div className={styles.empty}>No applications yet for this scope.</div>
+                <div className={shared.empty}>No applications yet for this scope.</div>
             ) : (
                 <>
                     <div className={styles.kpis}>
@@ -108,18 +108,18 @@ export default function AnalyticsPage() {
                         <BarChart caption="Median time in stage" data={data.time_in_stage.map((t) => ({ label: t.label, value: t.median_days ?? 0, sub: `${fmtDays(t.median_days)} (n=${t.n})` }))} />
                     </div>
 
-                    <section className={styles.eeo}>
-                        <h2 className={styles.sectionH}>EEO / diversity (aggregate)</h2>
+                    <section className={shared.card}>
+                        <p className={shared.sectionLabel}>EEO / diversity (aggregate)</p>
                         {eeoRestricted ? (
-                            <p className={styles.subtle}>Restricted to workspace owners/admins.</p>
+                            <p className={shared.subtle}>Restricted to workspace owners/admins.</p>
                         ) : !eeo || eeo.dimensions.length === 0 ? (
-                            <p className={styles.subtle}>No aggregate diversity data above the minimum cohort size.</p>
+                            <p className={shared.subtle}>No aggregate diversity data above the minimum cohort size.</p>
                         ) : (
                             <>
                                 <p className={styles.note}>{eeo.note}</p>
                                 {eeo.dimensions.map((d) => (
                                     <div key={d.dimension} className={styles.eeoDim}>
-                                        <h3 className={styles.eeoTitle}>{d.dimension} <span className={styles.subtle}>(n={d.total_responses}{d.suppressed_cells > 0 ? `, ${d.suppressed_cells} suppressed` : ''})</span></h3>
+                                        <h3 className={styles.eeoTitle}>{d.dimension} <span className={shared.muted}>(n={d.total_responses}{d.suppressed_cells > 0 ? `, ${d.suppressed_cells} suppressed` : ''})</span></h3>
                                         <ul className={styles.eeoBuckets}>
                                             {d.buckets.map((b) => <li key={b.answer}>{b.answer}: <strong>{b.count}</strong></li>)}
                                         </ul>

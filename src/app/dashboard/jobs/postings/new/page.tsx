@@ -1,11 +1,11 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { createJob, type JobInput } from '@/lib/jobs';
 import JobForm from '../_components/JobForm';
-import styles from '../postings.module.css';
+import JobsBreadcrumb from '../../_components/JobsBreadcrumb';
+import shared from '../../_components/jobs-shared.module.css';
 
 export default function NewJobPage() {
     const router = useRouter();
@@ -25,15 +25,8 @@ export default function NewJobPage() {
     };
 
     return (
-        <div className={styles.page}>
-            <header className={styles.pageHead}>
-                <div>
-                    <p className={styles.breadcrumb}>
-                        <Link href="/dashboard/jobs/postings">Job Postings</Link> › New Job
-                    </p>
-                    <h1 className={styles.pageTitle}>New Job</h1>
-                </div>
-            </header>
+        <div className={shared.page}>
+            <JobsBreadcrumb items={[{ label: 'Job Postings', href: '/dashboard/jobs/postings' }, { label: 'New' }]} />
             <JobForm submitLabel="Save draft" saving={saving} error={error} onSubmit={onSubmit} />
         </div>
     );

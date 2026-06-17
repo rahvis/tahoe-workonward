@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/tahoe-ui';
+import { Button, TextField } from '@/components/ui/tahoe-ui';
 import { type Branding, getBranding, putBranding } from '@/lib/jobs';
+import JobsBreadcrumb from '../_components/JobsBreadcrumb';
+import shared from '../_components/jobs-shared.module.css';
 import styles from '../settings/settings.module.css';
 
 export default function CareerPagePage() {
@@ -30,40 +32,37 @@ export default function CareerPagePage() {
     const set = (k: keyof Branding) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
         setB((prev) => ({ ...prev, [k]: e.target.value }));
 
-    if (loading) return <div className={styles.page}><div className={styles.loading}>Loading…</div></div>;
+    if (loading) return <div className={shared.page}><div className={shared.loading}>Loading…</div></div>;
 
     return (
-        <div className={styles.page}>
-            <header className={styles.head}>
-                <p className={styles.breadcrumb}>Jobs › Career Page</p>
-                <h1 className={styles.title}>Career page & branding</h1>
-                <p className={styles.subtle}>Shown on your public job postings at /jobs.</p>
-            </header>
+        <div className={shared.page}>
+            <JobsBreadcrumb items={[{ label: 'Career Page' }]} />
+            <p className={shared.subtle}>Shown on your public job postings at /jobs.</p>
 
-            <div className={styles.card}>
-                <label className={styles.field}><span>Company name</span>
-                    <input className={styles.input} value={b.company_name ?? ''} onChange={set('company_name')} maxLength={120} />
-                </label>
-                <label className={styles.field}><span>Tagline</span>
-                    <input className={styles.input} value={b.tagline ?? ''} onChange={set('tagline')} maxLength={240} />
-                </label>
-                <label className={styles.field}><span>Logo URL</span>
-                    <input className={styles.input} value={b.logo_url ?? ''} onChange={set('logo_url')} placeholder="https://…" maxLength={2048} />
-                </label>
-                <label className={styles.field}><span>Accent color</span>
+            <div className={shared.card}>
+                <div className={styles.field}><span className={styles.fieldLabel}>Company name</span>
+                    <TextField.Root value={b.company_name ?? ''} onChange={set('company_name')} maxLength={120} />
+                </div>
+                <div className={styles.field}><span className={styles.fieldLabel}>Tagline</span>
+                    <TextField.Root value={b.tagline ?? ''} onChange={set('tagline')} maxLength={240} />
+                </div>
+                <div className={styles.field}><span className={styles.fieldLabel}>Logo URL</span>
+                    <TextField.Root value={b.logo_url ?? ''} onChange={set('logo_url')} placeholder="https://…" maxLength={2048} />
+                </div>
+                <div className={styles.field}><span className={styles.fieldLabel}>Accent color</span>
                     <span className={styles.colorRow}>
-                        <input type="color" value={b.accent_color || '#5b5bd6'} onChange={set('accent_color')} aria-label="Accent color" />
-                        <input className={styles.input} value={b.accent_color ?? ''} onChange={set('accent_color')} placeholder="#5b5bd6" maxLength={9} />
+                        <input type="color" value={b.accent_color || '#ff682c'} onChange={set('accent_color')} aria-label="Accent color" />
+                        <TextField.Root rootClassName={shared.grow} value={b.accent_color ?? ''} onChange={set('accent_color')} placeholder="#ff682c" maxLength={9} />
                     </span>
-                </label>
-                <label className={styles.field}><span>About</span>
+                </div>
+                <div className={styles.field}><span className={styles.fieldLabel}>About</span>
                     <textarea className={styles.textarea} rows={6} value={b.about_html ?? ''} onChange={set('about_html')} maxLength={20000}
                         placeholder="A short description of your company shown on job pages." />
-                </label>
+                </div>
                 <div className={styles.actions}>
-                    <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save branding'}</Button>
-                    {msg && <span className={styles.ok}>{msg}</span>}
-                    {error && <span className={styles.error}>{error}</span>}
+                    <Button size="3" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save branding'}</Button>
+                    {msg && <span className={shared.ok}>{msg}</span>}
+                    {error && <span className={shared.error}>{error}</span>}
                 </div>
             </div>
         </div>
