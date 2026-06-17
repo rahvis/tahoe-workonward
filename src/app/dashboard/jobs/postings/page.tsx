@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/tahoe-ui';
 import {
     type Job,
@@ -30,7 +30,7 @@ function fmtDate(value?: string | null) {
     return Number.isNaN(d.getTime()) ? '—' : new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(d);
 }
 
-export default function JobPostingsPage() {
+function JobPostingsInner() {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -199,5 +199,13 @@ export default function JobPostingsPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function JobPostingsPage() {
+    return (
+        <Suspense fallback={<div className={styles.page}><div className={styles.loading}>Loading…</div></div>}>
+            <JobPostingsInner />
+        </Suspense>
     );
 }
