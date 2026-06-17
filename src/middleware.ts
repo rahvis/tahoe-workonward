@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { defaultLocale, isLocale } from '@/i18n/config';
 
-// Paths that must NEVER be locale-prefixed (the authenticated app, the API, and
-// the dynamic OG image route). Everything else public (marketing, legal, auth)
-// is redirected to /{locale}/... The matcher already drops _next, files with an
-// extension (sitemap.xml, robots.txt, llms.txt, manifest.webmanifest, images),
-// and /api.
-const SKIP_PREFIXES = ['/dashboard', '/api', '/og', '/dsl', '/logs'];
+// Paths that must NEVER be locale-prefixed (the authenticated app, the API, the
+// dynamic OG image route, and the public job board which lives, un-localized, at
+// /jobs/*). Everything else public (marketing, legal, auth) is redirected to
+// /{locale}/... The matcher already drops _next, files with an extension
+// (sitemap.xml, robots.txt, llms.txt, manifest.webmanifest, images), and /api.
+const SKIP_PREFIXES = ['/dashboard', '/api', '/og', '/dsl', '/logs', '/jobs'];
 
 function pathHasLocale(pathname: string): boolean {
     const first = pathname.split('/')[1];
