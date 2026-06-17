@@ -16,12 +16,13 @@ import {
     CardStackIcon,
     BarChartIcon,
     GearIcon,
+    BriefcaseIcon,
 } from '@/components/ui/icons';
 import BrandMark from '@/components/branding/BrandMark';
 import ProviderCreditsPanel from '@/app/dashboard/_components/ProviderCreditsPanel';
 import styles from './dashboard.module.css';
 
-type PrimarySection = 'search' | 'projects' | 'mailboxes' | 'outreach' | 'billing' | 'analytics' | 'settings';
+type PrimarySection = 'search' | 'projects' | 'jobs' | 'mailboxes' | 'outreach' | 'billing' | 'analytics' | 'settings';
 
 const sectionConfig = {
     search: {
@@ -40,6 +41,20 @@ const sectionConfig = {
         subnav: [
             { href: '/dashboard/projects', label: 'All Projects' },
             { href: '/dashboard/projects/lists', label: 'Lists' },
+        ],
+    },
+    jobs: {
+        label: 'Jobs',
+        href: '/dashboard/jobs/postings',
+        icon: <BriefcaseIcon width="18" height="18" />,
+        subnav: [
+            { href: '/dashboard/jobs/postings', label: 'Job Postings' },
+            { href: '/dashboard/jobs/pipeline', label: 'Candidates' },
+            { href: '/dashboard/jobs/search', label: 'Talent Search' },
+            { href: '/dashboard/jobs/messages', label: 'Messages' },
+            { href: '/dashboard/jobs/career-page', label: 'Career Page' },
+            { href: '/dashboard/jobs/analytics', label: 'Analytics' },
+            { href: '/dashboard/jobs/settings', label: 'Settings' },
         ],
     },
     outreach: {
@@ -105,6 +120,7 @@ function isSubnavItemActive(
 function inferActiveSection(pathname: string | null): PrimarySection {
     if (!pathname) return 'search';
     if (pathname.startsWith('/dashboard/projects')) return 'projects';
+    if (pathname.startsWith('/dashboard/jobs')) return 'jobs';
     if (pathname.startsWith('/dashboard/mailboxes')) return 'mailboxes';
     if (pathname.startsWith('/dashboard/outreach')) return 'outreach';
     if (pathname.startsWith('/dashboard/billing')) return 'billing';

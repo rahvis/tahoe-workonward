@@ -1,0 +1,30 @@
+.page { display: flex; flex-direction: column; gap: 16px; padding: 4px 2px 40px; }
+.head { display: flex; flex-direction: column; gap: 2px; }
+.breadcrumb { font-size: 13px; color: var(--gray-10, #70707a); margin: 0; }
+.title { font-size: 22px; font-weight: 700; margin: 0; }
+.subtle { color: var(--gray-10, #70707a); font-size: 14px; margin: 0; }
+
+.searchBar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.scope, .queryInput { border: 1px solid var(--gray-6, #d8d8de); border-radius: 8px; padding: 9px 11px; font: inherit; background: #fff; }
+.queryInput { flex: 1; min-width: 280px; }
+
+.chips { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.chipsLabel { font-size: 12px; color: var(--gray-10, #70707a); }
+.chip { font-size: 12px; background: #eef2ff; color: #34408a; border-radius: 999px; padding: 3px 10px; }
+
+.bulkBar { display: flex; align-items: center; gap: 10px; background: #eef2ff; border: 1px solid #b1b1f0; border-radius: 8px; padding: 8px 12px; font-size: 14px; }
+.clear { border: none; background: none; cursor: pointer; color: var(--accent-11, #4a4ac0); }
+
+.error { color: #d4351c; font-size: 14px; }
+.empty { padding: 40px; text-align: center; color: var(--gray-10, #70707a); border: 1px dashed var(--gray-6, #d8d8de); border-radius: 12px; }
+
+.table { width: 100%; border-collapse: collapse; font-size: 14px; background: #fff; border: 1px solid var(--gray-5, #e6e6ea); border-radius: 12px; overflow: hidden; }
+.table th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: var(--gray-10, #70707a); padding: 10px 12px; background: var(--gray-2, #fafafb); }
+.table td { padding: 10px 12px; border-top: 1px solid var(--gray-4, #eeeef0); vertical-align: top; }
+.cand a { color: inherit; text-decoration: none; font-weight: 600; }
+.cand a:hover { text-decoration: underline; }
+.match { font-weight: 700; }
+.muted { color: var(--gray-10, #8b8b94); }
+.why { max-width: 420px; }
+.whyLine { font-size: 13px; }
+.evidence { color: var(--gray-10, #70707a); font-size: 12px; margin-top: 4px; font-style: italic; }

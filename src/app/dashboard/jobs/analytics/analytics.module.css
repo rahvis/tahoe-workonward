@@ -1,0 +1,33 @@
+.page { display: flex; flex-direction: column; gap: 16px; padding: 4px 2px 40px; }
+.head { display: flex; flex-direction: column; gap: 2px; }
+.breadcrumb { font-size: 13px; color: var(--gray-10, #70707a); margin: 0; }
+.title { font-size: 22px; font-weight: 700; margin: 0; }
+.subtle { color: var(--gray-10, #70707a); font-size: 13px; }
+.error { color: #d4351c; font-size: 14px; }
+.loading, .empty { padding: 40px; text-align: center; color: var(--gray-10, #70707a); border: 1px dashed var(--gray-6, #d8d8de); border-radius: 12px; }
+.scopeLabel { font-size: 13px; color: var(--gray-11, #50505a); }
+.scope { border: 1px solid var(--gray-6, #d8d8de); border-radius: 8px; padding: 6px 8px; font: inherit; background: #fff; }
+
+.kpis { display: flex; gap: 12px; flex-wrap: wrap; }
+.kpi { flex: 1; min-width: 140px; border: 1px solid var(--gray-5, #e6e6ea); border-radius: 12px; padding: 14px 16px; background: #fff; display: flex; flex-direction: column; gap: 2px; }
+.kpiN { font-size: 26px; font-weight: 800; }
+.kpiL { font-size: 12px; color: var(--gray-10, #70707a); text-transform: uppercase; letter-spacing: .03em; }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 880px) { .grid { grid-template-columns: 1fr; } }
+
+.chart { margin: 0; border: 1px solid var(--gray-5, #e6e6ea); border-radius: 12px; padding: 14px 16px; background: #fff; }
+.chartCaption { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--gray-10, #70707a); margin-bottom: 10px; font-weight: 600; }
+.bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.barRow { display: grid; grid-template-columns: 110px 1fr auto; align-items: center; gap: 10px; font-size: 13px; }
+.barLabel { text-transform: capitalize; color: var(--gray-11, #50505a); }
+.barTrack { background: var(--gray-3, #f3f3f5); border-radius: 6px; height: 14px; overflow: hidden; }
+.barFill { display: block; height: 100%; background: var(--accent-9, #5b5bd6); border-radius: 6px; min-width: 2px; }
+.barValue { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--gray-12, #1c1c22); white-space: nowrap; }
+
+.eeo { border: 1px solid var(--gray-5, #e6e6ea); border-radius: 12px; padding: 16px; background: #fff; }
+.sectionH { font-size: 14px; font-weight: 700; margin: 0 0 8px; }
+.note { font-size: 12px; color: var(--gray-10, #70707a); margin: 0 0 10px; }
+.eeoDim { margin-bottom: 12px; }
+.eeoTitle { font-size: 14px; margin: 0 0 4px; text-transform: capitalize; }
+.eeoBuckets { list-style: none; margin: 0; padding: 0; display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; }

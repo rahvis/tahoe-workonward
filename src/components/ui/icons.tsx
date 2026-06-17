@@ -268,3 +268,13 @@ export function GearIcon(props: IconProps) {
         </SvgIcon>
     );
 }
+
+export function BriefcaseIcon(props: IconProps) {
+    return (
+        <SvgIcon viewBox="0 0 20 20" {...props}>
+            <rect x="3" y="6.5" width="14" height="9" rx="1.5" />
+            <path d="M7.5 6.5V5.25A1.25 1.25 0 0 1 8.75 4h2.5a1.25 1.25 0 0 1 1.25 1.25V6.5" />
+            <path d="M3 10.25h14" />
+        </SvgIcon>
+    );
+}

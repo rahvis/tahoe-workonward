@@ -1,0 +1,23 @@
+.page { display: flex; flex-direction: column; gap: 16px; padding: 4px 2px 40px; max-width: 720px; }
+.head { display: flex; flex-direction: column; gap: 2px; }
+.breadcrumb { font-size: 13px; color: var(--gray-10, #70707a); margin: 0; }
+.title { font-size: 22px; font-weight: 700; margin: 0; }
+.subtle { color: var(--gray-10, #70707a); font-size: 13px; margin: 0; }
+.loading { padding: 40px; text-align: center; color: var(--gray-10, #70707a); }
+
+.card { border: 1px solid var(--gray-5, #e6e6ea); border-radius: 12px; padding: 18px; background: #fff; display: flex; flex-direction: column; gap: 12px; }
+.sectionH { font-size: 14px; font-weight: 700; margin: 8px 0 0; }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; }
+.input, .textarea, .numInput { border: 1px solid var(--gray-6, #d8d8de); border-radius: 8px; padding: 9px 11px; font: inherit; font-weight: 400; }
+.textarea { resize: vertical; }
+.numInput { width: 120px; }
+.colorRow { display: flex; gap: 8px; align-items: center; }
+.colorRow input[type="color"] { width: 42px; height: 36px; border: 1px solid var(--gray-6, #d8d8de); border-radius: 8px; padding: 2px; background: #fff; }
+
+.weights { display: flex; flex-direction: column; gap: 10px; }
+.weightField { display: grid; grid-template-columns: 160px 1fr 90px; align-items: center; gap: 10px; font-size: 13px; text-transform: capitalize; }
+.weightField input[type="range"] { width: 100%; }
+
+.actions { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+.ok { color: #1a7f43; font-size: 13px; }
+.error { color: #d4351c; font-size: 13px; }
