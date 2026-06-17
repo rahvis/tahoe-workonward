@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Button, TahoeSelect, TextField } from '@/components/ui/tahoe-ui';
@@ -25,6 +24,8 @@ import {
     reingestApplication,
 } from '@/lib/jobs';
 import JobsBreadcrumb from '../../../_components/JobsBreadcrumb';
+import MessageComposer from '../../../_components/MessageComposer';
+import Modal from '../../../_components/Modal';
 import shared from '../../../_components/jobs-shared.module.css';
 import styles from '../../pipeline.module.css';
 
@@ -38,6 +39,7 @@ export default function CandidateDetailPage() {
     const [stages, setStages] = useState<PipelineStage[]>([]);
     const [tab, setTab] = useState<Tab>('profile');
     const [error, setError] = useState('');
+    const [msgOpen, setMsgOpen] = useState(false);
 
     const load = useCallback(async () => {
         try {
@@ -128,14 +130,21 @@ export default function CandidateDetailPage() {
                 {tab === 'email' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
                         <p className={shared.subtle}>Send-only candidate email. Replies go to your real mailbox.</p>
-                        <Link
-                            href={`/dashboard/jobs/messages?candidate_id=${candidate?.id ?? ''}&application_id=${application.id}&job_id=${jobId}&email=${encodeURIComponent(candidate?.email ?? '')}&name=${encodeURIComponent(candidate?.full_name ?? '')}`}
-                        >
-                            <Button variant="soft" color="orange">Open Messages →</Button>
-                        </Link>
+                        <Button variant="soft" color="orange" onClick={() => setMsgOpen(true)} disabled={!candidate?.id}>Open Messages →</Button>
                     </div>
                 )}
             </div>
+
+            <Modal
+                open={msgOpen}
+                onClose={() => setMsgOpen(false)}
+                title={`Message ${candidate?.full_name || 'candidate'}`}
+                subtitle={candidate?.email}
+            >
+                {candidate?.id && (
+                    <MessageComposer candidateId={candidate.id} applicationId={application.id} jobId={jobId} />
+                )}
+            </Modal>
         </div>
     );
 }

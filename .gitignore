@@ -28,6 +28,10 @@ ts-debug.log*
 .env.development.local
 .env.test.local
 .env.production.local
+# Live-secrets handoff doc (contains real keys) — never commit
+frontedn_env.md
+frontend_env.md
+*_env.md
 
 # Vercel
 .vercel
