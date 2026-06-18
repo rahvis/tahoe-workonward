@@ -4,7 +4,6 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import styles from '../billing.module.css';
 import {
-    createBillingPortal,
     createSubscriptionCheckout,
     createTopUpCheckout,
     fetchBillingCatalog,
@@ -110,19 +109,6 @@ function BillingPlanContent() {
         const params = new URLSearchParams(searchParams.toString());
         params.set('tab', tab);
         router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    }
-
-    async function handleManageStripe() {
-        setBusyKey('portal');
-        setError(null);
-        try {
-            const response = await createBillingPortal('/dashboard/billing/plan');
-            redirectToExternal(response.url);
-        } catch (actionError) {
-            setError(actionError instanceof Error ? actionError.message : 'Unable to open Stripe billing portal.');
-        } finally {
-            setBusyKey(null);
-        }
     }
 
     async function handlePlanCheckout(planKey: BillingPlan['key'], interval: 'month' | 'year') {
@@ -336,14 +322,6 @@ function BillingPlanContent() {
 
     return (
         <section className={styles.page}>
-            <div className={styles.header}>
-                <div className={styles.buttonRow}>
-                    <button className="tahoe-button" type="button" onClick={() => void handleManageStripe()} disabled={busyKey === 'portal'}>
-                        {busyKey === 'portal' ? 'Opening…' : 'Manage in Stripe'}
-                    </button>
-                </div>
-            </div>
-
             {error ? (
                 <div className={styles.heroCard}>
                     <div className={styles.statusCritical}>Billing error</div>

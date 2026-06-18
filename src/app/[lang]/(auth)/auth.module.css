@@ -3,6 +3,19 @@
     gap: 18px;
 }
 
+/* Accent (brand orange) primary CTA — overrides the global black .tahoe-button
+   for this page only, to give a clear "action" colour. */
+.submitAccent {
+    background: var(--tahoe-color-accent) !important;
+    border-color: var(--tahoe-color-accent) !important;
+    color: #ffffff !important;
+}
+.submitAccent:hover:not(:disabled) {
+    background: #f2551c !important;
+    border-color: #f2551c !important;
+    color: #ffffff !important;
+}
+
 .form {
     display: grid;
     gap: 18px;

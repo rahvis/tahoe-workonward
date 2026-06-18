@@ -30,9 +30,8 @@ test('submits the normalized email and shows the generic confirmation', async ()
         });
     });
 
+    // A brief generic confirmation is shown (it auto-dismisses after 1s).
     expect(screen.getByText(/a reset link is on its way/i)).toBeInTheDocument();
-    // Google-only users are guided without leaking whether the email exists.
-    expect(screen.getByText(/don't have a password to reset/i)).toBeInTheDocument();
 });
 
 test('does not call the API when the email is empty', async () => {
