@@ -45,6 +45,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         ['', '2026-06-15', 'weekly', 1],
         ['/product', '2026-06-15', 'monthly', 0.9],
         ['/features', '2026-06-15', 'monthly', 0.9],
+        ['/hiring', '2026-06-18', 'monthly', 0.9],
         ['/pricing', '2026-06-15', 'monthly', 0.95],
         ['/customers', '2026-06-15', 'monthly', 0.7],
         ['/our-story', '2026-06-15', 'monthly', 0.7],

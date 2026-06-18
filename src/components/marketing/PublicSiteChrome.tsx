@@ -84,6 +84,7 @@ export function PublicSiteHeader({ placement = 'blog' }: { placement?: string } 
                     <nav className={styles.desktopNav} aria-label="Primary">
                         <Link href={L('/product')} onClick={() => trackSectionNav('product', `${placement}_header_desktop`)}>{t.nav.product}</Link>
                         <Link href={L('/features')} onClick={() => trackSectionNav('features', `${placement}_header_desktop`)}>{t.nav.features}</Link>
+                        <Link href={L('/hiring')} onClick={() => trackSectionNav('hiring', `${placement}_header_desktop`)}>{t.nav.hiring}</Link>
                         <Link href={L('/pricing')} onClick={() => trackSectionNav('pricing', `${placement}_header_desktop`)}>{t.nav.pricing}</Link>
                         <Link href={L('/customers')} onClick={() => trackSectionNav('customers', `${placement}_header_desktop`)}>{t.nav.customers}</Link>
                         <Link href={L('/our-story')} onClick={() => trackSectionNav('our_story', `${placement}_header_desktop`)}>{t.nav.ourStory}</Link>
@@ -119,6 +120,7 @@ export function PublicSiteHeader({ placement = 'blog' }: { placement?: string } 
                     <div className={styles.mobileNav} aria-label="Mobile navigation">
                         <Link href={L('/product')} onClick={() => { trackSectionNav('product', `${placement}_header_mobile`); setMobileNavOpen(false); }}>{t.nav.product}</Link>
                         <Link href={L('/features')} onClick={() => { trackSectionNav('features', `${placement}_header_mobile`); setMobileNavOpen(false); }}>{t.nav.features}</Link>
+                        <Link href={L('/hiring')} onClick={() => { trackSectionNav('hiring', `${placement}_header_mobile`); setMobileNavOpen(false); }}>{t.nav.hiring}</Link>
                         <Link href={L('/pricing')} onClick={() => { trackSectionNav('pricing', `${placement}_header_mobile`); setMobileNavOpen(false); }}>{t.nav.pricing}</Link>
                         <Link href={L('/customers')} onClick={() => { trackSectionNav('customers', `${placement}_header_mobile`); setMobileNavOpen(false); }}>{t.nav.customers}</Link>
                         <Link href={L('/our-story')} onClick={() => { trackSectionNav('our_story', `${placement}_header_mobile`); setMobileNavOpen(false); }}>{t.nav.ourStory}</Link>
@@ -152,6 +154,7 @@ export function PublicSiteFooter({ placement = 'blog' }: { placement?: string } 
                     <div>
                         <h3>{t.footer.productHeading}</h3>
                         <Link href={L('/features')} onClick={() => trackSectionNav('features', `${placement}_footer_column`)}>{t.footer.features}</Link>
+                        <Link href={L('/hiring')} onClick={() => trackSectionNav('hiring', `${placement}_footer_column`)}>{t.footer.hiring}</Link>
                         <Link href={L('/pricing')} onClick={() => trackSectionNav('pricing', `${placement}_footer_column`)}>{t.footer.pricing}</Link>
                     </div>
 

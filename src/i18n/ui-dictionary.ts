@@ -10,6 +10,7 @@ export const ui = {
         nav: {
             product: 'Product',
             features: 'Features',
+            hiring: 'Hiring',
             pricing: 'Pricing',
             customers: 'Customers',
             ourStory: 'Our Story',
@@ -25,6 +26,7 @@ export const ui = {
             legalHeading: 'Legal',
             contactHeading: 'Contact',
             features: 'Features',
+            hiring: 'Hiring',
             pricing: 'Pricing',
             ourStory: 'Our Story',
             blog: 'Blog',
@@ -46,6 +48,7 @@ export const ui = {
         nav: {
             product: '제품',
             features: '기능',
+            hiring: '채용',
             pricing: '요금',
             customers: '고객',
             ourStory: '브랜드 스토리',
@@ -61,6 +64,7 @@ export const ui = {
             legalHeading: '약관',
             contactHeading: '문의',
             features: '기능',
+            hiring: '채용',
             pricing: '요금',
             ourStory: '브랜드 스토리',
             blog: '블로그',

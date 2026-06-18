@@ -1,0 +1,70 @@
+/* Spider-web / radar chart. Colors come from the marketing tokens defined on the
+   .page ancestor (--color-accent etc.). The candidate polygon fades + scales in once
+   on mount; disabled under reduced motion. */
+
+.radar {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.ring {
+    fill: none;
+    stroke: var(--color-border-subtle, #e8e8e8);
+    stroke-width: 1;
+}
+
+.spoke {
+    stroke: var(--color-border-subtle, #e8e8e8);
+    stroke-width: 1;
+}
+
+.required {
+    fill: rgba(32, 32, 32, 0.04);
+    stroke: rgba(32, 32, 32, 0.35);
+    stroke-width: 1.25;
+    stroke-dasharray: 4 3;
+}
+
+.candidate {
+    fill: rgba(255, 104, 44, 0.16);
+    stroke: var(--color-accent, #ff682c);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: radarPop 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.dot {
+    fill: var(--color-accent, #ff682c);
+}
+
+.axisLabel {
+    fill: var(--color-text-secondary, #4d4d4d);
+    font-family: var(--font-body-stack);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.axisValue {
+    fill: var(--color-accent, #ff682c);
+    font-weight: 700;
+}
+
+@keyframes radarPop {
+    from {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .candidate {
+        animation: none;
+    }
+}
