@@ -1,0 +1,103 @@
+.packGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+@media (max-width: 600px) {
+    .packGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.pack {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 16px 16px 14px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: var(--tahoe-radius-md);
+    background: var(--tahoe-color-canvas);
+}
+
+/* Orange, eye-grabbing highlight for the best-value pack. */
+.packBest {
+    border: 1.5px solid var(--tahoe-color-accent);
+    background: linear-gradient(180deg, rgba(255, 104, 44, 0.12) 0%, rgba(255, 104, 44, 0.03) 100%);
+    box-shadow: var(--tahoe-focus-ring-shadow);
+}
+
+.bestBadge {
+    position: absolute;
+    top: -10px;
+    right: 12px;
+    padding: 2px 10px;
+    border-radius: var(--tahoe-radius-full);
+    background: var(--tahoe-color-accent);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.packCredits {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--tahoe-color-text-primary);
+}
+
+.packPrice {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--tahoe-color-text-primary);
+}
+
+.packPer {
+    font-size: 12px;
+    color: var(--tahoe-color-text-tertiary);
+    margin-bottom: 8px;
+}
+
+.buyButton {
+    width: 100%;
+    margin-top: auto;
+    min-height: 38px;
+    border-radius: var(--tahoe-radius-full);
+    border: 1px solid var(--tahoe-color-border-subtle);
+    background: var(--tahoe-color-surface-subtle);
+    color: var(--tahoe-color-text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: filter 0.12s, background 0.12s;
+}
+
+.buyButton:hover:not(:disabled) {
+    background: var(--tahoe-color-surface-muted);
+}
+
+.buyButton:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+/* Orange CTA for the best-value pack. */
+.buyBest {
+    background: var(--tahoe-color-accent);
+    border-color: var(--tahoe-color-accent);
+    color: #ffffff;
+}
+
+.buyBest:hover:not(:disabled) {
+    background: #f2551c;
+    border-color: #f2551c;
+}
+
+.packNote {
+    margin: 14px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--tahoe-color-text-tertiary);
+}

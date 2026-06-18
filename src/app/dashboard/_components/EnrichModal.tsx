@@ -10,6 +10,7 @@ import {
     fetchBillingSummary,
     type EnrichmentRunSummary,
 } from '@/lib/organization';
+import { ACTION_COST } from '@/lib/credits';
 import UpgradePaywallModal from '../search/UpgradePaywallModal';
 
 interface EnrichModalProps {
@@ -29,10 +30,11 @@ const FIELD_LABELS: Record<EnrichmentField, string> = {
     phone: 'Mobile phone',
 };
 
+// Per-field credit costs sourced from the shared rate card (single source of truth).
 const FIELD_COSTS: Record<EnrichmentField, number> = {
-    work_email: 1,
-    personal_email: 3,
-    phone: 10,
+    work_email: ACTION_COST.work_email,
+    personal_email: ACTION_COST.personal_email,
+    phone: ACTION_COST.phone,
 };
 
 function newIdempotencyKey() {

@@ -75,8 +75,139 @@
 }
 
 .paywallActions {
-    padding: 8px 24px 22px;
-    border-top: 1px solid var(--tahoe-color-border-subtle);
-    margin-top: 8px;
-    padding-top: 16px;
+    padding: 8px 24px 18px;
+}
+
+/* ── Monthly / Annual toggle ── */
+.billingToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    font-size: 14px;
+}
+
+.toggleActive {
+    color: var(--tahoe-color-text-primary);
+    font-weight: 600;
+}
+
+.toggleMuted {
+    color: var(--tahoe-color-text-tertiary);
+}
+
+.savePill {
+    padding: 2px 8px;
+    border-radius: var(--tahoe-radius-full);
+    background: rgba(33, 110, 78, 0.12);
+    color: var(--tahoe-color-success);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* ── Plan cards ── */
+.topupBody {
+    padding: 4px 24px 8px;
+}
+
+.planCardPopular {
+    position: relative;
+    border: 1.5px solid var(--tahoe-color-accent);
+    background: linear-gradient(180deg, rgba(255, 104, 44, 0.06) 0%, rgba(255, 104, 44, 0.01) 100%);
+    box-shadow: var(--tahoe-focus-ring-shadow);
+}
+
+.popularBadge {
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    padding: 2px 10px;
+    border-radius: var(--tahoe-radius-full);
+    background: var(--tahoe-color-accent);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.planPriceRow {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-top: 2px;
+}
+
+.planBilled {
+    font-size: 12px;
+    color: var(--tahoe-color-text-tertiary);
+    margin-bottom: 4px;
+}
+
+.featureList {
+    list-style: none;
+    margin: 10px 0 14px;
+    padding: 0;
+    display: grid;
+    gap: 7px;
+}
+
+.featureItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.check {
+    flex-shrink: 0;
+    color: var(--tahoe-color-success);
+}
+
+.upgradeButton {
+    width: 100%;
+    margin-top: auto;
+    min-height: 40px;
+    border-radius: var(--tahoe-radius-full);
+    border: 1px solid var(--tahoe-color-border-subtle);
+    background: var(--tahoe-color-surface-subtle);
+    color: var(--tahoe-color-text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.upgradeButton:hover:not(:disabled) {
+    background: var(--tahoe-color-surface-muted);
+}
+
+.upgradeButton:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.upgradeButtonPopular {
+    background: var(--tahoe-color-accent);
+    border-color: var(--tahoe-color-accent);
+    color: #ffffff;
+}
+
+.upgradeButtonPopular:hover:not(:disabled) {
+    background: #f2551c;
+    border-color: #f2551c;
+}
+
+.legend {
+    margin: 4px 24px 0;
+    padding: 10px 14px;
+    border-radius: var(--tahoe-radius-sm);
+    background: var(--tahoe-color-surface-subtle);
+    color: var(--tahoe-color-text-tertiary);
+    font-size: 12.5px;
+    text-align: center;
+}
+
+.paywallError {
+    display: block;
+    padding: 6px 24px 0;
 }

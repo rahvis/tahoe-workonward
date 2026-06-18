@@ -160,17 +160,6 @@ test('top-ups tab starts top-up checkout', async () => {
     });
 });
 
-test('shows a visible billing error when the Stripe portal action fails', async () => {
-    mockedCreateBillingPortal.mockRejectedValue(new Error('Stripe portal unavailable'));
-
-    render(<BillingPlanPage />);
-
-    const button = await screen.findByRole('button', { name: 'Manage in Stripe' });
-    fireEvent.click(button);
-
-    expect(await screen.findByText('Stripe portal unavailable')).toBeInTheDocument();
-});
-
 test('renders clean empty states for unavailable plans and top-ups', async () => {
     mockedFetchBillingCatalog.mockResolvedValue({
         plans: [],

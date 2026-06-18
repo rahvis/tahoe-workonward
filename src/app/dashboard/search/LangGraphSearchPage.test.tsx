@@ -896,7 +896,7 @@ test("shows the upgrade paywall when execute is blocked with subscription_requir
     const dialog = await screen.findByLabelText("Search filters");
     await user.click(within(dialog).getByRole("button", { name: "Find candidates" }));
 
-    expect(await screen.findByText("Upgrade to keep searching")).toBeInTheDocument();
+    expect(await screen.findByText("Choose a plan to keep going")).toBeInTheDocument();
 });
 
 test("locks search proactively when access is locked and never re-parses", async () => {
@@ -917,7 +917,7 @@ test("locks search proactively when access is locked and never re-parses", async
     await user.type(screen.getByPlaceholderText(/Senior ML engineers/i), "ml engineer");
     await user.click(screen.getAllByRole("button", { name: "Find candidates" })[0]);
 
-    expect(await screen.findByText("Upgrade to keep searching")).toBeInTheDocument();
+    expect(await screen.findByText("Choose a plan to keep going")).toBeInTheDocument();
     // Proactive: no parse/execute were attempted for the locked recruiter.
     expect(mockedApiRequest.mock.calls.some(([path]) => path === "/search/parse")).toBe(false);
     expect(mockedApiRequest.mock.calls.some(([path]) => path === "/search/execute")).toBe(false);

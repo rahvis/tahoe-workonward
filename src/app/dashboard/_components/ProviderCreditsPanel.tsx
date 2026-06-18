@@ -1,65 +1,27 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Button, Dialog, Flex, Text } from '@/components/ui/tahoe-ui';
-import { fetchProviderCredits, type ProviderCreditsResponse } from '@/lib/organization';
-
-const BUCKET_LABELS: Record<string, string> = {
-    coresignal_search: 'Search',
-    fullenrich: 'Enrich',
-};
-// Search and Enrich only — Collect is not an active product feature.
-const BUCKET_ORDER = ['coresignal_search', 'fullenrich'];
-const TOP_UPS_URL = 'https://tahoe.workonward.com/dashboard/billing/plan?tab=topups';
-const TOP_UP_PROMPT_THRESHOLD = 0.95;
-
-function getProviderCreditUsage(data: ProviderCreditsResponse | null) {
-    if (!data?.enabled) {
-        return { allocated: 0, used: 0, usageRatio: 0, overThreshold: false, lowLabels: [] as string[], promptKey: null as string | null };
-    }
-
-    let allocated = 0;
-    let used = 0;
-    const lowLabels: string[] = [];
-    const keyParts: string[] = [];
-    for (const key of BUCKET_ORDER) {
-        const bucket = data.buckets[key];
-        if (!bucket) continue;
-        allocated += Math.max(0, bucket.allocated);
-        used += Math.max(0, bucket.used);
-        keyParts.push(`${key}:${bucket.used}/${bucket.allocated}`);
-        const ratio = bucket.allocated > 0 ? bucket.used / bucket.allocated : 0;
-        // Prompt when ANY funded bucket is depleted or nearly so (per-bucket).
-        if (bucket.allocated > 0 && (bucket.remaining <= 0 || ratio >= TOP_UP_PROMPT_THRESHOLD)) {
-            lowLabels.push(BUCKET_LABELS[key] ?? key);
-        }
-    }
-    return {
-        allocated,
-        used,
-        usageRatio: allocated > 0 ? used / allocated : 0,
-        overThreshold: lowLabels.length > 0,
-        lowLabels,
-        promptKey: lowLabels.length > 0 ? keyParts.join('|') : null,
-    };
-}
+import { useEffect, useState } from 'react';
+import { fetchBillingSummary, type BillingSummary } from '@/lib/organization';
+import TopUpModal from './TopUpModal';
 
 /**
- * Realtime per-workspace provider credit balances. Refreshes whenever a search or
- * enrichment dispatches the `tahoe:credits-updated` window event.
+ * Unified credit wallet in the sidebar. One balance ("available / monthly included"),
+ * orange panel, and a one-click "Top up" button. Refreshes whenever a search or
+ * enrichment dispatches the `tahoe:credits-updated` window event. Hidden for trial
+ * workspaces with no plan and no credits.
  */
 export default function ProviderCreditsPanel({ collapsed = false }: { collapsed?: boolean }) {
-    const [data, setData] = useState<ProviderCreditsResponse | null>(null);
-    const [dismissedTopUpPromptKey, setDismissedTopUpPromptKey] = useState<string | null>(null);
+    const [summary, setSummary] = useState<BillingSummary | null>(null);
+    const [topUpOpen, setTopUpOpen] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
         async function load() {
             try {
-                const res = await fetchProviderCredits();
-                if (!cancelled) setData(res);
+                const res = await fetchBillingSummary();
+                if (!cancelled) setSummary(res);
             } catch {
-                if (!cancelled) setData(null);
+                if (!cancelled) setSummary(null);
             }
         }
         void load();
@@ -70,77 +32,61 @@ export default function ProviderCreditsPanel({ collapsed = false }: { collapsed?
         };
     }, []);
 
-    const usage = useMemo(() => getProviderCreditUsage(data), [data]);
-    const topUpPromptKey = usage.promptKey;
-    const topUpPromptOpen = Boolean(topUpPromptKey && topUpPromptKey !== dismissedTopUpPromptKey);
+    if (!summary) return null;
+    const included = summary.monthly_included_credits || 0;
+    const available = summary.available_credits || 0;
+    // Trial / no plan — nothing to show.
+    if (included <= 0 && available <= 0) return null;
+    if (collapsed) return null;
 
-    if (!data || !data.enabled) {
-        return null;
-    }
+    const low = summary.low_credit_state === 'critical' || summary.low_credit_state === 'empty';
+    const amountColor = low ? 'var(--tahoe-color-danger)' : 'var(--tahoe-color-text-primary)';
 
     return (
         <>
-            <Dialog.Root open={topUpPromptOpen} onOpenChange={(open) => {
-                if (!open && topUpPromptKey) {
-                    setDismissedTopUpPromptKey(topUpPromptKey);
-                }
-            }}>
-                <Dialog.Content maxWidth="460px" aria-label="Add credits" style={{ padding: 24 }}>
-                    <Dialog.Title>Add credits</Dialog.Title>
-                    <Dialog.Description size="2" mb="4">
-                        Your {usage.lowLabels.join(' and ') || 'provider'} credit{usage.lowLabels.length === 1 ? ' is' : 's are'} running low. Top up to keep sourcing without interruption.
-                    </Dialog.Description>
-                    <Text as="p" size="2" color="gray" mb="4">
-                        {usage.used.toLocaleString()} of {usage.allocated.toLocaleString()} provider credits consumed.
-                    </Text>
-                    <Flex gap="3" justify="end">
-                        <Dialog.Close>
-                            <Button variant="soft" color="gray">Not now</Button>
-                        </Dialog.Close>
-                        <a className="tui-button tui-button--solid tui-button--size-2" href={TOP_UPS_URL}>
-                            Add credits
-                        </a>
-                    </Flex>
-                </Dialog.Content>
-            </Dialog.Root>
-
-            {!collapsed ? (
-                <div
-                    aria-label="Provider credits"
+            <div
+                aria-label="Credits"
+                style={{
+                    display: 'grid',
+                    gap: 8,
+                    padding: '10px 12px',
+                    margin: '0 0 8px',
+                    borderRadius: 10,
+                    border: '1px solid rgba(255, 104, 44, 0.45)',
+                    background: 'linear-gradient(180deg, rgba(255, 104, 44, 0.12) 0%, rgba(255, 104, 44, 0.04) 100%)',
+                    fontSize: 12,
+                }}
+            >
+                <div style={{ color: 'var(--tahoe-color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Credits
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+                    <span style={{ fontSize: 18, fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: amountColor }}>
+                        {available.toLocaleString()}
+                    </span>
+                    {included > 0 ? (
+                        <span style={{ color: 'var(--tahoe-color-text-tertiary)' }}>/ {included.toLocaleString()} /mo</span>
+                    ) : null}
+                </div>
+                <button
+                    type="button"
+                    onClick={() => setTopUpOpen(true)}
                     style={{
-                        display: 'grid',
-                        gap: 6,
-                        padding: '10px 12px',
-                        margin: '0 0 8px',
-                        borderRadius: 10,
-                        border: '1px solid rgba(255, 104, 44, 0.45)',
-                        background: 'linear-gradient(180deg, rgba(255, 104, 44, 0.12) 0%, rgba(255, 104, 44, 0.04) 100%)',
+                        marginTop: 2,
+                        minHeight: 30,
+                        borderRadius: 'var(--tahoe-radius-full)',
+                        border: '1px solid var(--tahoe-color-accent)',
+                        background: 'var(--tahoe-color-accent)',
+                        color: '#ffffff',
                         fontSize: 12,
+                        fontWeight: 600,
+                        cursor: 'pointer',
                     }}
                 >
-                    <div style={{ color: 'var(--tahoe-color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                        Credits
-                    </div>
-                    {BUCKET_ORDER.map((key) => {
-                        const bucket = data.buckets[key];
-                        if (!bucket) return null;
-                        const low = bucket.remaining <= 0;
-                        return (
-                            <div key={key} style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                                <span style={{ color: 'var(--tahoe-color-text-secondary)' }}>{BUCKET_LABELS[key] ?? key}</span>
-                                <span
-                                    style={{
-                                        fontVariantNumeric: 'tabular-nums',
-                                        color: low ? 'var(--tahoe-color-danger)' : 'var(--tahoe-color-text-primary)',
-                                    }}
-                                >
-                                    {bucket.remaining}/{bucket.allocated}
-                                </span>
-                            </div>
-                        );
-                    })}
-                </div>
-            ) : null}
+                    Top up
+                </button>
+            </div>
+            <TopUpModal open={topUpOpen} onClose={() => setTopUpOpen(false)} />
         </>
     );
 }

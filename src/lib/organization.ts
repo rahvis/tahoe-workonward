@@ -198,6 +198,7 @@ export async function fetchProviderCredits(options?: { signal?: AbortSignal }) {
 }
 
 export interface BillingLimits {
+    seats?: number;
     mailboxes: number;
     active_campaigns: number;
 }

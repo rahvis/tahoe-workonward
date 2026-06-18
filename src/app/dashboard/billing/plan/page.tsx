@@ -258,7 +258,7 @@ function BillingPlanContent() {
                             <div>
                                 <div className={styles.eyebrow}>{bucketLabel ? `${bucketLabel} top-up` : 'Top-up credits'}</div>
                                 <div className={styles.finePrint}>
-                                    {bucketLabel ? `Refills your ${bucketLabel} credits for this cycle.` : 'Non-expiring credits for burst capacity.'}
+                                    {bucketLabel ? `Refills your ${bucketLabel} credits for this cycle.` : 'Credits added to your wallet for this billing cycle (no rollover).'}
                                 </div>
                             </div>
                             <div className={styles.priceBlock}>

@@ -20,6 +20,8 @@ import {
 import type { SearchPageBootstrapPayload } from "@/lib/search-page-bootstrap";
 import SaveToListDialog from "../_components/SaveToListDialog";
 import { previewCandidateToImportPayload } from "@/lib/organization";
+import { useCreditConfirm } from "@/app/dashboard/_components/CreditConfirmDialog";
+import { ACTION_COST, loadActionCosts } from "@/lib/credits";
 import { fetchSearchAccess, autocompleteLocations, autocompleteJobs, autocompleteCompany, autocompleteEducation, autocompleteCertifications, type LocationField, type JobField, type CompanyField, type EducationField, type CertificationField } from "@/lib/organization";
 import { clearAnalyticsCache } from "../analytics/_components/analytics-cache";
 import PreviewCapBanner from "./preview-cap-banner";
@@ -1843,12 +1845,16 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
     // open the upgrade modal. The backend 402 (subscription_required) is the
     // authoritative gate; this drives proactive locking + the modal.
     const [searchLocked, setSearchLocked] = useState(false);
+    const [subscriptionActive, setSubscriptionActive] = useState(false);
+    const [searchCost, setSearchCost] = useState(ACTION_COST.search);
     const [paywallReason, setPaywallReason] = useState<PaywallReason | null>(null);
+    const { confirmSpend, creditConfirmDialog } = useCreditConfirm();
 
     const refreshAccess = useCallback(async () => {
         try {
             const access = await fetchSearchAccess();
             setSearchLocked(access.locked);
+            setSubscriptionActive(access.subscription_active);
         } catch {
             // Non-fatal: the backend 402 still gates the action.
         }
@@ -1857,6 +1863,11 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
     useEffect(() => {
         void refreshAccess();
     }, [refreshAccess]);
+
+    // Live per-search credit cost (falls back to the constant).
+    useEffect(() => {
+        void loadActionCosts().then((costs) => setSearchCost(costs.search));
+    }, []);
 
     /** If `err` is a 402 paywall response, open the upgrade modal and report handled. */
     const handlePaywallError = useCallback((err: unknown): boolean => {
@@ -2217,6 +2228,12 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
         const searchPromptForRun = getSearchPromptForRun(state.query, popupModel);
         const hasFilters = countActiveFilters(popupModel) > 0;
         if (!searchPromptForRun && !hasFilters) return false;
+        // Subscribed searches spend credits — confirm once (suppressible). The free
+        // trial search and the onboarding demo never charge, so skip the prompt there.
+        if (subscriptionActive && !demoActive) {
+            const ok = await confirmSpend({ actionLabel: "Run this search", cost: searchCost });
+            if (!ok) return false;
+        }
         if (launchedFromPopup) {
             setPopupSearchPending(true);
         }
@@ -2873,7 +2890,9 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                                     type="submit"
                                     disabled={findButtonDisabled}
                                 >
-                                    {state.viewState === "searching" ? <Spinner /> : "Find candidates"}
+                                    {state.viewState === "searching"
+                                        ? <Spinner />
+                                        : subscriptionActive ? `Find candidates · ${searchCost} cr` : "Find candidates"}
                                 </Button>
                             </>
                         ) : null}
@@ -3149,6 +3168,8 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                 reason={paywallReason ?? "subscription_required"}
                 onClose={() => setPaywallReason(null)}
             />
+
+            {creditConfirmDialog}
 
             {state.mobileFiltersOpen && (
                 <>
