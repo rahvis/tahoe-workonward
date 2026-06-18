@@ -242,7 +242,7 @@ function NewCampaignContent() {
                     setSignature((current) => ({
                         sender_name: current.sender_name || defaultSignature?.sender_name || accountName,
                         sender_email: current.sender_email || defaultSignature?.sender_email || firstHealthy?.email || settingsPayload.account.email,
-                        sender_phone: current.sender_phone || defaultSignature?.sender_phone || '',
+                        sender_phone: current.sender_phone || defaultSignature?.sender_phone || settingsPayload.workspace.company_phone || '',
                         sender_address: current.sender_address || defaultSignature?.sender_address || settingsPayload.workspace.company_address || '',
                         sender_website: current.sender_website || defaultSignature?.sender_website || settingsPayload.workspace.company_website || '',
                     }));

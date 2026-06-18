@@ -529,6 +529,7 @@ export interface WorkspaceSettings {
     billing_contact_email?: string | null;
     timezone: string;
     company_website?: string | null;
+    company_phone?: string | null;
     company_address?: string | null;
     company_address_meta?: AddressMetadata | null;
 }

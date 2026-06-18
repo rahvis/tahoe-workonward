@@ -487,7 +487,9 @@ function SettingsPageContent() {
     }, [pathname, router, searchParamsString]);
 
     useEffect(() => {
-        if (!['account', 'subscription', 'payment'].includes(activeTab)) {
+        // 'workspace' also loads billing so the account-deletion card (surfaced on
+        // that tab) can warn about an active subscription before deletion.
+        if (!['account', 'workspace', 'subscription', 'payment'].includes(activeTab)) {
             setBillingLoading(false);
             return;
         }
@@ -804,6 +806,57 @@ function SettingsPageContent() {
     const referralRows = pagedRows(draft.referral.invites, referralPage);
     const securityRows = pagedRows(draft.security.recent_sensitive_events, securityPage);
 
+    // Account-deletion danger card — reused by the hidden Account tab and surfaced
+    // on the visible Workspace tab so users can delete their own account there.
+    const renderAccountDeletionCard = () => (
+        <div className={`${styles.card} ${styles.dangerCard}`}>
+            <div className={styles.cardHeader}>
+                <div>
+                    <h2 className={styles.cardTitle}>Delete account request</h2>
+                    <p className={styles.cardText}>
+                        Request deletion of your Tahoe user account. Tahoe keeps records required for legal, billing, security, and abuse-prevention review.
+                    </p>
+                </div>
+                {accountDeletionStatus ? <span className={statusClass(accountDeletionStatus.status)}>{accountDeletionStatus.status}</span> : null}
+            </div>
+            {hasActiveSubscription ? (
+                <div className={styles.banner}>An active subscription is attached to this workspace. Cancel it from the Subscription tab before final account deletion can be completed.</div>
+            ) : null}
+            {billingError ? (
+                <div className={styles.banner}>Subscription status could not be refreshed: {billingError}</div>
+            ) : null}
+            {accountDeletionStatus ? (
+                <div className={styles.statusItem}>
+                    <span>
+                        <strong>Latest request</strong><br />
+                        <span className={styles.muted}>{formatDate(accountDeletionStatus.requested_at)} · {accountDeletionStatus.message || 'Recorded for operator review.'}</span>
+                    </span>
+                    <span className={styles.mutedPill}>{accountDeletionStatus.request_id}</span>
+                </div>
+            ) : null}
+            <div className={styles.dangerFormGrid}>
+                <label className={styles.dangerField}>
+                    <span className={styles.label}>{`Type ${accountDeletionConfirmationText}`}</span>
+                    <TextField.Root
+                        size="3"
+                        value={accountDeletion.confirmation}
+                        aria-label={`Type ${accountDeletionConfirmationText}`}
+                        onChange={(event) => setAccountDeletion((prev) => ({ ...prev, confirmation: event.target.value }))}
+                    />
+                </label>
+                <label className={styles.dangerField}>
+                    <span className={styles.label}>Reason or notes</span>
+                    <textarea className={styles.dangerTextarea} value={accountDeletion.reason} onChange={(event) => setAccountDeletion((prev) => ({ ...prev, reason: event.target.value }))} />
+                </label>
+            </div>
+            <div className={styles.actions}>
+                <Button variant="soft" disabled={saving || accountDeletion.confirmation.trim() !== accountDeletionConfirmationText} onClick={handleAccountDeletionRequest}>
+                    {saving ? 'Submitting...' : 'Request account deletion'}
+                </Button>
+            </div>
+        </div>
+    );
+
     return (
         <main className={styles.page}>
             <nav className={styles.tabs} aria-label="Settings sections">
@@ -848,61 +901,17 @@ function SettingsPageContent() {
                                 </div>
                                 <SaveActions dirty={dirtySections.has('account')} saving={saving} onSave={() => saveSection('account')} onReset={() => resetSection('account')} />
                             </div>
-                            <div className={`${styles.card} ${styles.dangerCard}`}>
-                                <div className={styles.cardHeader}>
-                                    <div>
-                                        <h2 className={styles.cardTitle}>Delete account request</h2>
-                                        <p className={styles.cardText}>
-                                            Request deletion of your Tahoe user account. Tahoe keeps records required for legal, billing, security, and abuse-prevention review.
-                                        </p>
-                                    </div>
-                                    {accountDeletionStatus ? <span className={statusClass(accountDeletionStatus.status)}>{accountDeletionStatus.status}</span> : null}
-                                </div>
-                                {hasActiveSubscription ? (
-                                    <div className={styles.banner}>An active subscription is attached to this workspace. Cancel it from the Subscription tab before final account deletion can be completed.</div>
-                                ) : null}
-                                {billingError ? (
-                                    <div className={styles.banner}>Subscription status could not be refreshed: {billingError}</div>
-                                ) : null}
-                                {accountDeletionStatus ? (
-                                    <div className={styles.statusItem}>
-                                        <span>
-                                            <strong>Latest request</strong><br />
-                                            <span className={styles.muted}>{formatDate(accountDeletionStatus.requested_at)} · {accountDeletionStatus.message || 'Recorded for operator review.'}</span>
-                                        </span>
-                                        <span className={styles.mutedPill}>{accountDeletionStatus.request_id}</span>
-                                    </div>
-                                ) : null}
-                                <div className={styles.dangerFormGrid}>
-                                    <label className={styles.dangerField}>
-                                        <span className={styles.label}>{`Type ${accountDeletionConfirmationText}`}</span>
-                                        <TextField.Root
-                                            size="3"
-                                            value={accountDeletion.confirmation}
-                                            aria-label={`Type ${accountDeletionConfirmationText}`}
-                                            onChange={(event) => setAccountDeletion((prev) => ({ ...prev, confirmation: event.target.value }))}
-                                        />
-                                    </label>
-                                    <label className={styles.dangerField}>
-                                        <span className={styles.label}>Reason or notes</span>
-                                        <textarea className={styles.dangerTextarea} value={accountDeletion.reason} onChange={(event) => setAccountDeletion((prev) => ({ ...prev, reason: event.target.value }))} />
-                                    </label>
-                                </div>
-                                <div className={styles.actions}>
-                                    <Button variant="soft" disabled={saving || accountDeletion.confirmation.trim() !== accountDeletionConfirmationText} onClick={handleAccountDeletionRequest}>
-                                        {saving ? 'Submitting...' : 'Request account deletion'}
-                                    </Button>
-                                </div>
-                            </div>
+                            {renderAccountDeletionCard()}
                         </>
                     ) : null}
 
                     {activeTab === 'workspace' ? (
+                        <>
                         <div className={styles.card}>
                             <div className={styles.cardHeader}>
                                 <div>
                                     <h2 className={styles.cardTitle}>Workspace</h2>
-                                    <p className={styles.cardText}>Company identity, billing contact, timezone, and physical address used across compliance defaults.</p>
+                                    <p className={styles.cardText}>Company identity, contact details, timezone, and address. Your phone, website, and address auto-fill new campaign signatures (you can still edit them per campaign).</p>
                                 </div>
                             </div>
                             <div className={styles.formGrid}>
@@ -915,6 +924,7 @@ function SettingsPageContent() {
                                     </TahoeSelect>
                                 </label>
                                 <TextInput label="Company website" value={workspace.company_website || ''} onChange={(value) => updateDraft('workspace', { ...workspace, company_website: value }, 'workspace')} />
+                                <TextInput label="Company phone" type="tel" value={workspace.company_phone || ''} onChange={(value) => updateDraft('workspace', { ...workspace, company_phone: value }, 'workspace')} />
                                 <AddressAutocompleteInput
                                     value={workspace.company_address || ''}
                                     meta={workspace.company_address_meta}
@@ -927,6 +937,20 @@ function SettingsPageContent() {
                             </div>
                             <SaveActions dirty={dirtySections.has('workspace')} saving={saving} onSave={() => saveSection('workspace')} onReset={() => resetSection('workspace')} />
                         </div>
+                        <div className={styles.card}>
+                            <div className={styles.cardHeader}>
+                                <div>
+                                    <h2 className={styles.cardTitle}>Account</h2>
+                                    <p className={styles.cardText}>The email you use to sign in to Tahoe.</p>
+                                </div>
+                                <span className={account.is_verified ? styles.successPill : styles.warningPill}>{account.is_verified ? 'Verified' : 'Unverified'}</span>
+                            </div>
+                            <div className={styles.formGrid}>
+                                <TextInput label="Login email" value={account.email} onChange={() => undefined} disabled />
+                            </div>
+                        </div>
+                        {renderAccountDeletionCard()}
+                        </>
                     ) : null}
 
                     {activeTab === 'subscription' ? (
