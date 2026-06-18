@@ -45,7 +45,18 @@ export default async function JobBoardPage({ searchParams }: { searchParams: Sea
                             const comp = formatComp(job);
                             return (
                                 <Link key={job.slug} href={`/jobs/${job.slug}`} className={styles.card}>
-                                    <h2 className={styles.cardTitle}>{job.title}</h2>
+                                    <div className={styles.cardTop}>
+                                        <h2 className={styles.cardTitle}>{job.title}</h2>
+                                        {(job.logo_url || job.company_name) && (
+                                            <span className={styles.cardEmployer}>
+                                                {job.logo_url && (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img src={job.logo_url} alt={job.company_name ?? 'Company logo'} className={styles.cardEmployerLogo} />
+                                                )}
+                                                {job.company_name && <span className={styles.cardEmployerName}>{job.company_name}</span>}
+                                            </span>
+                                        )}
+                                    </div>
                                     <p className={styles.cardMeta}>{locationLabel(job)}{job.employment_type ? ` · ${job.employment_type.replace('_', ' ')}` : ''}</p>
                                     {(comp || job.equity) && (
                                         <p className={styles.cardComp}>{[comp, job.equity, job.commission ? 'Commission' : ''].filter(Boolean).join(' · ')}</p>

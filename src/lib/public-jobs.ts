@@ -7,6 +7,8 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 export interface PublicJobCard {
     slug: string;
     title: string;
+    company_name: string | null;
+    logo_url: string | null;
     department: string | null;
     team: string | null;
     employment_type: string | null;
