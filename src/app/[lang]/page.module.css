@@ -1826,7 +1826,10 @@
     .heroGrid,
     .pricingGrid,
     .finalCtaCard {
-        grid-template-columns: 1fr;
+        /* minmax(0, …) lets the single column shrink below its content's intrinsic
+           width — without it the wide live-search mock forces the whole hero (title,
+           body, stats) wider than the viewport and it gets clipped on phones. */
+        grid-template-columns: minmax(0, 1fr);
         gap: 48px;
     }
 
@@ -1870,11 +1873,11 @@
     .footerGrid,
     .analyticsGrid,
     .billingHero {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .searchMockLayout {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .mockSidebar {
@@ -2421,5 +2424,53 @@
 
     .addressText {
         font-size: 12px;
+    }
+}
+
+/* ── Mobile hardening: wide decorative mock cards must clip, never push the page
+   wider than the viewport (fixes the hero overflow on iOS/Android phones). ── */
+@media (max-width: 1023px) {
+    .heroCopy {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .heroCard {
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .heroSearchField,
+    .typedQuery,
+    .filterChips,
+    .resultRow,
+    .resultMain,
+    .resultMatch {
+        min-width: 0;
+    }
+
+    .typedQuery {
+        overflow: hidden;
+    }
+
+    /* Candidate name / role / location must ellipsis instead of forcing card width. */
+    .resultMain strong,
+    .resultMain span,
+    .resultMatch span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 600px) {
+    .heroCard {
+        padding: 18px;
+    }
+
+    /* Keep the three hero stats readable; wrap to two-up on the smallest phones. */
+    .statsRow {
+        gap: 14px;
     }
 }
