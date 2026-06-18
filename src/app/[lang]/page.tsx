@@ -500,8 +500,8 @@ function ProofVisual({ type }: { type: (typeof homeT.en.proofTabs)[number]['visu
         return (
             <div className={styles.proofCardMock}>
                 <strong className={styles.proofStartTitle}>You are ready to search.</strong>
-                <div className={styles.proofContactRow}><span>Search credits</span><strong>300 / 300</strong></div>
-                <div className={styles.proofContactRow}><span>Enrich credits</span><strong>200 / 200</strong></div>
+                <div className={styles.proofContactRow}><span>Free search</span><strong>1 included</strong></div>
+                <div className={styles.proofContactRow}><span>Reveal contacts</span><strong>On any plan</strong></div>
                 <div className={styles.proofCardFoot}>No credit card required</div>
             </div>
         );
