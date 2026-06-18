@@ -34,6 +34,9 @@ interface OnboardingContextValue {
     step: number;
     demoActive: boolean;
     showChecklist: boolean;
+    // True only after the user actively FINISHES the tour in this session — never
+    // on a fresh load that merely reconciles to an already-completed server state.
+    justCompleted: boolean;
     setSegment: (segment: OnboardingSegment) => void;
     startTour: () => void;
     advance: () => void;
@@ -57,6 +60,7 @@ const NOOP_ONBOARDING: OnboardingContextValue = {
     step: 0,
     demoActive: false,
     showChecklist: false,
+    justCompleted: false,
     setSegment: () => {},
     startTour: () => {},
     advance: () => {},
@@ -99,6 +103,10 @@ export default function OnboardingProvider({ children }: { children: ReactNode }
     // It is intentionally NOT persisted: a non-completed user is re-prompted on their
     // next login (fresh page load resets this), but isn't nagged within one session.
     const [sessionDismissed, setSessionDismissed] = useState(false);
+    // Rising edge that drives the one-time completion confetti. Set only by the
+    // explicit complete() action, never by the load reconcile — so the celebration
+    // shows exactly once (the session the user finishes) and not on later logins.
+    const [justCompleted, setJustCompleted] = useState(false);
 
     // Keep a synchronous mirror so actions compute from the freshest value.
     const stateRef = useRef(state);
@@ -156,14 +164,13 @@ export default function OnboardingProvider({ children }: { children: ReactNode }
         goSearch();
     }, [apply, goSearch]);
 
-    const complete = useCallback(
-        () =>
-            apply(
-                { tour_status: 'completed', completed_at: new Date().toISOString() },
-                { tour_status: 'completed' },
-            ),
-        [apply],
-    );
+    const complete = useCallback(() => {
+        setJustCompleted(true);
+        apply(
+            { tour_status: 'completed', completed_at: new Date().toISOString() },
+            { tour_status: 'completed' },
+        );
+    }, [apply]);
 
     const advance = useCallback(() => {
         const prev = stateRef.current;
@@ -238,6 +245,7 @@ export default function OnboardingProvider({ children }: { children: ReactNode }
             // Demo results appear once the user "runs" the example (step >= 1).
             demoActive: loaded && state.tour_status === 'in_progress' && state.tour_step >= 1,
             showChecklist: loaded && state.tour_status !== 'pending' && !state.checklist_dismissed,
+            justCompleted,
             setSegment,
             startTour,
             advance,
@@ -248,7 +256,7 @@ export default function OnboardingProvider({ children }: { children: ReactNode }
             dismissChecklist,
             relaunch,
         }),
-        [loaded, sessionDismissed, state, setSegment, startTour, advance, back, skip, complete, markTask, dismissChecklist, relaunch],
+        [loaded, sessionDismissed, justCompleted, state, setSegment, startTour, advance, back, skip, complete, markTask, dismissChecklist, relaunch],
     );
 
     return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;

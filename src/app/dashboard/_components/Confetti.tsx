@@ -3,8 +3,8 @@
 import { useMemo } from 'react';
 import styles from './confetti.module.css';
 
-// Soft, celebratory palette (greens + brand accent + neutrals).
-const COLORS = ['#4caf7d', '#7fc2a0', '#ff682c', '#ffd9c7', '#cfe8d8'];
+// Warm, on-brand palette matching the landing page (orange accent + peach/cream).
+const COLORS = ['#ff682c', '#f2551c', '#ff9e6b', '#ffd9c7', '#fbe3d3'];
 
 // Deterministic pseudo-random in [0,1) per (index, salt): pure (no Math.random,
 // no Date) so it satisfies the purity rule and renders identically on server +

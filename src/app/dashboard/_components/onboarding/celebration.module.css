@@ -9,8 +9,11 @@
     left: 50%;
     top: 80px;
     transform: translateX(-50%);
-    background: linear-gradient(180deg, #f1faf4 0%, #ffffff 70%);
-    border: 1px solid #cfe8d8;
+    /* Landing-page palette: warm cream with a soft orange glow + accent border. */
+    background:
+        radial-gradient(circle at top right, rgba(255, 104, 44, 0.12), transparent 60%),
+        linear-gradient(180deg, #fffdf9 0%, #ffffff 70%, #fbfaf7 100%);
+    border: 1px solid rgba(255, 104, 44, 0.30);
     border-radius: var(--tahoe-radius-md);
     box-shadow: var(--tahoe-shadow-panel);
     padding: 14px 22px;
@@ -22,7 +25,7 @@
     font-family: var(--font-instrument), "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
     animation: drop 0.2s ease-out;
 }
-.toast strong { font-size: 16px; color: var(--tahoe-color-text-primary); }
+.toast strong { font-size: 16px; color: var(--tahoe-color-accent); }
 .toast span { font-size: 13px; color: var(--tahoe-color-text-secondary); }
 
 @keyframes drop { from { opacity: 0; transform: translate(-50%, -8px); } to { opacity: 1; transform: translate(-50%, 0); } }

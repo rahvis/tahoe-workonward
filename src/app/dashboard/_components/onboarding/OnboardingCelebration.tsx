@@ -5,16 +5,20 @@ import Confetti from '../Confetti';
 import { useOnboarding } from './OnboardingProvider';
 import styles from './celebration.module.css';
 
-/** Brief confetti + toast when the tour transitions to completed (this session only). */
+/**
+ * Brief confetti + toast shown EXACTLY ONCE — the moment the user finishes the
+ * tour in this session. It keys off `justCompleted` (a rising edge set only by the
+ * complete() action), so a later login that merely loads an already-completed
+ * state never re-triggers it.
+ */
 export default function OnboardingCelebration() {
-    const { state } = useOnboarding();
-    const prevStatus = useRef(state.tour_status);
+    const { justCompleted } = useOnboarding();
+    const fired = useRef(false);
     const [show, setShow] = useState(false);
 
     useEffect(() => {
-        const justCompleted = prevStatus.current !== 'completed' && state.tour_status === 'completed';
-        prevStatus.current = state.tour_status;
-        if (!justCompleted) return;
+        if (!justCompleted || fired.current) return;
+        fired.current = true; // guard against any re-run within the session
         // Defer the setState so it isn't a synchronous set-state-in-effect.
         const raf = requestAnimationFrame(() => setShow(true));
         const hide = window.setTimeout(() => setShow(false), 2600);
@@ -22,7 +26,7 @@ export default function OnboardingCelebration() {
             cancelAnimationFrame(raf);
             window.clearTimeout(hide);
         };
-    }, [state.tour_status]);
+    }, [justCompleted]);
 
     if (!show) return null;
 
