@@ -219,25 +219,18 @@
         box-shadow 180ms ease;
 }
 
-.primaryAction {
-    background: var(--color-text-primary);
+/* "Apply to be a partner" — solid orange, white text, readable in both states. */
+.primaryAction,
+.accentAction {
+    background: var(--color-accent);
     color: #ffffff;
     box-shadow: var(--shadow-soft);
 }
 
-.primaryAction:hover {
-    background: #111111;
-    transform: translateY(-1px);
-}
-
-.accentAction {
-    background: var(--color-accent);
-    color: var(--color-text-primary);
-    box-shadow: var(--shadow-soft);
-}
-
+.primaryAction:hover,
 .accentAction:hover {
-    background: #f15f21;
+    /* Darken the orange (improves white-text contrast); never flip the text colour. */
+    background: #f2551c;
     color: #ffffff;
     transform: translateY(-1px);
 }
@@ -248,26 +241,20 @@
     box-shadow: var(--shadow-soft);
 }
 
-.ghostAction {
-    background: transparent;
-    color: var(--color-text-secondary);
-    border: 1px solid var(--color-border-subtle);
-}
-
-.ghostAction:hover {
-    color: var(--color-text-primary);
-    background: var(--color-surface-subtle);
-}
-
+/* "Read the FAQ" — orange outline that fills on hover; orange text stays readable on
+   both the light hero and the dark final-CTA card, and white-on-orange on hover. */
+.ghostAction,
 .inverseGhostAction {
     background: transparent;
-    color: var(--color-inverse-muted);
-    border: 1px solid rgba(255, 255, 255, 0.24);
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent);
 }
 
+.ghostAction:hover,
 .inverseGhostAction:hover {
+    background: #f2551c;
     color: #ffffff;
-    border-color: #ffffff;
+    border-color: #f2551c;
 }
 
 .textAction {

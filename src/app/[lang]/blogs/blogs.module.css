@@ -414,3 +414,26 @@
         flex-direction: column;
     }
 }
+
+/* ── Article content: never overflow horizontally on mobile ── */
+.articleContent { overflow-wrap: break-word; }
+.articleContent img,
+.articleContent svg,
+.infographicSvg { max-width: 100%; height: auto; }
+.articleContent pre,
+.articleContent table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ── Phones (≤ 560px): tighter article spacing ── */
+@media (max-width: 560px) {
+    .hero h1,
+    .articleHeader h1 { font-size: 22px; }
+    .postCard { padding: 18px; }
+    .postGrid { gap: 14px; }
+    .articleContent { font-size: 16px; line-height: 1.65; }
+    .articleQuote { padding-left: 16px; }
+}

@@ -12,6 +12,9 @@ import styles from './page.module.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.com';
 
+// "Book a demo" opens the Google Calendar appointment scheduler in a new tab.
+const DEMO_URL = 'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ2TB11Wn_yYLPd8ClWeKR2YyHYCYYjdRm1cJguma5qRyE6IuKaJlVjdugP4zOs96cFr3-mvhO0P';
+
 const inter = Inter({
     subsets: ['latin'],
     variable: '--font-body',
@@ -721,9 +724,9 @@ export default function LandingPage() {
                                 <Link href={L('/signup')} className={styles.primaryAction} onClick={() => trackAuthCta('start_free_trial', 'hero')}>
                                     {t.ctaStart} <ArrowIcon />
                                 </Link>
-                                <Link href={L('/contact')} className={styles.ghostAction} onClick={() => trackAuthCta('book_demo', 'hero')}>
+                                <a href={DEMO_URL} target="_blank" rel="noopener noreferrer" className={styles.ghostAction} onClick={() => trackAuthCta('book_demo', 'hero')}>
                                     {t.ctaDemo} <ArrowUpRightIcon />
-                                </Link>
+                                </a>
                                 <Image
                                     src="/loading_animations_transparent_all/fade_transparent.gif"
                                     alt=""
@@ -958,9 +961,9 @@ export default function LandingPage() {
                                 <Link href={L('/signup')} className={styles.accentAction} onClick={() => trackAuthCta('start_free_trial', 'final_cta')}>
                                     {t.finalCtaStart} <ArrowIcon />
                                 </Link>
-                                <Link href={L('/contact')} className={styles.inverseGhostAction} onClick={() => trackAuthCta('book_demo', 'final_cta')}>
+                                <a href={DEMO_URL} target="_blank" rel="noopener noreferrer" className={styles.inverseGhostAction} onClick={() => trackAuthCta('book_demo', 'final_cta')}>
                                     {t.finalCtaDemo} <ArrowUpRightIcon />
-                                </Link>
+                                </a>
                             </div>
                         </div>
 

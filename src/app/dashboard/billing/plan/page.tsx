@@ -5,13 +5,14 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import styles from '../billing.module.css';
 import {
     createSubscriptionCheckout,
-    createTopUpCheckout,
     fetchBillingCatalog,
     fetchBillingSummary,
     type BillingCatalogResponse,
     type BillingPlan,
     type BillingSummary,
 } from '@/lib/organization';
+import PlanCards from '@/app/dashboard/_components/PlanCards';
+import { TopUpPacks } from '@/app/dashboard/_components/TopUpModal';
 
 type BillingTab = 'overview' | 'plans' | 'topups' | 'credits';
 
@@ -112,7 +113,7 @@ function BillingPlanContent() {
     }
 
     async function handlePlanCheckout(planKey: BillingPlan['key'], interval: 'month' | 'year') {
-        setBusyKey(`${planKey}:${interval}`);
+        setBusyKey(planKey);
         setError(null);
         try {
             const response = await createSubscriptionCheckout({
@@ -124,24 +125,6 @@ function BillingPlanContent() {
             redirectToExternal(response.url);
         } catch (actionError) {
             setError(actionError instanceof Error ? actionError.message : 'Unable to start Stripe checkout.');
-        } finally {
-            setBusyKey(null);
-        }
-    }
-
-    async function handleTopUp(packKey: string) {
-        setBusyKey(packKey);
-        setError(null);
-        try {
-            const response = await createTopUpCheckout({
-                pack_key: packKey,
-                success_path: '/dashboard/billing/plan',
-                cancel_path: '/dashboard/billing/plan',
-            });
-            redirectToExternal(response.url);
-        } catch (actionError) {
-            setError(actionError instanceof Error ? actionError.message : 'Unable to start top-up checkout.');
-        } finally {
             setBusyKey(null);
         }
     }
@@ -195,47 +178,17 @@ function BillingPlanContent() {
 
     function renderPlans() {
         if (!catalog) return null;
-        if (catalog.plans.length === 0) {
+        const plans = catalog.plans.filter((plan) => plan.key !== 'enterprise');
+        if (plans.length === 0) {
             return <div className={styles.emptyState}>No subscription plans are available yet.</div>;
         }
         return (
-            <div className={styles.planGrid}>
-                {catalog.plans.map((plan) => (
-                    <div key={plan.key} className={styles.card}>
-                        <div className={styles.cardHeader}>
-                            <div>
-                                <div className={styles.eyebrow}>{plan.name}</div>
-                                <div className={styles.finePrint}>Subscription plan</div>
-                            </div>
-                            <div className={styles.priceBlock}>
-                                <div className={styles.priceValue}>{formatPrice(plan.monthly_price_usd)} / month</div>
-                                <div className={styles.planPriceMeta}>or {formatPrice(plan.yearly_price_usd)} / year</div>
-                            </div>
-                        </div>
-                        <div className={styles.row}><span>Credits / month</span><strong>{plan.monthly_credits.toLocaleString()}</strong></div>
-                        <div className={styles.row}><span>Mailboxes</span><strong>{plan.limits.mailboxes}</strong></div>
-                        <div className={styles.row}><span>Active campaigns</span><strong>{plan.limits.active_campaigns}</strong></div>
-                        <div className={styles.buttonRow}>
-                            <button
-                                type="button"
-                                className="tahoe-button-secondary"
-                                onClick={() => void handlePlanCheckout(plan.key, 'month')}
-                                disabled={busyKey === `${plan.key}:month`}
-                            >
-                                {busyKey === `${plan.key}:month` ? 'Opening…' : 'Choose monthly'}
-                            </button>
-                            <button
-                                type="button"
-                                className="tahoe-button"
-                                onClick={() => void handlePlanCheckout(plan.key, 'year')}
-                                disabled={busyKey === `${plan.key}:year`}
-                            >
-                                {busyKey === `${plan.key}:year` ? 'Opening…' : 'Choose yearly'}
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
+            <PlanCards
+                plans={plans}
+                onChoose={handlePlanCheckout}
+                busyPlan={busyKey}
+                currentPlanKey={hasActiveEntitlements ? summary?.billing.plan_key ?? null : null}
+            />
         );
     }
 
@@ -244,41 +197,7 @@ function BillingPlanContent() {
         if (catalog.topups.length === 0) {
             return <div className={styles.emptyState}>No top-up packs are available yet.</div>;
         }
-        return (
-            <div className={styles.topupGrid}>
-                {catalog.topups.map((pack) => {
-                    const bucketLabel = pack.bucket === 'coresignal_search'
-                        ? 'Search'
-                        : pack.bucket === 'fullenrich'
-                          ? 'Enrich'
-                          : null;
-                    return (
-                    <div key={pack.key} className={styles.card}>
-                        <div className={styles.cardHeader}>
-                            <div>
-                                <div className={styles.eyebrow}>{bucketLabel ? `${bucketLabel} top-up` : 'Top-up credits'}</div>
-                                <div className={styles.finePrint}>
-                                    {bucketLabel ? `Refills your ${bucketLabel} credits for this cycle.` : 'Credits added to your wallet for this billing cycle (no rollover).'}
-                                </div>
-                            </div>
-                            <div className={styles.priceBlock}>
-                                <div className={styles.priceValue}>{pack.credits.toLocaleString()}</div>
-                                <div className={styles.planPriceMeta}>{formatPrice(pack.price_usd)} one time</div>
-                            </div>
-                        </div>
-                        <button
-                            type="button"
-                            className="tahoe-button"
-                            onClick={() => void handleTopUp(pack.key)}
-                            disabled={busyKey === pack.key}
-                        >
-                            {busyKey === pack.key ? 'Opening…' : `Buy ${pack.credits.toLocaleString()}`}
-                        </button>
-                    </div>
-                    );
-                })}
-            </div>
-        );
+        return <TopUpPacks packs={catalog.topups} returnPath="/dashboard/billing/plan" />;
     }
 
     function renderCredits() {

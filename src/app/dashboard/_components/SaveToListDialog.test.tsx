@@ -269,6 +269,8 @@ test('shows next-step success actions after importing selected candidates', asyn
 
     await user.click(screen.getByLabelText('List'));
     await user.click(screen.getByRole('option', { name: /Contact engineers/i }));
+    // "Stay on search" is the default now — opt into the next-steps flow for this test.
+    await user.click(screen.getByLabelText('Show next steps'));
     await user.click(screen.getByRole('button', { name: 'Save candidates' }));
 
     expect(await screen.findByRole('heading', { name: 'Saved 1 candidate' })).toBeInTheDocument();

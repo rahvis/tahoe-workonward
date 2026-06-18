@@ -8,6 +8,8 @@ vi.mock('next/font/google', () => ({
     Montserrat: () => ({ className: 'montserrat-font', variable: 'montserrat-variable' }),
 }));
 
+const DEMO_URL = 'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ2TB11Wn_yYLPd8ClWeKR2YyHYCYYjdRm1cJguma5qRyE6IuKaJlVjdugP4zOs96cFr3-mvhO0P';
+
 test('renders Tahoe landing content with auth CTAs pointing to dedicated routes', () => {
     render(<LandingPage />);
 
@@ -24,7 +26,9 @@ test('renders Tahoe landing content with auth CTAs pointing to dedicated routes'
         screen.getAllByRole('link', { name: /start for free/i }).every((link) => link.getAttribute('href') === '/signup'),
     ).toBe(true);
     expect(
-        screen.getAllByRole('link', { name: /book a demo/i }).every((link) => link.getAttribute('href') === '/contact'),
+        screen.getAllByRole('link', { name: /book a demo/i }).every(
+            (link) => link.getAttribute('href') === DEMO_URL && link.getAttribute('target') === '_blank',
+        ),
     ).toBe(true);
     expect(
         screen.getAllByRole('link', { name: /^blog$/i }).every((link) => link.getAttribute('href') === '/blogs'),

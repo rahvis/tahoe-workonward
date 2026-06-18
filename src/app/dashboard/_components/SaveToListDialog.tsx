@@ -238,7 +238,7 @@ export default function SaveToListDialog({
     const [listPickerOpen, setListPickerOpen] = useState(false);
     const [projectSearch, setProjectSearch] = useState('');
     const [listSearch, setListSearch] = useState('');
-    const [afterSaveAction, setAfterSaveAction] = useState<'next_steps' | 'stay'>('next_steps');
+    const [afterSaveAction, setAfterSaveAction] = useState<'next_steps' | 'stay'>('stay');
     const [savedState, setSavedState] = useState<{
         result: SaveToListResponse;
         list: ListSummary;
@@ -267,7 +267,7 @@ export default function SaveToListDialog({
             setLoadingLists(false);
             setProjectSearch('');
             setListSearch('');
-            setAfterSaveAction('next_steps');
+            setAfterSaveAction('stay');
             setSavedState(null);
             setProjectPickerOpen(false);
             setListPickerOpen(false);

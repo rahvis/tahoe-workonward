@@ -107,3 +107,28 @@
 .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--tahoe-color-border-subtle); }
 .dotDone { background: var(--tahoe-color-success); }
 .bar { width: 40px; height: 2px; background: var(--tahoe-color-border-subtle); }
+
+/* Long descriptions / preformatted job text and media must wrap, never overflow. */
+.section p, .section li { overflow-wrap: break-word; }
+.section img, .section svg { max-width: 100%; height: auto; }
+
+/* ── Phones (≤ 560px) ── */
+@media (max-width: 560px) {
+    .main { padding: 24px 16px 56px; }
+    .boardTitle { font-size: 28px; }
+    .detailTitle { font-size: 24px; }
+    .statusTitle { font-size: 21px; }
+    .statusTitleSuccess { font-size: 22px; }
+    .statusCard { padding: 24px 18px; margin: 16px auto; }
+    /* Stack the title and employer chip so neither is cramped. */
+    .cardTop { flex-direction: column; align-items: flex-start; gap: 2px; }
+    .cardEmployer { max-width: 100%; }
+    /* Scroll the detail tab row rather than let it overflow. */
+    .tabs { gap: 18px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { white-space: nowrap; }
+    /* Center the timeline bars on narrow phones. */
+    .bar { width: 24px; }
+    /* Prevent iOS Safari auto-zoom on input focus (requires ≥16px). */
+    .input, .textarea, .select, .filterInput, .filterSelect { font-size: 16px; }
+}

@@ -100,7 +100,7 @@ test('defaults to the overview tab and hides plan actions until the Plans tab is
     expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.queryByRole('tab', { name: 'Rules' })).not.toBeInTheDocument();
     expect(screen.getByText('Available credits')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Choose monthly' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /upgrade now/i })).not.toBeInTheDocument();
 });
 
 test('normalizes the removed rules tab to overview', async () => {
@@ -127,17 +127,27 @@ test('switches sections with settings-style tabs and updates the URL', async () 
     expect(replaceMock).toHaveBeenCalledWith('/dashboard/billing/plan?tab=credits', { scroll: false });
 });
 
-test('plans tab starts subscription checkout with existing return paths', async () => {
+test('plans tab starts subscription checkout (annual by default) with existing return paths', async () => {
+    // Workspace is on Starter (shown as "Current plan"); upgrading to Growth checks out.
+    mockedFetchBillingCatalog.mockResolvedValue({
+        plans: [
+            { key: 'starter', name: 'Starter', monthly_price_usd: 49, yearly_price_usd: 468, monthly_credits: 400, limits: { seats: 1, mailboxes: 1, active_campaigns: 2 }, stripe_product_lookup_key: '', stripe_monthly_price_lookup_key: '', stripe_yearly_price_lookup_key: '' },
+            { key: 'growth', name: 'Growth', monthly_price_usd: 129, yearly_price_usd: 1236, monthly_credits: 1200, limits: { seats: 3, mailboxes: 3, active_campaigns: 10 }, stripe_product_lookup_key: '', stripe_monthly_price_lookup_key: '', stripe_yearly_price_lookup_key: '' },
+        ],
+        topups: [], rate_card: {}, low_credit_thresholds: [25, 10, 0], automatic_tax_enabled: false, portal_enabled: true,
+    });
+
     render(<BillingPlanPage />);
 
-    await screen.findByText('Starter');
+    await screen.findByText('Available credits');
     fireEvent.click(screen.getByRole('tab', { name: 'Plans' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Choose monthly' }));
+    // Starter is the current plan (disabled); Growth is the only "Upgrade now".
+    fireEvent.click(await screen.findByRole('button', { name: /upgrade now/i }));
 
     await waitFor(() => {
         expect(mockedCreateSubscriptionCheckout).toHaveBeenCalledWith({
-            plan_key: 'starter',
-            interval: 'month',
+            plan_key: 'growth',
+            interval: 'year',
             success_path: '/dashboard/billing/plan',
             cancel_path: '/dashboard/billing/plan',
         });
@@ -147,9 +157,9 @@ test('plans tab starts subscription checkout with existing return paths', async 
 test('top-ups tab starts top-up checkout', async () => {
     render(<BillingPlanPage />);
 
-    await screen.findByText('Starter');
+    await screen.findByText('Available credits');
     fireEvent.click(screen.getByRole('tab', { name: 'Top-ups' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Buy 1,000' }));
+    fireEvent.click(await screen.findByRole('button', { name: /buy.*\$80/i }));
 
     await waitFor(() => {
         expect(mockedCreateTopUpCheckout).toHaveBeenCalledWith({

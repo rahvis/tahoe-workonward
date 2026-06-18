@@ -21,6 +21,11 @@
     color: var(--tahoe-color-text-secondary);
 }
 
+/* Inset for the shared PlanCards / TopUpPacks rendered inside the modal. */
+.bodyRegion {
+    padding: 4px 24px 8px;
+}
+
 .planGrid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

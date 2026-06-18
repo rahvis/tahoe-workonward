@@ -5,27 +5,48 @@ import { Button, Dialog, Flex, Spinner, Text } from '@/components/ui/tahoe-ui';
 import { createTopUpCheckout, fetchBillingCatalog, type TopUpPack } from '@/lib/organization';
 import styles from './topup.module.css';
 
+// Every pack carries the same simple, honest terms — shown as bullets so the cards
+// are detailed rather than empty.
+const PACK_BULLETS = [
+    'Added to your wallet instantly',
+    'Used this billing cycle (no rollover)',
+    'Sending outreach is always free',
+];
+
 function redirectToCheckout(url: string) {
     if (process.env.NODE_ENV === 'test' || typeof window === 'undefined') return;
     window.location.assign(url);
 }
 
+function CheckIcon() {
+    return (
+        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" className={styles.check}>
+            <path d="M13.5 4.5 6.5 11.5 3 8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    );
+}
+
 /**
- * The 3 top-up packs as orange-highlighted cards. Buying redirects straight to Stripe
- * Checkout. Reused by the sidebar "Top up" button and the out-of-credits paywall view.
+ * The top-up packs as detailed, orange-highlighted cards (credits, price, $/credit,
+ * what you get, and a one-click buy → Stripe). Reused by the sidebar "Top up" button,
+ * the out-of-credits paywall, and the Billing → Top-ups page. Pass `packs` to avoid a
+ * second catalog fetch when the caller already has it.
  */
-export function TopUpPacks({ returnPath = '/dashboard/search/new' }: { returnPath?: string }) {
-    const [packs, setPacks] = useState<TopUpPack[] | null>(null);
+export function TopUpPacks({ returnPath = '/dashboard/search/new', packs: packsProp }: { returnPath?: string; packs?: TopUpPack[] }) {
+    const [fetchedPacks, setFetchedPacks] = useState<TopUpPack[] | null>(null);
     const [busyKey, setBusyKey] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    // When the caller passes `packs`, use them directly (no fetch); otherwise load once.
+    const packs = packsProp ?? fetchedPacks;
 
     useEffect(() => {
+        if (packsProp) return;
         let cancelled = false;
         fetchBillingCatalog()
-            .then((catalog) => { if (!cancelled) setPacks(catalog.topups); })
-            .catch(() => { if (!cancelled) setPacks([]); });
+            .then((catalog) => { if (!cancelled) setFetchedPacks(catalog.topups); })
+            .catch(() => { if (!cancelled) setFetchedPacks([]); });
         return () => { cancelled = true; };
-    }, []);
+    }, [packsProp]);
 
     async function buy(packKey: string) {
         setBusyKey(packKey);
@@ -40,7 +61,7 @@ export function TopUpPacks({ returnPath = '/dashboard/search/new' }: { returnPat
     }
 
     if (packs === null) {
-        return <Flex align="center" justify="center" style={{ minHeight: 120 }}><Spinner /></Flex>;
+        return <Flex align="center" justify="center" style={{ minHeight: 140 }}><Spinner /></Flex>;
     }
     if (packs.length === 0) {
         return <Text size="2" color="gray">Top-up packs are unavailable right now.</Text>;
@@ -58,9 +79,18 @@ export function TopUpPacks({ returnPath = '/dashboard/search/new' }: { returnPat
                     return (
                         <div key={pack.key} className={best ? `${styles.pack} ${styles.packBest}` : styles.pack}>
                             {best ? <span className={styles.bestBadge}>Best value</span> : null}
-                            <span className={styles.packCredits}>{pack.credits.toLocaleString()} credits</span>
-                            <span className={styles.packPrice}>${pack.price_usd}</span>
+                            <span className={styles.packEyebrow}>Top-up credits</span>
+                            <div className={styles.packCreditsRow}>
+                                <span className={styles.packCredits}>{pack.credits.toLocaleString()}</span>
+                                <span className={styles.packCreditsUnit}>credits</span>
+                            </div>
+                            <span className={styles.packPrice}>${pack.price_usd} <span className={styles.packPriceMeta}>one-time</span></span>
                             <span className={styles.packPer}>${perCredit.toFixed(3)} / credit</span>
+                            <ul className={styles.packBullets}>
+                                {PACK_BULLETS.map((bullet) => (
+                                    <li key={bullet} className={styles.packBullet}><CheckIcon />{bullet}</li>
+                                ))}
+                            </ul>
                             <button
                                 type="button"
                                 className={best ? `${styles.buyButton} ${styles.buyBest}` : styles.buyButton}
@@ -73,9 +103,6 @@ export function TopUpPacks({ returnPath = '/dashboard/search/new' }: { returnPat
                     );
                 })}
             </div>
-            <p className={styles.packNote}>
-                Credits top up your plan instantly and are used this billing cycle (no rollover). Sending outreach is always free.
-            </p>
             {error ? <Text size="2" color="red">{error}</Text> : null}
         </>
     );
@@ -93,7 +120,7 @@ export default function TopUpModal({
 }) {
     return (
         <Dialog.Root open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
-            <Dialog.Content maxWidth="600px" aria-label="Top up credits" style={{ padding: 24 }}>
+            <Dialog.Content maxWidth="760px" aria-label="Top up credits" style={{ padding: 24 }}>
                 <Dialog.Title>Top up credits</Dialog.Title>
                 <Dialog.Description size="2" mb="4">
                     Add credits to your wallet — instant, one click, no sales call.
