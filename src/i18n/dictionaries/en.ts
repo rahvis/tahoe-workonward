@@ -272,157 +272,123 @@ export const en = {
         },
     },
     hiring: {
-        metaTitle: 'Hiring — the job board where every job is real',
+        metaTitle: 'Hiring: the job board where every job is real',
         metaDescription:
-            'Tahoe Jobs is an AI-native ATS, recruiting CRM, and public job board. Post one real job, get applications straight into an explainable, ranked pipeline, and let applicants track their status in real time — not a scraped, ghost-job board.',
+            'Tahoe is a hiring platform with a real job board. Post a job, get applications back as a clear, ranked shortlist, and let candidates follow their status. Every job is real and posted by a real recruiter.',
         ogDescription:
-            'Post one real job. AI drafts it, ranks every applicant with explainable evidence, and applicants track status in real time. The single source of truth for a real job — not a scraped aggregator listing.',
+            'Post one real job. Tahoe helps you write it, ranks every applicant in plain language, and lets candidates follow their progress. A real job board, not a scraped one.',
         breadcrumbHome: 'Home',
         breadcrumb: 'Hiring',
 
         // Hero
         h1: 'The job board where every job is real.',
-        lede: 'Tahoe turns one job post into a verified listing, a no-account apply, and a ranked, explained shortlist — so applicants reach a real person and recruiters stop drowning in noise.',
+        lede: 'Post a job once, and Tahoe turns it into a real listing that people can apply to without an account. Every application comes back as a simple, ranked shortlist, so candidates reach a real person and you spend less time sorting through noise.',
         ctaStart: 'Start for free',
-        ctaStartNote: 'Post your first real job in 5 minutes. No credit card.',
+        ctaStartNote: 'Post your first job in five minutes. No credit card needed.',
         demoCta: 'Book a demo',
-        framesLabel: 'The agentic hiring loop',
+        boardCta: 'Browse the job board',
+        framesLabel: 'How hiring works on Tahoe',
         frames: [
-            { key: 'draft', label: 'Draft', tag: 'Draft with AI', title: 'Describe the role', lines: ['“Senior backend, Kafka, remote EU, $140–170k”', '→ title · summary · requirements · comp'] },
-            { key: 'publish', label: 'Publish', tag: 'Verified posting', title: 'One real job, live', lines: ['/jobs/senior-backend-engineer-7f3a', 'JobPosting structured data · indexed by Google'] },
-            { key: 'apply', label: 'Apply', tag: 'Lands in the pipeline', title: 'Apply in 30 seconds', lines: ['Autofill from résumé ✓', 'No account needed'] },
-            { key: 'rank', label: 'Rank', tag: 'Match 92%', title: 'Ana Rivera', lines: ['✓ Kafka · 6 yrs', '⚠ Go preferred — one gap'] },
-            { key: 'pipeline', label: 'Pipeline', tag: 'Kanban ⇄ table', title: 'Ranked, explained', lines: ['Ana Rivera — 92%', 'M. Chen — 78%', 'P. Singh — 71%'] },
-            { key: 'search', label: 'Search', tag: 'Natural language', title: 'Ask your applicants', lines: ['“React + Node, 5+ yrs, can relocate to EU”', '→ a cited shortlist from your own pool'] },
+            { key: 'draft', label: 'Draft', tag: 'Write with AI', title: 'Describe the role', lines: ['“Senior backend engineer, remote in Europe”', 'Tahoe writes the full job for you to edit.'] },
+            { key: 'publish', label: 'Publish', tag: 'Verified posting', title: 'One real job, live', lines: ['Posted by a real, verified recruiter.', 'Shows up on Google as a real job.'] },
+            { key: 'apply', label: 'Apply', tag: 'No account needed', title: 'Apply in under a minute', lines: ['Upload a résumé and the form fills itself.', 'The application goes straight to the recruiter.'] },
+            { key: 'rank', label: 'Rank', tag: 'Match 92%', title: 'Ana Rivera', lines: ['Strong on skills and experience.', 'One small gap, shown clearly.'] },
+            { key: 'pipeline', label: 'Pipeline', tag: 'Sorted for you', title: 'Your shortlist, ranked', lines: ['Ana Rivera · 92%', 'Marco Chen · 78%', 'Priya Singh · 71%'] },
+            { key: 'search', label: 'Search', tag: 'Plain language', title: 'Ask about your applicants', lines: ['“React developers open to relocating”', 'Get a short, sourced list from your own pool.'] },
         ],
 
-        // Problem
-        problemHeading: 'The job board is broken — and everyone knows it.',
-        problemStats: [
-            { stat: '18–30%', label: 'of online job postings are ghost jobs' },
-            { stat: '~1 in 3', label: 'employers post with no intent to hire' },
-            { stat: '62,700+', label: 'job-posting scam reports by mid-2025' },
-            { stat: '8/10 → 4/10', label: 'hires per posting since 2019' },
-        ],
-        problemNote: 'Applicants apply into a void. Recruiters get 400 résumés and no signal. Scraped aggregators copy the same role across dozens of sites — you can’t tell the original from the echo.',
-
-        // Shift
-        shiftHeading: 'Everyone bolts AI onto the old board. We rebuilt the job around an AI that shows its work.',
-        shiftPoints: [
-            { title: 'Agentic, not autocomplete', body: 'The AI takes multi-step action — drafts the post, parses every résumé, ranks candidates, answers questions over your pool, drafts the outreach. You set the goal; the agent does the legwork.' },
-            { title: 'Explainable by default', body: 'Black-box scores are out. Every match shows its evidence and gaps — the reasoning log the EU AI Act now expects for hiring. Explainability isn’t a nicety; it’s the product.' },
-        ],
-
-        // Single source of truth
-        truthHeading: 'One real job. One owner. One source of truth.',
-        truthLede: 'Every Tahoe job is a single canonical record, posted by a verified, logged-in recruiter — from post to hire.',
-        truthOldTitle: 'The scraped way',
-        truthOld: ['Aggregator A — a copy', 'Aggregator B — a copy', 'Agency repost — stale', 'Apply → into a void'],
-        truthNewTitle: 'The Tahoe way',
-        truthNew: ['One job record', '/jobs/<slug> + JobPosting JSON-LD', 'The original Google indexes', 'Apply → lands in the pipeline'],
-        truthPoints: [
-            { title: 'No scraping, no echoes', body: 'The job exists in exactly one place, with one owner. The public page is generated from that record — it’s the original, not a copy.' },
-            { title: 'The apply goes somewhere real', body: 'A submission is parsed, embedded, ranked, and dropped into the recruiter’s pipeline within ~60 seconds — where a human actually reviews it.' },
-            { title: 'A human + an explainable AI', body: 'Not “screened out by a bot you can’t see.” Every match comes with evidence and gaps you can read.' },
-        ],
-
-        // Agentic loop (8 features)
-        loopHeading: 'The agentic hiring loop',
-        loopLede: 'Eight steps. The AI does the busywork; the recruiter decides. Every capability below is live today.',
-        loop: [
-            { title: 'Draft the job', body: 'A one-line prompt becomes a full post — title, summary, responsibilities, requirements, comp, location — editable in a live form.' },
-            { title: 'Check the post', body: 'Inclusive-language, missing-field, and compliance nudges before you publish.' },
-            { title: 'Publish as truth', body: 'An SEO slug, JobPosting structured data, and a sitemap entry — the canonical listing Google trusts. Publish now or schedule.' },
-            { title: 'Autofill the apply', body: 'Applicants upload a résumé and the form pre-fills — no account, 30 seconds.' },
-            { title: 'Parse every résumé', body: 'Each file is parsed into a structured profile — skills, tools, roles, education — not a PDF you have to read.' },
-            { title: 'Rank, explainably', body: 'A blend of semantic, structured, and LLM judgment becomes a match % that opens into a spider-web of evidence and gaps.' },
-            { title: 'Search your pool in English', body: 'Ask “React + Node, 5+ yrs, can relocate” and get a cited shortlist drawn only from your own applicants.' },
-            { title: 'Draft the outreach', body: 'AI-drafted candidate and rejection emails and short sequences — sent from your real mailbox; replies land in your inbox.' },
-        ],
-        loopControl: 'The AI drafts and ranks; the recruiter decides. Every score is explainable, every email editable — nothing is auto-sent or auto-rejected.',
-
-        // Explainable match (radar)
-        matchHeading: 'A match score you can see — and defend.',
-        matchLede: 'The match % is never a black-box number. It opens into a spider-web that breaks the fit into six requirement dimensions — the candidate’s coverage over the job’s required outline — with the evidence and gaps written underneath.',
+        // Hero radar (the Rank frame)
         matchCandidate: 'Ana Rivera',
-        matchRole: 'Senior Backend Engineer',
         matchScoreLabel: 'Match',
         matchAxes: [
             { label: 'Skills', value: 95 },
             { label: 'Experience', value: 90 },
             { label: 'Tools', value: 92 },
-            { label: 'Domain', value: 80 },
+            { label: 'Industry', value: 80 },
             { label: 'Education', value: 70 },
             { label: 'Location', value: 78 },
         ],
         matchRequired: 88,
-        matchLegendCandidate: 'Candidate coverage',
-        matchLegendRequired: 'Job requires',
-        matchEvidenceHeading: 'Evidence',
-        matchEvidence: ['Kafka + event streaming → résumé · Experience', 'EU-region services (GDPR) → résumé · Projects', 'Open to relocate: Berlin → application · Q3'],
-        matchGapsHeading: 'Gaps',
-        matchGaps: ['Go preferred — not in candidate history'],
-        matchBlend: 'Blend: semantic 0.88 · structured 0.95 · LLM 0.90',
 
-        // Fair by design
-        fairHeading: 'Fair by design — not a checkbox.',
-        fairLede: 'Most hiring AI asks you to trust a number. Tahoe shows its work — to the recruiter and to the applicant.',
-        fairCheckTitle: 'Check post — before it goes live',
-        fairCheck: ['“rockstar ninja” → try “experienced engineer”', '“young, energetic team” → may signal age bias', 'no salary range → add one (pay transparency)'],
-        fairRankTitle: 'How ranking stays fair',
-        fairRank: ['Scores job-relevant evidence only — not name, age, or school', 'Evidence + gaps on every score — auditable (EU AI Act log)', 'AI ranks; a human decides — never an auto-reject', 'Diversity survey optional & isolated · EEO snapshot in analytics', 'Structured scorecards on a shared rubric — less gut-feel'],
+        // Problem
+        problemHeading: 'The job market is full of fake and stale listings.',
+        problemStats: [
+            { stat: '18–30%', label: 'of job posts are “ghost jobs” with no real opening' },
+            { stat: '1 in 3', label: 'employers post jobs they do not plan to fill' },
+            { stat: '62,700+', label: 'people reported job scams by mid-2025' },
+            { stat: 'Half', label: 'as many hires per job post as in 2019' },
+        ],
+        problemNote: 'Candidates apply and never hear back. Recruiters get hundreds of résumés with no easy way to tell which ones matter. The same job gets copied across dozens of sites, so no one can tell the real posting from the copies.',
+
+        // Shift
+        shiftHeading: 'A real job board, with help built in.',
+        shiftPoints: [
+            { title: 'It does the busy work', body: 'Tahoe writes the job post, reads every résumé, and sorts your applicants, so you can spend your time talking to people instead of sorting files.' },
+            { title: 'It shows its reasons', body: 'For every candidate, you can see in plain words why they were ranked where they are. There is no black box and no guessing.' },
+        ],
+
+        // How it works (the steps)
+        loopHeading: 'Everything in one place, from post to hire.',
+        loopLede: 'Tahoe handles the busy work at each step. You stay in control and make every decision.',
+        loop: [
+            { title: 'Write the job', body: 'Describe the role in a sentence and Tahoe drafts the full post for you to edit.' },
+            { title: 'Check the wording', body: 'Tahoe flags unclear or biased language and missing details before you publish.' },
+            { title: 'Publish a real listing', body: 'Your job goes live as a real, verified posting that shows up properly on Google.' },
+            { title: 'Let people apply easily', body: 'Candidates apply in under a minute, with no account, and can fill the form from a résumé.' },
+            { title: 'Read every résumé', body: 'Tahoe turns each résumé into a clear profile, so you are not reading raw files.' },
+            { title: 'Rank with reasons', body: 'Every applicant gets a match score you can understand, with the strengths and the gaps spelled out.' },
+            { title: 'Search in plain words', body: 'Ask for what you want, like five years of React, and get a short, sourced list from your own applicants.' },
+            { title: 'Reach out in a click', body: 'Send a friendly, ready-to-edit email from your own inbox, and replies come straight back to you.' },
+        ],
+        loopControl: 'Tahoe drafts and ranks. You decide. Nothing is sent or rejected without you.',
+
+        // Fair
+        fairHeading: 'Fair to candidates, and easy to trust.',
+        fairLede: 'Most hiring tools ask you to trust a score. Tahoe shows you the reasons behind every one, for you and for the candidate.',
+        fairCheckTitle: 'It checks your wording before you post',
+        fairCheck: ['It suggests clearer words in place of phrases like “rockstar ninja.”', 'It flags wording that could put off older or under-represented people.', 'It reminds you to add a salary range.'],
+        fairRankTitle: 'It keeps ranking fair',
+        fairRank: ['It looks at job-related experience only, never name, age, or school.', 'It shows the reasons behind every score, so you can check it.', 'It ranks people, but you always make the final call.', 'The diversity survey is optional and kept separate from screening.', 'Everyone is measured against the same simple checklist.'],
 
         // Two journeys
-        journeysHeading: 'Clarity for both sides.',
-        recruiterTitle: 'For recruiters',
-        recruiterSteps: ['Draft with AI → check → publish', 'Applications arrive, parsed and ranked', 'Kanban or ranked table, with match rationale', 'Notes, scorecards, move stage', 'Ask your pool in plain English', 'AI-drafted outreach from your mailbox'],
-        seekerTitle: 'For job seekers',
-        seekerSteps: ['Find a real job on the board', 'Open it — comp and details up front', 'Apply with no account · autofill from résumé', 'Confirmation + a magic link to track status', 'Watch your stage move in real time', 'A real person is on the other side'],
-
-        // Transparent for everyone (applicant tracker)
-        transparentHeading: 'Track your application in real time. No more black hole.',
-        transparentLede: 'Because every application lives in the recruiter’s pipeline as one record, the applicant gets a live, no-account status page — updated the moment the recruiter moves them.',
-        trackerTitle: 'Your application · Senior Backend Engineer',
-        trackerSteps: [
-            { label: 'Received', time: 'Jun 12 · 9:04a', state: 'done' },
-            { label: 'Under review', time: 'Jun 13 · 2:18p', state: 'done' },
-            { label: 'Interview', time: 'scheduled Jun 19', state: 'current' },
-            { label: 'Decision', time: '—', state: 'todo' },
-        ],
-        trackerNote: 'Live status — updates the moment the recruiter moves you. No account needed.',
+        journeysHeading: 'Clear for you, and clear for candidates.',
+        recruiterTitle: 'For you, the recruiter',
+        recruiterSteps: ['Write and publish a job in minutes.', 'Watch applications arrive, already sorted.', 'See each candidate with a clear match and notes.', 'Move people forward and leave notes for your team.', 'Ask about your applicants in plain words.', 'Send follow-ups from your own inbox.'],
+        seekerTitle: 'For the candidate',
+        seekerSteps: ['Find a real job on the board.', 'See the pay and details up front.', 'Apply in under a minute, with no account.', 'Get a link to follow their application.', 'Watch it move from received to a decision.', 'Know a real person is on the other side.'],
 
         // Comparison
-        compareHeading: 'Not a scraped board. Not a legacy ATS.',
+        compareHeading: 'Not a scraped board, and not clunky old software.',
         compareColTahoe: 'Tahoe',
-        compareCols: ['Scraped aggregator', 'Legacy ATS'],
+        compareCols: ['Scraped job sites', 'Old hiring software'],
         compareRows: [
-            { label: 'Job is canonical', cells: ['Yes', 'Copies', 'Career page only'] },
-            { label: 'Real recruiter behind it', cells: ['Yes', 'Unknown', 'Yes'] },
-            { label: 'Apply lands in a pipeline', cells: ['Yes', 'Void / email', 'Yes'] },
-            { label: 'Explainable AI match', cells: ['Yes — evidence', 'No', 'Black-box score'] },
-            { label: 'NL search over your pool', cells: ['Yes — cited', 'No', 'Keyword'] },
-            { label: 'No-account apply + autofill', cells: ['Yes', 'Limited', 'Limited'] },
-            { label: 'Applicant tracks status live', cells: ['Yes', 'No', 'Sometimes'] },
+            { label: 'The job is the real, original posting', cells: ['Yes', 'No, just copies', 'Only on a careers page'] },
+            { label: 'A real recruiter is behind it', cells: ['Yes', 'Often unclear', 'Yes'] },
+            { label: 'Applications reach a real shortlist', cells: ['Yes', 'Often a dead end', 'Yes'] },
+            { label: 'You see why each person is ranked', cells: ['Yes, in plain words', 'No', 'A score with no reasons'] },
+            { label: 'Search applicants in plain language', cells: ['Yes', 'No', 'Keywords only'] },
+            { label: 'Apply with no account', cells: ['Yes', 'Sometimes', 'Rarely'] },
+            { label: 'Candidates can follow their status', cells: ['Yes', 'No', 'Sometimes'] },
         ],
-        compareNote: 'Comparison is by capability category, not a per-vendor benchmark.',
+        compareNote: 'This compares the kinds of tools, not specific brands.',
 
         // What's next
-        whatsNextHeading: 'What’s next',
-        whatsNextBody: 'AI voice and video phone-screening is on the roadmap — so the first conversation can happen the moment a candidate is a strong, explainable match.',
+        whatsNextHeading: 'Coming soon',
+        whatsNextBody: 'Friendly AI phone and video screening, so a first conversation can happen as soon as someone is a strong match.',
 
         // FAQ
-        faqHeading: 'Questions about Tahoe Jobs',
+        faqHeading: 'Common questions',
         faq: [
-            ['Is it a real job board?', 'Yes. Every job is posted by a verified, logged-in recruiter in their own ATS and exists as one canonical record at /jobs/<slug> with JobPosting structured data. It is the original listing, not a scraped copy, and the application lands directly in the recruiter’s pipeline.'],
-            ['How is the AI match explained?', 'Each candidate gets a match % that opens into a spider-web across six dimensions (skills, experience, tools, domain, education, location), with the specific evidence and gaps written out and linked to the résumé or application — a reasoning log a recruiter or auditor can read.'],
-            ['How do you prevent bias?', 'The ranking scores job-relevant evidence only (not name, age, gender, or school), “Check post” flags biased language before publishing, the diversity survey is optional and isolated from screening, analytics includes an EEO snapshot, and a human always decides — the AI never auto-rejects.'],
-            ['Can applicants track their status?', 'Yes. From a no-account magic link, applicants see their live stage — Received → Under review → Interview → Decision — updated the moment the recruiter moves them. No more applying into a void.'],
-            ['Do you scrape other job boards?', 'No. Tahoe jobs are created by real recruiters in Tahoe. There are no scraped, duplicated, or ghost listings — one job, one owner, one source of truth.'],
-            ['What is the AI allowed to do on its own?', 'It drafts, parses, ranks, and searches. It does not auto-send email or auto-reject candidates — the recruiter makes every decision, and every AI draft is editable.'],
+            ['Is this a real job board?', 'Yes. Every job is posted by a real, verified recruiter and lives in one place. It is the original listing, not a copy, and applications go straight to that recruiter.'],
+            ['How does the match score work?', 'Each candidate gets a score with the reasons behind it: what fits the role and what does not. You can read the reasoning and check it for yourself.'],
+            ['How do you keep it fair?', 'Tahoe looks at job-related experience only, never name, age, or school. It flags biased wording before you post, keeps the diversity survey separate, and leaves every decision to you.'],
+            ['Can candidates follow their application?', 'Yes. With a simple link and no account, they can watch their application move from received to a decision, so no one is left guessing.'],
+            ['Do you copy jobs from other sites?', 'No. Every Tahoe job is created by a real recruiter here. There are no scraped, duplicated, or fake listings.'],
+            ['What does the AI decide on its own?', 'Nothing important. It writes drafts, sorts applications, and answers your questions, but it never sends an email or rejects a candidate on its own. You always decide.'],
         ],
 
         // Final CTA
-        finalCtaHeading: 'Post a real job in 5 minutes.',
+        finalCtaHeading: 'Post a real job in five minutes.',
         finalCtaStart: 'Start for free',
         finalCtaDemo: 'Book a demo',
     },

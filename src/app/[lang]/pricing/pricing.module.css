@@ -73,8 +73,8 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-height: 48px;
-    padding: 12px 24px;
+    min-height: 40px;
+    padding: 10px 24px;
     border-radius: var(--radius-pill);
     font-size: 15px;
     font-weight: 500;
@@ -258,7 +258,7 @@
     justify-content: center;
     width: 100%;
     margin-top: auto;
-    min-height: 48px;
+    min-height: 42px;
     border-radius: var(--radius-pill);
     border: 1.5px solid var(--color-accent);
     background: transparent;

@@ -32,6 +32,7 @@ function renderHero() {
             ctaStart="Start for free"
             ctaStartNote="note"
             demoCta="Book a demo"
+            boardCta="Browse the job board"
             framesLabel="loop"
             frames={frames}
             matchAxes={axes}
@@ -39,6 +40,7 @@ function renderHero() {
             radarAria="match radar"
             signupHref="/en/signup"
             demoUrl="https://demo.example"
+            boardHref="/jobs"
         />,
     );
 }
@@ -48,6 +50,7 @@ test('renders hero copy and CTAs with correct links', () => {
     expect(screen.getByRole('heading', { name: 'HeroTitle' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Start for free' })).toHaveAttribute('href', '/en/signup');
     expect(screen.getByRole('link', { name: 'Book a demo' })).toHaveAttribute('href', 'https://demo.example');
+    expect(screen.getByRole('link', { name: 'Browse the job board' })).toHaveAttribute('href', '/jobs');
 });
 
 test('scrubs frames via chips and shows the radar on the rank frame', () => {

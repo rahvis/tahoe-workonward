@@ -22,6 +22,7 @@ export default function HiringHero({
     ctaStart,
     ctaStartNote,
     demoCta,
+    boardCta,
     framesLabel,
     frames,
     matchAxes,
@@ -29,12 +30,14 @@ export default function HiringHero({
     radarAria,
     signupHref,
     demoUrl,
+    boardHref,
 }: {
     h1: string;
     lede: string;
     ctaStart: string;
     ctaStartNote: string;
     demoCta: string;
+    boardCta: string;
     framesLabel: string;
     frames: readonly Frame[];
     matchAxes: readonly Axis[];
@@ -42,6 +45,7 @@ export default function HiringHero({
     radarAria: string;
     signupHref: string;
     demoUrl: string;
+    boardHref: string;
 }) {
     const [active, setActive] = useState(0);
     const [paused, setPaused] = useState(false);
@@ -64,6 +68,7 @@ export default function HiringHero({
                         <p className={styles.heroLede}>{lede}</p>
                         <div className={styles.heroActions}>
                             <Link href={signupHref} className={page.primaryAction}>{ctaStart}</Link>
+                            <Link href={boardHref} className={styles.boardCta}>{boardCta}</Link>
                             <a href={demoUrl} target="_blank" rel="noreferrer" className={page.heroDemoAction}>{demoCta}</a>
                         </div>
                         <p className={styles.heroNote}>{ctaStartNote}</p>
@@ -90,18 +95,25 @@ export default function HiringHero({
                         </div>
 
                         <div key={frame.key} className={styles.frameCard}>
-                            <span className={styles.frameTag}>{frame.tag}</span>
-                            <div className={styles.frameTitle}>{frame.title}</div>
-                            {frame.key === 'rank' ? (
-                                <div className={styles.frameRadar}>
-                                    <MatchRadar axes={matchAxes} required={matchRequired} compact ariaLabel={radarAria} />
-                                </div>
-                            ) : null}
-                            <ul className={styles.frameLines}>
-                                {frame.lines.map((line) => (
-                                    <li key={line}>{line}</li>
-                                ))}
-                            </ul>
+                            <div className={styles.frameChrome} aria-hidden="true">
+                                <span />
+                                <span />
+                                <span />
+                            </div>
+                            <div className={styles.frameBody}>
+                                <span className={styles.frameTag}>{frame.tag}</span>
+                                <div className={styles.frameTitle}>{frame.title}</div>
+                                {frame.key === 'rank' ? (
+                                    <div className={styles.frameRadar}>
+                                        <MatchRadar axes={matchAxes} required={matchRequired} compact ariaLabel={radarAria} />
+                                    </div>
+                                ) : null}
+                                <ul className={styles.frameLines}>
+                                    {frame.lines.map((line) => (
+                                        <li key={line}>{line}</li>
+                                    ))}
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>

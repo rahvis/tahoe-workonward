@@ -86,7 +86,6 @@ export function PublicSiteHeader({ placement = 'blog' }: { placement?: string } 
                         <Link href={L('/features')} onClick={() => trackSectionNav('features', `${placement}_header_desktop`)}>{t.nav.features}</Link>
                         <Link href={L('/hiring')} onClick={() => trackSectionNav('hiring', `${placement}_header_desktop`)}>{t.nav.hiring}</Link>
                         <Link href={L('/pricing')} onClick={() => trackSectionNav('pricing', `${placement}_header_desktop`)}>{t.nav.pricing}</Link>
-                        <Link href={L('/customers')} onClick={() => trackSectionNav('customers', `${placement}_header_desktop`)}>{t.nav.customers}</Link>
                         <Link href={L('/our-story')} onClick={() => trackSectionNav('our_story', `${placement}_header_desktop`)}>{t.nav.ourStory}</Link>
                         <Link href={L('/blogs')} onClick={() => trackBlogNav(`${placement}_header_desktop`)}>{t.nav.blog}</Link>
                     </nav>
@@ -122,7 +121,6 @@ export function PublicSiteHeader({ placement = 'blog' }: { placement?: string } 
                         <Link href={L('/features')} onClick={() => { trackSectionNav('features', `${placement}_header_mobile`); setMobileNavOpen(false); }}>{t.nav.features}</Link>
                         <Link href={L('/hiring')} onClick={() => { trackSectionNav('hiring', `${placement}_header_mobile`); setMobileNavOpen(false); }}>{t.nav.hiring}</Link>
                         <Link href={L('/pricing')} onClick={() => { trackSectionNav('pricing', `${placement}_header_mobile`); setMobileNavOpen(false); }}>{t.nav.pricing}</Link>
-                        <Link href={L('/customers')} onClick={() => { trackSectionNav('customers', `${placement}_header_mobile`); setMobileNavOpen(false); }}>{t.nav.customers}</Link>
                         <Link href={L('/our-story')} onClick={() => { trackSectionNav('our_story', `${placement}_header_mobile`); setMobileNavOpen(false); }}>{t.nav.ourStory}</Link>
                         <Link href={L('/blogs')} onClick={() => { trackBlogNav(`${placement}_header_mobile`); setMobileNavOpen(false); }}>{t.nav.blog}</Link>
                         <div className={styles.mobileAuthActions}>

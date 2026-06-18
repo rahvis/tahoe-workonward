@@ -10,7 +10,6 @@ import JsonLd from '@/components/seo/JsonLd';
 import styles from '../page.module.css';
 import hiring from './hiring.module.css';
 import HiringHero from './_components/HiringHero';
-import MatchRadar from './_components/MatchRadar';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.com';
 const DEMO_URL =
@@ -86,6 +85,7 @@ export default async function HiringPage({ params }: { params: Promise<{ lang: s
                 ctaStart={t.ctaStart}
                 ctaStartNote={t.ctaStartNote}
                 demoCta={t.demoCta}
+                boardCta={t.boardCta}
                 framesLabel={t.framesLabel}
                 frames={t.frames}
                 matchAxes={t.matchAxes}
@@ -93,6 +93,7 @@ export default async function HiringPage({ params }: { params: Promise<{ lang: s
                 radarAria={radarAria}
                 signupHref={L('/signup')}
                 demoUrl={DEMO_URL}
+                boardHref="/jobs"
             />
 
             {/* ── Problem ── */}
@@ -130,43 +131,7 @@ export default async function HiringPage({ params }: { params: Promise<{ lang: s
                 </div>
             </section>
 
-            {/* ── Single source of truth ── */}
-            <section className={styles.section}>
-                <div className={styles.container}>
-                    <div className={styles.sectionHead}>
-                        <h2>{t.truthHeading}</h2>
-                        <p>{t.truthLede}</p>
-                    </div>
-                    <div className={hiring.truthGrid}>
-                        <div className={`${hiring.truthCol} ${hiring.truthOld}`}>
-                            <div className={hiring.truthColTitle}>{t.truthOldTitle}</div>
-                            <ul className={hiring.truthList}>
-                                {t.truthOld.map((item) => (
-                                    <li key={item}>{item}</li>
-                                ))}
-                            </ul>
-                        </div>
-                        <div className={`${hiring.truthCol} ${hiring.truthNew}`}>
-                            <div className={hiring.truthColTitle}>{t.truthNewTitle}</div>
-                            <ul className={hiring.truthList}>
-                                {t.truthNew.map((item) => (
-                                    <li key={item}>{item}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    </div>
-                    <div className={hiring.panelGrid3}>
-                        {t.truthPoints.map((p) => (
-                            <div key={p.title} className={hiring.panelCard}>
-                                <h3 className={hiring.panelTitle}>{p.title}</h3>
-                                <p className={hiring.panelBody}>{p.body}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ── The agentic loop ── */}
+            {/* ── How it works ── */}
             <section className={styles.section}>
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
@@ -183,54 +148,6 @@ export default async function HiringPage({ params }: { params: Promise<{ lang: s
                         ))}
                     </div>
                     <div className={hiring.loopControl}>{t.loopControl}</div>
-                </div>
-            </section>
-
-            {/* ── Explainable match (spider-web) ── */}
-            <section className={styles.section}>
-                <div className={styles.container}>
-                    <div className={styles.sectionHead}>
-                        <h2>{t.matchHeading}</h2>
-                        <p>{t.matchLede}</p>
-                    </div>
-                    <div className={hiring.matchGrid}>
-                        <div className={hiring.matchCard}>
-                            <div className={hiring.matchHead}>
-                                <div>
-                                    <div className={hiring.matchName}>{t.matchCandidate}</div>
-                                    <div className={hiring.matchRole}>{t.matchRole}</div>
-                                </div>
-                                <div>
-                                    <div className={hiring.matchScore}>92%</div>
-                                    <span className={hiring.matchScoreLabel}>{t.matchScoreLabel}</span>
-                                </div>
-                            </div>
-                            <MatchRadar axes={t.matchAxes} required={t.matchRequired} ariaLabel={radarAria} />
-                            <div className={hiring.matchLegend}>
-                                <span><span className={`${hiring.legendSwatch} ${hiring.swatchCandidate}`} />{t.matchLegendCandidate}</span>
-                                <span><span className={`${hiring.legendSwatch} ${hiring.swatchRequired}`} />{t.matchLegendRequired}</span>
-                            </div>
-                        </div>
-                        <div className={hiring.matchLists}>
-                            <div>
-                                <h3 className={hiring.matchListTitle}>{t.matchEvidenceHeading}</h3>
-                                <ul className={hiring.factList}>
-                                    {t.matchEvidence.map((item) => (
-                                        <li key={item}><span className={hiring.ok}>✓</span>{item}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                            <div>
-                                <h3 className={hiring.matchListTitle}>{t.matchGapsHeading}</h3>
-                                <ul className={hiring.factList}>
-                                    {t.matchGaps.map((item) => (
-                                        <li key={item}><span className={hiring.warn}>⚠</span>{item}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                            <p className={hiring.matchBlend}>{t.matchBlend}</p>
-                        </div>
-                    </div>
                 </div>
             </section>
 
@@ -285,37 +202,6 @@ export default async function HiringPage({ params }: { params: Promise<{ lang: s
                                 ))}
                             </ol>
                         </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Transparent for everyone (applicant tracker) ── */}
-            <section className={styles.section}>
-                <div className={styles.container}>
-                    <div className={styles.sectionHead}>
-                        <h2>{t.transparentHeading}</h2>
-                    </div>
-                    <div className={hiring.transparentGrid}>
-                        <div className={hiring.tracker}>
-                            <div className={hiring.trackerTitle}>{t.trackerTitle}</div>
-                            <ul className={hiring.trackerSteps}>
-                                {t.trackerSteps.map((step) => (
-                                    <li key={step.label} className={hiring.trackerStep}>
-                                        <span
-                                            className={`${hiring.trackerDot} ${step.state === 'done' ? hiring.dotDone : step.state === 'current' ? hiring.dotCurrent : ''}`}
-                                        />
-                                        <span className={hiring.trackerMain}>
-                                            <span className={step.state === 'current' ? `${hiring.trackerLabel} ${hiring.trackerLabelCurrent}` : hiring.trackerLabel}>
-                                                {step.label}
-                                            </span>
-                                            <span className={hiring.trackerTime}>{step.time}</span>
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                            <p className={hiring.trackerNote}>{t.trackerNote}</p>
-                        </div>
-                        <p className={hiring.leadNote}>{t.transparentLede}</p>
                     </div>
                 </div>
             </section>

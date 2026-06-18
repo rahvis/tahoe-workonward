@@ -204,8 +204,8 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-height: 46px;
-    padding: 12px 22px;
+    min-height: 40px;
+    padding: 10px 22px;
     border-radius: var(--radius-pill);
     font-family: var(--font-body-stack);
     font-size: 15px;

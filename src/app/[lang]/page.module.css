@@ -200,8 +200,8 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-height: 46px;
-    padding: 12px 22px;
+    min-height: 40px;
+    padding: 10px 22px;
     border: 0;
     border-radius: var(--radius-pill);
     background: var(--color-text-primary);
@@ -223,7 +223,7 @@
 
 .primaryAction,
 .accentAction {
-    min-height: 48px;
+    min-height: 40px;
 }
 
 .ghostAction,
@@ -2483,8 +2483,8 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    min-height: 46px;
-    padding: 10px 20px;
+    min-height: 40px;
+    padding: 8px 20px;
     border: 1.5px solid var(--color-accent);
     border-radius: var(--radius-pill);
     background: transparent;

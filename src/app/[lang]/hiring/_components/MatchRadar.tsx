@@ -71,17 +71,17 @@ export default function MatchRadar({
                 <circle key={`dot-${axes[i].label}`} className={styles.dot} cx={x} cy={y} r={compact ? 2.6 : 3} />
             ))}
 
-            {/* axis labels + values */}
-            {!compact &&
-                axes.map((a, i) => {
-                    const [lx, ly] = point(118, i);
-                    const anchor = lx > cx + 4 ? 'start' : lx < cx - 4 ? 'end' : 'middle';
-                    return (
-                        <text key={`lbl-${a.label}`} className={styles.axisLabel} x={lx} y={ly} textAnchor={anchor} dominantBaseline="middle">
-                            {a.label} <tspan className={styles.axisValue}>{a.value}</tspan>
-                        </text>
-                    );
-                })}
+            {/* axis labels (skill names); value shown only in the full-size chart */}
+            {axes.map((a, i) => {
+                const [lx, ly] = point(116, i);
+                const anchor = lx > cx + 4 ? 'start' : lx < cx - 4 ? 'end' : 'middle';
+                return (
+                    <text key={`lbl-${a.label}`} className={styles.axisLabel} x={lx} y={ly} textAnchor={anchor} dominantBaseline="middle">
+                        {a.label}
+                        {!compact ? <tspan className={styles.axisValue}> {a.value}</tspan> : null}
+                    </text>
+                );
+            })}
         </svg>
     );
 }

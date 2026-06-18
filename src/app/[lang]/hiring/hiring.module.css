@@ -47,6 +47,27 @@
     color: var(--color-text-tertiary);
 }
 
+/* Neutral hero button that links to the public job board. */
+.boardCta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 10px 20px;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--color-border-subtle);
+    background: var(--color-canvas);
+    color: var(--color-text-primary);
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.boardCta:hover {
+    border-color: var(--color-text-primary);
+}
+
 .heroVisual {
     min-width: 0;
 }
@@ -77,8 +98,8 @@
 }
 
 .frameCard {
-    min-height: 268px;
-    padding: 24px;
+    height: 380px;
+    overflow: hidden;
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-group);
     background: var(--color-canvas);
@@ -89,6 +110,33 @@
 @keyframes frameIn {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: none; }
+}
+
+/* Mock "window" chrome so every frame reads like a small product screen. */
+.frameChrome {
+    display: flex;
+    gap: 6px;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-subtle);
+}
+
+.frameChrome span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(32, 32, 32, 0.16);
+}
+
+.frameChrome span:first-child {
+    background: var(--color-accent);
+    opacity: 0.7;
+}
+
+.frameBody {
+    display: flex;
+    flex-direction: column;
+    padding: 22px 24px;
 }
 
 .frameTag {
@@ -111,8 +159,8 @@
 }
 
 .frameRadar {
-    max-width: 230px;
-    margin: 4px auto 6px;
+    max-width: 168px;
+    margin: 2px auto 6px;
 }
 
 .frameLines {
@@ -706,8 +754,8 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-height: 48px;
-    padding: 12px 24px;
+    min-height: 40px;
+    padding: 10px 24px;
     border-radius: var(--radius-pill);
     font-size: 15px;
     font-weight: 500;
