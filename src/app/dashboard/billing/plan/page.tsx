@@ -20,7 +20,6 @@ const tabs: Array<{ key: BillingTab; label: string }> = [
     { key: 'overview', label: 'Overview' },
     { key: 'plans', label: 'Plans' },
     { key: 'topups', label: 'Top-ups' },
-    { key: 'credits', label: 'Credits' },
 ];
 
 function formatPrice(value: number) {

@@ -119,12 +119,12 @@ test('normalizes the removed rules tab to overview', async () => {
 test('switches sections with settings-style tabs and updates the URL', async () => {
     render(<BillingPlanPage />);
 
-    await screen.findByText('Starter');
-    fireEvent.click(screen.getByRole('tab', { name: 'Credits' }));
+    await screen.findByText('Available credits');
+    // The Credits tab was removed from the UI.
+    expect(screen.queryByRole('tab', { name: 'Credits' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Top-ups' }));
 
-    expect(screen.getByText('Credit buckets')).toBeInTheDocument();
-    expect(screen.getByText('No credit buckets have been granted yet.')).toBeInTheDocument();
-    expect(replaceMock).toHaveBeenCalledWith('/dashboard/billing/plan?tab=credits', { scroll: false });
+    expect(replaceMock).toHaveBeenCalledWith('/dashboard/billing/plan?tab=topups', { scroll: false });
 });
 
 test('plans tab starts subscription checkout (annual by default) with existing return paths', async () => {

@@ -724,7 +724,7 @@ export default function LandingPage() {
                                 <Link href={L('/signup')} className={styles.primaryAction} onClick={() => trackAuthCta('start_free_trial', 'hero')}>
                                     {t.ctaStart} <ArrowIcon />
                                 </Link>
-                                <a href={DEMO_URL} target="_blank" rel="noopener noreferrer" className={styles.ghostAction} onClick={() => trackAuthCta('book_demo', 'hero')}>
+                                <a href={DEMO_URL} target="_blank" rel="noopener noreferrer" className={styles.heroDemoAction} onClick={() => trackAuthCta('book_demo', 'hero')}>
                                     {t.ctaDemo} <ArrowUpRightIcon />
                                 </a>
                                 <Image

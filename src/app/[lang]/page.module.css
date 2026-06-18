@@ -2474,3 +2474,29 @@
         gap: 14px;
     }
 }
+
+/* ── Orange CTA buttons: header "Sign in" + hero "Book a demo" ──
+   Orange-outlined pills that fill on hover — clearly orange but secondary to the
+   primary black "Start for free". (.textAction is only the header Sign in.) */
+.textAction,
+.heroDemoAction {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 46px;
+    padding: 10px 20px;
+    border: 1.5px solid var(--color-accent);
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--color-accent);
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.25;
+    text-decoration: none;
+}
+
+.textAction:hover,
+.heroDemoAction:hover {
+    background: var(--color-accent);
+    color: #ffffff;
+}
