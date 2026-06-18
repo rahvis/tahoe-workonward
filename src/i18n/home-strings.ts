@@ -6,7 +6,7 @@
 export const homeT = {
     en: {
         heroQueries: [
-            "Senior backend engineers in Berlin who've shipped fintech",
+            "Senior backend engineers in San Francisco who've shipped fintech",
             'Product designers in Brooklyn open to remote, 5+ yrs at B2B SaaS',
             'ML engineers with PyTorch, ex-FAANG, willing to relocate',
         ],
@@ -80,7 +80,7 @@ export const homeT = {
     },
     ko: {
         heroQueries: [
-            '핀테크 경험이 있는 베를린의 시니어 백엔드 엔지니어',
+            '핀테크 경험이 있는 샌프란시스코의 시니어 백엔드 엔지니어',
             '원격 근무 가능, B2B SaaS 5년 이상 경력의 브루클린 프로덕트 디자이너',
             'PyTorch 경험, FAANG 출신, 이주 의향이 있는 ML 엔지니어',
         ],

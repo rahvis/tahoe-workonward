@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Dialog, Flex, Text } from '@/components/ui/tahoe-ui';
+import { ApiError } from '@/lib/api';
 import {
     createEnrichmentRun,
     estimateEnrichmentRun,
     fetchBillingSummary,
     type EnrichmentRunSummary,
 } from '@/lib/organization';
+import UpgradePaywallModal from '../search/UpgradePaywallModal';
 
 interface EnrichModalProps {
     open: boolean;
@@ -39,6 +41,13 @@ function newIdempotencyKey() {
     return `enrichment-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+/** True when the API blocked enrichment because the workspace isn't subscribed. */
+function isSubscriptionRequired(err: unknown): boolean {
+    return err instanceof ApiError
+        && err.status === 402
+        && (err.detail as { code?: string } | null | undefined)?.code === 'subscription_required';
+}
+
 export default function EnrichModal({
     open,
     onOpenChange,
@@ -57,6 +66,7 @@ export default function EnrichModal({
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [paywall, setPaywall] = useState(false);
 
     useEffect(() => {
         if (!open) {
@@ -65,6 +75,7 @@ export default function EnrichModal({
         setScope(hasSelection ? 'selected_candidate_ids' : 'all_in_list');
         setFields(['work_email']);
         setError('');
+        setPaywall(false);
     }, [hasSelection, open]);
 
     useEffect(() => {
@@ -91,7 +102,9 @@ export default function EnrichModal({
     }, [open]);
 
     useEffect(() => {
-        if (!open || fields.length === 0) {
+        // Skip when paywalled — the estimate would just 402 again; the upgrade
+        // modal is already shown.
+        if (!open || fields.length === 0 || paywall) {
             setEstimatedCredits(0);
             setTargetCount(0);
             setSkippedInflight(0);
@@ -117,7 +130,12 @@ export default function EnrichModal({
                 setBalance(response.balance);
                 setBalanceAfter(response.balance_after);
             } catch (err) {
-                if (!cancelled) {
+                if (cancelled) {
+                    return;
+                }
+                if (isSubscriptionRequired(err)) {
+                    setPaywall(true);  // unsubscribed → show the upgrade paywall instead
+                } else {
                     setError(err instanceof Error ? err.message : 'Unable to estimate enrichment.');
                     setEstimatedCredits(0);
                     setTargetCount(0);
@@ -132,7 +150,7 @@ export default function EnrichModal({
         return () => {
             cancelled = true;
         };
-    }, [fields, listId, open, scope, selectedCandidateIds]);
+    }, [fields, listId, open, paywall, scope, selectedCandidateIds]);
 
     const displayedBalanceAfter = fields.length === 0 || error ? balance : balanceAfter;
 
@@ -171,10 +189,26 @@ export default function EnrichModal({
             await onSubmitted?.(run);
             onOpenChange(false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unable to start enrichment.');
+            if (isSubscriptionRequired(err)) {
+                setPaywall(true);
+            } else {
+                setError(err instanceof Error ? err.message : 'Unable to start enrichment.');
+            }
         } finally {
             setSubmitting(false);
         }
+    }
+
+    // Unsubscribed workspaces can't enrich — replace the enrich dialog with the
+    // same upgrade paywall the search screen uses. Closing it dismisses the flow.
+    if (paywall) {
+        return (
+            <UpgradePaywallModal
+                open
+                reason="subscription_required"
+                onClose={() => { setPaywall(false); onOpenChange(false); }}
+            />
+        );
     }
 
     return (

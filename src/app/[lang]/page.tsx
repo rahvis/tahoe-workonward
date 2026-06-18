@@ -26,10 +26,10 @@ const montserrat = Montserrat({
 });
 
 const HERO_RESULTS = [
-    { name: 'Marcus Chen', role: 'Staff Backend Eng · Klarna', location: 'Berlin', match: 96 },
-    { name: 'Aisha Okonkwo', role: 'Senior Backend · N26', location: 'Berlin', match: 94 },
-    { name: 'Lukas Berger', role: 'Tech Lead · Trade Republic', location: 'Berlin', match: 91 },
-    { name: 'Sofia Marchetti', role: 'Backend · Solarisbank', location: 'Berlin', match: 88 },
+    { name: 'Michael Rodriguez', role: 'Staff Backend Eng · Stripe', location: 'San Francisco, United States', match: 96 },
+    { name: 'Emily Johnson', role: 'Senior Backend · Plaid', location: 'New York, United States', match: 94 },
+    { name: 'David Kim', role: 'Tech Lead · Brex', location: 'San Jose, United States', match: 91 },
+    { name: 'Jessica Martinez', role: 'Backend · Ramp', location: 'Brooklyn, United States', match: 88 },
 ];
 
 type ScreenTab = (typeof homeT.en.screenTabs)[number]['id'];
@@ -466,13 +466,13 @@ function ProofVisual({ type }: { type: (typeof homeT.en.proofTabs)[number]['visu
         return (
             <div className={styles.proofCardMock}>
                 <div className={styles.proofContactHead}>
-                    <span className={styles.proofAvatar}>AO</span>
+                    <span className={styles.proofAvatar}>EJ</span>
                     <div className={styles.proofContactName}>
-                        <strong>Aisha Okonkwo</strong>
-                        <span>Senior Backend · N26</span>
+                        <strong>Emily Johnson</strong>
+                        <span>Senior Backend · Plaid</span>
                     </div>
                 </div>
-                {[['Work email', 'aisha@n26.com'], ['Personal', 'aisha@gmail.com'], ['Mobile', '+49 30 901 2345']].map(([label, value]) => (
+                {[['Work email', 'emily@plaid.com'], ['Personal', 'emily@gmail.com'], ['Mobile', '+1 (415) 555-0142']].map(([label, value]) => (
                     <div key={label} className={styles.proofContactRow}>
                         <span>{label}</span>
                         <strong>{value}</strong>
@@ -486,9 +486,9 @@ function ProofVisual({ type }: { type: (typeof homeT.en.proofTabs)[number]['visu
     if (type === 'inbox') {
         return (
             <div className={styles.proofCardMock}>
-                <div className={styles.proofMailHead}>To aisha@n26.com</div>
+                <div className={styles.proofMailHead}>To emily@plaid.com</div>
                 <div className={styles.proofMailSubject}>Backend role, at your pace</div>
-                <p className={styles.proofMailBody}>Hi Aisha, your work at N26 stood out. Open to a quick chat this week?</p>
+                <p className={styles.proofMailBody}>Hi Emily, your work at Plaid stood out. Open to a quick chat this week?</p>
                 <div className={styles.proofCardFoot}>Sent from you@gmail.com</div>
             </div>
         );
@@ -503,10 +503,10 @@ function ProofVisual({ type }: { type: (typeof homeT.en.proofTabs)[number]['visu
             </div>
         );
     }
-    const rows: Array<[string, number]> = [['Marcus Chen', 96], ['Aisha Okonkwo', 94], ['Lukas Berger', 91]];
+    const rows: Array<[string, number]> = [['Michael Rodriguez', 96], ['Emily Johnson', 94], ['David Kim', 91]];
     return (
         <div className={styles.proofCardMock}>
-            <div className={styles.proofSearchField}><SearchIcon /><span>backend engineers in Berlin</span></div>
+            <div className={styles.proofSearchField}><SearchIcon /><span>backend engineers in San Francisco</span></div>
             {rows.map(([name, score]) => (
                 <div key={name} className={styles.proofResultRow}>
                     <span className={styles.proofResultName}>{name}</span>
@@ -765,7 +765,7 @@ export default function LandingPage() {
                             </div>
 
                             <div className={styles.filterChips} data-visible={showResults ? 'true' : 'false'}>
-                                {['Backend Engineer', 'Senior+', 'Berlin', 'Fintech'].map((chip) => (
+                                {['Backend Engineer', 'Senior+', 'United States', 'Fintech'].map((chip) => (
                                     <span key={chip} className={styles.filterChip}>
                                         {chip}
                                         <CloseIcon />
