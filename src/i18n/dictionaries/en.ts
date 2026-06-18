@@ -150,34 +150,126 @@ export const en = {
     pricing: {
         metaTitle: 'Pricing',
         metaDescription:
-            'Tahoe AI pricing starts at $49 per month for AI recruiting search, candidate lists, contact enrichment workflows, outreach, and analytics.',
+            'Tahoe AI pricing starts at $49 per month: natural-language search, candidate lists, contact enrichment, outreach, and analytics in one simple credit wallet.',
         ogDescription:
-            'Simple AI recruiting software pricing with visible credits, enrichment costs, outreach, and analytics.',
+            'Simple AI recruiting software pricing with visible credits, enrichment costs, free outreach, and transparent top-ups.',
         breadcrumbHome: 'Home',
         breadcrumb: 'Pricing',
+
+        // Hero
         eyebrow: 'Pricing',
         h1: 'Recruiter-grade tools without the enterprise contract.',
-        lede: 'Tahoe starts at $49 per month. You get search in your own words, candidate lists, clear credit costs, contact enrichment, outreach, and analytics in one workflow.',
+        lede: 'Pay only to search and to reveal contacts. One simple credit wallet, three plans, and outreach that is always free to send.',
         ctaStart: 'Start for free',
-        planName: 'Growth',
+        ctaStartNote: 'Continue with Google or email. No credit card.',
+        demoCta: 'Book a demo',
+
+        // Monthly / annual toggle
+        toggle: { monthly: 'Monthly', annual: 'Annual', save: 'Save 20%' },
         perMonth: '/mo',
-        cancelAnytime: 'Cancel anytime',
-        planFeatures: [
-            'Search candidates in your own words',
-            'Candidate lists and recruiting projects',
-            'Contact enrichment readiness workflows',
-            'Native outreach sequencing',
-            'Mailbox pacing and sender controls',
-            'Credit ledger and recruiting analytics',
+        billedAnnually: 'billed annually ({price}/yr)',
+        billedMonthly: 'billed monthly',
+        mostPopular: 'Most Popular',
+        planName: 'Growth',
+        planCta: 'Start for free',
+        plansEyebrow: 'Plans',
+        plansHeading: 'Pick a plan, then only pay for what you reveal.',
+
+        // Plans (prices/credits are universal; feature copy is localized)
+        plans: [
+            {
+                key: 'starter',
+                name: 'Starter',
+                monthly: 49,
+                yearly: 468,
+                popular: false,
+                features: ['400 credits / month', '1 seat', '1 mailbox', '2 active campaigns', 'Email outreach + AI templates'],
+            },
+            {
+                key: 'growth',
+                name: 'Growth',
+                monthly: 129,
+                yearly: 1236,
+                popular: true,
+                features: ['1,200 credits / month', '3 seats', '3 mailboxes', '10 active campaigns', 'Team collaboration', 'Priority support'],
+            },
+            {
+                key: 'pro',
+                name: 'Pro',
+                monthly: 349,
+                yearly: 3348,
+                popular: false,
+                features: ['3,500 credits / month', '10 seats', '10 mailboxes', '30 active campaigns', 'Usage analytics', 'Priority support (Slack)'],
+            },
         ],
+
+        // What a credit buys
+        creditStrip: {
+            eyebrow: 'Transparent credits',
+            title: 'What a credit buys',
+            items: [
+                ['Search a page', '2 cr'],
+                ['Personal email', '3 cr'],
+                ['Mobile phone', '10 cr'],
+                ['Send outreach', 'Free'],
+                ['Failed reveal', 'Free'],
+            ],
+            note: 'Credits refresh every month and do not roll over. Your free trial includes 1 search.',
+        },
+
+        // Comparison (factual, sourced — names only, no logos)
+        compare: {
+            eyebrow: 'How Tahoe compares',
+            heading: 'More contact data, for less than the incumbents.',
+            colTahoe: 'Tahoe',
+            cols: ['LinkedIn Recruiter Lite', 'SeekOut', 'hireEZ'],
+            priceLabel: 'Entry price / mo',
+            priceTahoeAnnual: '$39',
+            priceTahoeMonthly: '$49',
+            priceCompetitors: ['~$170', '~$179+', '~$169'],
+            rows: [
+                { label: "What's included", cells: ['400 credits', '30 InMails', '500 reveals', '100–4k credits'] },
+                { label: 'Emails + phone numbers', cells: ['Email + mobile', 'None', 'Email + phone', 'Email + phone'] },
+                { label: 'Natural-language search', cells: ['Yes', 'Boolean only', 'Boolean + AI', 'Boolean + AI'] },
+                { label: 'Published top-up rate', cells: ['From $0.126/cr', 'n/a', 'Sales-gated', 'Sales-gated'] },
+                { label: 'Start free, no card', cells: ['Yes', 'No', 'Sales only', 'Sales only'] },
+            ],
+            disclaimer:
+                'Competitor details as of June 2026, from each vendor’s public pricing pages and subject to change. LinkedIn, SeekOut, and hireEZ are trademarks of their respective owners; Tahoe is not affiliated with, sponsored by, or endorsed by them. Comparison is for informational purposes.',
+        },
+
+        // Top-ups
+        topups: {
+            eyebrow: 'Top-ups',
+            heading: 'Out of credits? Top up in one click.',
+            note: 'Credits are added instantly and used this billing cycle (no rollover). Sending outreach is always free.',
+            bestValue: 'Best value',
+            perCreditLabel: 'per credit',
+            cta: 'Start for free',
+            packs: [
+                { credits: '200 credits', price: '$35', perCredit: '$0.175', best: false, bullets: ['Added instantly', 'Used this cycle'] },
+                { credits: '500 credits', price: '$75', perCredit: '$0.150', best: false, bullets: ['Added instantly', 'Used this cycle'] },
+                { credits: '1,500 credits', price: '$189', perCredit: '$0.126', best: true, bullets: ['Added instantly', 'Lowest price per credit'] },
+            ],
+        },
+
         faqEyebrow: 'Pricing FAQ',
         faqHeading: 'Questions about credits and billing',
         faq: [
-            ['What is a credit?', 'Credits cover the work Tahoe does for you. Search credits run your candidate searches, and enrich credits find verified emails and phone numbers. You always see the cost before you spend.'],
-            ['Do unused credits roll over?', 'Each plan includes a fresh monthly allowance. Unused credits do not roll over, so you start every month with your full balance.'],
-            ['Do I pay extra to send outreach?', 'No. Outreach sends from your own inbox, so there is no separate sending charge.'],
-            ['Can I start without a credit card?', 'Yes. Start for free with Google or email, run your first search, and add a card only when you are ready.'],
+            ['What is a credit?', 'Credits cover the work Tahoe does for you. A search costs 2 credits, a personal email costs 3, and a mobile phone number costs 10. You always see the cost before you spend, and sending outreach is free.'],
+            ['Do unused credits roll over?', 'No. Each plan includes a fresh monthly allowance, so you start every month with your full balance. Top-up credits are also used within the billing cycle.'],
+            ['Do I pay extra to send outreach?', 'No. Outreach sends from your own inbox, so there is no separate sending charge, and failed reveals are never charged.'],
+            ['What does the free trial include?', 'The free trial includes 1 search with no card required. To reveal contacts or run more searches, choose any plan.'],
+            ['Can I top up if I run out?', 'Yes. Top-ups add credits instantly from a published rate as low as $0.126 per credit — no sales call required.'],
+            ['Can I cancel anytime?', 'Yes. Plans are month-to-month or annual, and you can cancel anytime from your billing settings.'],
         ],
+
+        // Final CTA
+        finalCta: {
+            heading: 'Find your first candidates in 60 seconds.',
+            start: 'Start for free',
+            demo: 'Book a demo',
+        },
     },
     customers: {
         metaTitle: 'Customers',

@@ -4,6 +4,7 @@ import "vanilla-cookieconsent/dist/cookieconsent.css";
 import "./globals.css";
 import "./tahoe-theme.css";
 import PublicGoogleAnalytics from "@/components/analytics/PublicGoogleAnalytics";
+import ClarityAnalytics from "@/components/analytics/ClarityAnalytics";
 import PublicCookieConsent from "@/components/consent/PublicCookieConsent";
 import { OG_IMAGES, OG_IMAGE_URL } from "@/lib/og";
 
@@ -92,6 +93,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${montserrat.variable} ${instrumentSans.variable}`}>
         <PublicGoogleAnalytics />
+        <ClarityAnalytics />
         <PublicCookieConsent />
         {children}
       </body>

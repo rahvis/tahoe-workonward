@@ -247,3 +247,61 @@
         margin: 2px 0;
     }
 }
+
+/* ── Business-email hint, inline error, consent checkbox, Google gating ── */
+.businessHint {
+    margin: 0;
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.fieldError {
+    margin: 6px 0 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--tahoe-color-danger);
+}
+
+.termsRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.checkbox {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    accent-color: var(--tahoe-color-accent);
+    cursor: pointer;
+}
+
+.termsLabel {
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.googleButtonWrap {
+    position: relative;
+}
+
+.googleDisabledOverlay {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--tahoe-radius-lg);
+    background: var(--tahoe-color-canvas);
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.googleBusinessNote {
+    margin: 0;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--tahoe-color-text-tertiary);
+}

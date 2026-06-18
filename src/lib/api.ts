@@ -1,3 +1,5 @@
+import { recordLoginForSearchTip } from "@/lib/search-tips";
+
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 interface RequestOptions {
@@ -137,6 +139,9 @@ export async function transcribeAudio(blob: Blob): Promise<{ transcript: string 
 
 export function setToken(token: string) {
     localStorage.setItem("tahoe_token", token);
+    // Both login paths (password + Google) funnel through here, so this is the
+    // single place to count logins for the search-tips hint gating.
+    recordLoginForSearchTip();
 }
 
 export function getToken(): string | null {

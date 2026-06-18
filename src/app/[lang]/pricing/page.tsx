@@ -8,8 +8,12 @@ import { faqLd } from '@/lib/structured-data';
 import { PublicSiteFooter, PublicSiteHeader } from '@/components/marketing/PublicSiteChrome';
 import JsonLd from '@/components/seo/JsonLd';
 import styles from '../page.module.css';
+import pricing from './pricing.module.css';
+import PricingTables from './_components/PricingTables';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tahoe.workonward.com';
+const DEMO_URL =
+    'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ2TB11Wn_yYLPd8ClWeKR2YyHYCYYjdRm1cJguma5qRyE6IuKaJlVjdugP4zOs96cFr3-mvhO0P';
 
 export async function generateMetadata({
     params,
@@ -78,35 +82,30 @@ export default async function PricingPage({ params }: { params: Promise<{ lang: 
             <PublicSiteHeader />
             <JsonLd data={[offerLd, breadcrumbLd, faqLd(t.faq.map(([q, a]) => ({ q, a })))]} />
 
+            {/* ── Hero ── */}
             <section className={styles.section}>
                 <div className={styles.container}>
-                    <div className={styles.pricingGrid}>
-                        <div className={styles.pricingCopy}>
-                            <span className={styles.sectionEyebrow}>{t.eyebrow}</span>
-                            <h1>{t.h1}</h1>
-                            <p>{t.lede}</p>
-                            <Link href={L('/signup')} className={styles.primaryAction}>{t.ctaStart}</Link>
+                    <div className={pricing.hero}>
+                        <span className={styles.sectionEyebrow}>{t.eyebrow}</span>
+                        <h1 className={pricing.heroTitle}>{t.h1}</h1>
+                        <p className={pricing.heroLede}>{t.lede}</p>
+                        <div className={pricing.heroActions}>
+                            <Link href={L('/signup')} className={styles.primaryAction}>
+                                {t.ctaStart}
+                            </Link>
+                            <a href={DEMO_URL} target="_blank" rel="noreferrer" className={styles.heroDemoAction}>
+                                {t.demoCta}
+                            </a>
                         </div>
-                        <div className={styles.pricingCard}>
-                            <div className={styles.pricingFeaturedRow}>
-                                <div className={styles.featuredBrand}>{t.planName}</div>
-                                <div className={styles.barTrack}>
-                                    <div className={styles.barFillAccent} style={{ width: '100%' }} />
-                                </div>
-                                <div className={styles.priceCell}>
-                                    <strong>$49</strong>
-                                    <span>{t.perMonth}</span>
-                                    <small>{t.cancelAnytime}</small>
-                                </div>
-                            </div>
-                            {t.planFeatures.map((item) => (
-                                <div key={item} className={styles.detailLine}>{item}</div>
-                            ))}
-                        </div>
+                        <p className={pricing.heroNote}>{t.ctaStartNote}</p>
                     </div>
                 </div>
             </section>
 
+            {/* ── Toggle + plans + credit strip + comparison + top-ups (interactive) ── */}
+            <PricingTables t={t} signupHref={L('/signup')} />
+
+            {/* ── FAQ ── */}
             <section className={styles.section}>
                 <div className={styles.container}>
                     <div className={styles.sectionHead}>
@@ -120,6 +119,23 @@ export default async function PricingPage({ params }: { params: Promise<{ lang: 
                                 <p>{answer}</p>
                             </article>
                         ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ── Final CTA ── */}
+            <section className={styles.finalCtaSection}>
+                <div className={styles.container}>
+                    <div className={pricing.finalCta}>
+                        <h2 className={pricing.finalCtaHeading}>{t.finalCta.heading}</h2>
+                        <div className={pricing.finalCtaActions}>
+                            <Link href={L('/signup')} className={pricing.finalCtaPrimary}>
+                                {t.finalCta.start}
+                            </Link>
+                            <a href={DEMO_URL} target="_blank" rel="noreferrer" className={pricing.finalCtaSecondary}>
+                                {t.finalCta.demo}
+                            </a>
+                        </div>
                     </div>
                 </div>
             </section>

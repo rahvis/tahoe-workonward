@@ -22,6 +22,7 @@ import SaveToListDialog from "../_components/SaveToListDialog";
 import { previewCandidateToImportPayload } from "@/lib/organization";
 import { useCreditConfirm } from "@/app/dashboard/_components/CreditConfirmDialog";
 import { ACTION_COST, loadActionCosts } from "@/lib/credits";
+import { SEARCH_TIPS_URL, dismissSearchTip, shouldShowSearchTip } from "@/lib/search-tips";
 import { fetchSearchAccess, autocompleteLocations, autocompleteJobs, autocompleteCompany, autocompleteEducation, autocompleteCertifications, type LocationField, type JobField, type CompanyField, type EducationField, type CertificationField } from "@/lib/organization";
 import { clearAnalyticsCache } from "../analytics/_components/analytics-cache";
 import PreviewCapBanner from "./preview-cap-banner";
@@ -1848,7 +1849,19 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
     const [subscriptionActive, setSubscriptionActive] = useState(false);
     const [searchCost, setSearchCost] = useState(ACTION_COST.search);
     const [paywallReason, setPaywallReason] = useState<PaywallReason | null>(null);
+    const [showSearchTip, setShowSearchTip] = useState(false);
     const { confirmSpend, creditConfirmDialog } = useCreditConfirm();
+
+    // Search-tips hint: client-only gate (reads localStorage) so it can't cause
+    // a hydration mismatch. Shows for the first 5 logins, dismissible anytime.
+    useEffect(() => {
+        setShowSearchTip(shouldShowSearchTip());
+    }, []);
+
+    const handleDismissSearchTip = useCallback(() => {
+        dismissSearchTip();
+        setShowSearchTip(false);
+    }, []);
 
     const refreshAccess = useCallback(async () => {
         try {
@@ -2919,13 +2932,36 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                         onOpen={() => dispatch({ type: "patch", payload: { intakeDrawerOpen: true } })}
                     />
                 ) : null}
-                <div className={styles.workflowRail} aria-label="Recruiter workflow">
-                    <span>Search</span>
-                    <span>Review filters</span>
-                    <span>Results</span>
-                    <span>Save to list</span>
-                    <span>Enrich</span>
-                    <span>Campaign</span>
+                <div className={styles.workflowRow}>
+                    <div className={styles.workflowRail} aria-label="Recruiter workflow">
+                        <span>Search</span>
+                        <span>Review filters</span>
+                        <span>Results</span>
+                        <span>Save to list</span>
+                        <span>Enrich</span>
+                        <span>Campaign</span>
+                    </div>
+                    {showSearchTip ? (
+                        <span className={styles.workflowTip}>
+                            <a
+                                className={styles.workflowTipLink}
+                                href={SEARCH_TIPS_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Search tips &amp; tricks &#8599;
+                            </a>
+                            <button
+                                type="button"
+                                className={styles.workflowTipDismiss}
+                                onClick={handleDismissSearchTip}
+                                aria-label="Hide search tips"
+                                title="Hide search tips"
+                            >
+                                &#215;
+                            </button>
+                        </span>
+                    ) : null}
                 </div>
             </Box>
 
