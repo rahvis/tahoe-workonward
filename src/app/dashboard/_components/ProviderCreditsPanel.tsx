@@ -113,8 +113,8 @@ export default function ProviderCreditsPanel({ collapsed = false }: { collapsed?
                         padding: '10px 12px',
                         margin: '0 0 8px',
                         borderRadius: 10,
-                        border: '1px solid var(--tahoe-color-border-subtle)',
-                        background: 'var(--tahoe-color-canvas)',
+                        border: '1px solid rgba(255, 104, 44, 0.45)',
+                        background: 'linear-gradient(180deg, rgba(255, 104, 44, 0.12) 0%, rgba(255, 104, 44, 0.04) 100%)',
                         fontSize: 12,
                     }}
                 >

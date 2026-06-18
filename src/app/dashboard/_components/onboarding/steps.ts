@@ -36,7 +36,7 @@ export const TOUR_STEPS: TourStep[] = [
         anchor: 'result-row',
         title: 'Ranked example matches',
         body: 'Candidates are ranked with a clear match score and the evidence behind each one.',
-        note: '👋 These are example candidates so you can see how Tahoe works — not real people. You’ll search real profiles right after this.',
+        note: 'These are example candidates so you can see how Tahoe works — not real people. You’ll search real profiles right after this.',
         placement: 'top',
     },
     {

@@ -95,6 +95,10 @@ export default function OnboardingProvider({ children }: { children: ReactNode }
     const router = useRouter();
     const [state, setState] = useState<OnboardingState>(() => readLocal() ?? defaultOnboardingState());
     const [loaded, setLoaded] = useState(false);
+    // True once the user dismisses the welcome in THIS session (Skip / Esc / backdrop).
+    // It is intentionally NOT persisted: a non-completed user is re-prompted on their
+    // next login (fresh page load resets this), but isn't nagged within one session.
+    const [sessionDismissed, setSessionDismissed] = useState(false);
 
     // Keep a synchronous mirror so actions compute from the freshest value.
     const stateRef = useRef(state);
@@ -176,10 +180,10 @@ export default function OnboardingProvider({ children }: { children: ReactNode }
         apply({ tour_step: step }, { tour_step: step });
     }, [apply]);
 
-    const skip = useCallback(
-        () => apply({ tour_status: 'skipped' }, { tour_status: 'skipped' }),
-        [apply],
-    );
+    const skip = useCallback(() => {
+        setSessionDismissed(true);
+        apply({ tour_status: 'skipped' }, { tour_status: 'skipped' });
+    }, [apply]);
 
     const markTask = useCallback(
         (task: ChecklistKey) => {
@@ -215,19 +219,18 @@ export default function OnboardingProvider({ children }: { children: ReactNode }
         return () => window.removeEventListener('tahoe:onboarding-task', handler as EventListener);
     }, [markTask]);
 
-    // Relaunch the tour from the sidebar Help button (decoupled via an event so the
-    // layout doesn't need to consume this context).
-    useEffect(() => {
-        const handler = () => relaunch();
-        window.addEventListener('tahoe:onboarding-relaunch', handler);
-        return () => window.removeEventListener('tahoe:onboarding-relaunch', handler);
-    }, [relaunch]);
-
     const value = useMemo<OnboardingContextValue>(
         () => ({
             loaded,
             state,
-            showWelcome: loaded && state.tour_status === 'pending',
+            // Re-prompt anyone who hasn't FINISHED the tour on every fresh login
+            // (pending or skipped), unless they dismissed it earlier this session.
+            // 'in_progress' resumes the tour overlay instead; 'completed' never shows.
+            showWelcome:
+                loaded &&
+                !sessionDismissed &&
+                state.tour_status !== 'completed' &&
+                state.tour_status !== 'in_progress',
             // Gate on `loaded` so the first client render matches SSR (no overlay)
             // and we never act on stale localStorage before the server confirms.
             tourActive: loaded && state.tour_status === 'in_progress',
@@ -245,7 +248,7 @@ export default function OnboardingProvider({ children }: { children: ReactNode }
             dismissChecklist,
             relaunch,
         }),
-        [loaded, state, setSegment, startTour, advance, back, skip, complete, markTask, dismissChecklist, relaunch],
+        [loaded, sessionDismissed, state, setSegment, startTour, advance, back, skip, complete, markTask, dismissChecklist, relaunch],
     );
 
     return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;

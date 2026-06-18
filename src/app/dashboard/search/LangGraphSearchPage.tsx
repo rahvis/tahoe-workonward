@@ -2925,7 +2925,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                         <Box data-onboarding="result-row">
                             <Callout.Root color="gray" style={{ marginBottom: 12 }}>
                                 <Callout.Text>
-                                    👋 These are <strong>example candidates</strong> so you can see how Tahoe works — they&apos;re not real people. You&apos;ll search real profiles right after this quick tour.
+                                    These are <strong>example candidates</strong> so you can see how Tahoe works — they&apos;re not real people. You&apos;ll search real profiles right after this quick tour.
                                 </Callout.Text>
                             </Callout.Root>
                             <Flex align="center" gap="2" mb="3" wrap="wrap">

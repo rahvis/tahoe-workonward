@@ -93,6 +93,21 @@
     font-family: var(--tahoe-font-body);
 }
 
+/* Brand-orange Enrich CTA — overrides the global black .tahoe-button.
+   Doubled class for specificity so it wins over .tahoe-button without !important. */
+.enrichButton.enrichButton {
+    background: var(--tahoe-color-accent);
+    border-color: var(--tahoe-color-accent);
+    color: #ffffff;
+}
+.enrichButton.enrichButton:hover:not(:disabled) {
+    background: #f2551c;
+    border-color: #f2551c;
+}
+.enrichButton.enrichButton:disabled {
+    opacity: 0.55;
+}
+
 .listRunBanner {
     padding: 12px 14px;
     border: 1px solid rgba(255, 104, 44, 0.16);

@@ -30,7 +30,7 @@ export default function OnboardingCelebration() {
         <div className={styles.layer}>
             <Confetti count={32} />
             <div className={styles.toast}>
-                <strong>🎉 You&apos;re set up.</strong>
+                <strong>You&apos;re set up.</strong>
                 <span>Finish the checklist to get your first reply — we saved your spot.</span>
             </div>
         </div>

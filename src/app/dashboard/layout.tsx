@@ -21,6 +21,7 @@ import {
 import BrandMark from '@/components/branding/BrandMark';
 import ProviderCreditsPanel from '@/app/dashboard/_components/ProviderCreditsPanel';
 import OnboardingProvider from '@/app/dashboard/_components/onboarding/OnboardingProvider';
+import OnboardingHelpButton from '@/app/dashboard/_components/onboarding/OnboardingHelpButton';
 import OnboardingRoot from '@/app/dashboard/_components/onboarding/OnboardingRoot';
 import styles from './dashboard.module.css';
 
@@ -275,15 +276,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <div data-onboarding="credits">
                             <ProviderCreditsPanel collapsed={collapsed} />
                         </div>
-                        <button
-                            className={styles.navButton}
-                            type="button"
-                            onClick={() => window.dispatchEvent(new Event('tahoe:onboarding-relaunch'))}
-                            aria-label="Getting started"
-                        >
-                            <span className={styles.navIcon} aria-hidden="true">?</span>
-                            {!collapsed ? <span className={styles.navLabel}>Getting started</span> : null}
-                        </button>
+                        <OnboardingHelpButton collapsed={collapsed} />
                         <button className={`${styles.navButton} ${styles.logoutButton}`} type="button" onClick={handleLogout}>
                             <span className={styles.navIcon}><ExitIcon width="18" height="18" /></span>
                             {!collapsed ? <span className={styles.navLabel}>Log out</span> : null}

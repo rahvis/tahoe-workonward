@@ -503,7 +503,6 @@ function ListDetailPageInner() {
     const paginationTokens = buildPaginationTokens(page, totalPages, 10);
     const listCandidateCount = Math.max(list?.candidate_count ?? 0, total);
     const canEnrich = !loading && listCandidateCount > 0;
-    const activeRunIsOpen = activeRun?.status === 'pending' || activeRun?.status === 'in_progress';
 
     useEffect(() => {
         if (!shouldAutoOpenEnrich) {
@@ -531,7 +530,7 @@ function ListDetailPageInner() {
                         <CreditsBadge refreshKey={creditRefreshKey} />
                         <button
                             type="button"
-                            className="tahoe-button"
+                            className={`tahoe-button ${layoutStyles.enrichButton}`}
                             disabled={!canEnrich}
                             onClick={() => setEnrichOpen(true)}
                         >
@@ -546,11 +545,6 @@ function ListDetailPageInner() {
                     </div>
                 </Flex>
 
-                {activeRunIsOpen && activeRun ? (
-                    <div className={layoutStyles.listRunBanner}>
-                        An enrichment run for {activeRun.target_candidate_count} contact{activeRun.target_candidate_count === 1 ? '' : 's'} is in progress. Status is tracked from Tahoe run state.
-                    </div>
-                ) : null}
                 {enrichmentNotice ? (
                     <div className={layoutStyles.listRunBanner} role="status" aria-live="polite">
                         {enrichmentNotice}
@@ -728,9 +722,9 @@ function ListDetailPageInner() {
                 onSubmitted={async (run) => {
                     if (run.status === 'pending' || run.status === 'in_progress') {
                         setActiveRun(run);
-                        setEnrichmentNotice(
-                            `Enrichment has started for ${run.target_candidate_count} candidate${run.target_candidate_count === 1 ? '' : 's'}. You can keep working or come back to this list later; contact details will appear here as FullEnrich returns them.`,
-                        );
+                        // No banner on a successful start — progress is shown per-row
+                        // via the ENRICHMENT status column.
+                        setEnrichmentNotice('');
                     } else {
                         setActiveRun(null);
                         setEnrichmentNotice(

@@ -310,10 +310,11 @@ test('renders contact status and refreshes list data when the active run complet
 
     render(<ListDetailPage />);
 
-    expect(await screen.findByText(/An enrichment run for 1 contact is in progress/i)).toBeInTheDocument();
-    expect(screen.getByTestId('column-order')).toHaveTextContent(
+    expect(await screen.findByTestId('column-order')).toHaveTextContent(
         'Candidate|Current Title|Company Name|Phone|Work Email|Personal Email|Enrichment',
     );
+    // The "enrichment run in progress" banner is intentionally not shown.
+    expect(screen.queryByText(/An enrichment run for 1 contact is in progress/i)).not.toBeInTheDocument();
     expect(await screen.findByText(/DONE/i)).toBeInTheDocument();
     expect(await screen.findByText(/jane@tahoe.workonward.com/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Enrichment pending/i)).toBeInTheDocument();
@@ -702,7 +703,7 @@ test('numbered pagination keeps selected basket across page changes', async () =
     expect(screen.getByRole('button', { name: /Remove 1 from list/i })).toBeInTheDocument();
 });
 
-test('selected-candidate enrichment uses candidates selected across pages and shows started notice', async () => {
+test('selected-candidate enrichment uses candidates selected across pages without a started banner', async () => {
     const user = userEvent.setup();
     mockedFetchEnrichmentRuns.mockResolvedValue({ items: [] });
     mockedEstimateEnrichmentRun.mockResolvedValue({
@@ -765,7 +766,8 @@ test('selected-candidate enrichment uses candidates selected across pages and sh
             }),
         );
     });
-    expect(await screen.findByText(/You can keep working or come back to this list later/i)).toBeInTheDocument();
+    // No "enrichment has started" banner is shown on a successful start.
+    expect(screen.queryByText(/You can keep working or come back to this list later/i)).not.toBeInTheDocument();
 });
 
 test('completed zero-target enrichment shows no-op notice instead of in-progress banner', async () => {
