@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Dialog, Flex, Text } from '@/components/ui/tahoe-ui';
 import { ApiError } from '@/lib/api';
+import { markOnboardingTask } from '@/lib/onboarding';
 import {
     createEnrichmentRun,
     estimateEnrichmentRun,
@@ -186,6 +187,7 @@ export default function EnrichModal({
                 fields,
                 idempotency_key: newIdempotencyKey(),
             });
+            markOnboardingTask('enrich_contact');
             await onSubmitted?.(run);
             onOpenChange(false);
         } catch (err) {

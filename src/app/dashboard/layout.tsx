@@ -20,6 +20,8 @@ import {
 } from '@/components/ui/icons';
 import BrandMark from '@/components/branding/BrandMark';
 import ProviderCreditsPanel from '@/app/dashboard/_components/ProviderCreditsPanel';
+import OnboardingProvider from '@/app/dashboard/_components/onboarding/OnboardingProvider';
+import OnboardingRoot from '@/app/dashboard/_components/onboarding/OnboardingRoot';
 import styles from './dashboard.module.css';
 
 type PrimarySection = 'search' | 'projects' | 'jobs' | 'mailboxes' | 'outreach' | 'billing' | 'analytics' | 'settings';
@@ -167,6 +169,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const primaryWidth = collapsed ? 88 : 248;
 
     return (
+        <OnboardingProvider>
         <div className={styles.dashboardLayout} data-tahoe-dashboard>
             <aside
                 className={`${styles.primarySidebar} ${collapsed ? styles.sidebarCollapsed : ''}`}
@@ -218,6 +221,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                         href={item.href}
                                         className={`${styles.navButton} ${isActive ? styles.navButtonActive : ''}`}
                                         aria-current={isActive ? 'page' : undefined}
+                                        data-onboarding={item.key === 'mailboxes' ? 'mailboxes' : undefined}
                                     >
                                         <span className={styles.navIcon}>{item.icon}</span>
                                         <span className={styles.navLabel}>{item.label}</span>
@@ -268,7 +272,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </nav>
 
                     <div className={styles.sidebarFooter}>
-                        <ProviderCreditsPanel collapsed={collapsed} />
+                        <div data-onboarding="credits">
+                            <ProviderCreditsPanel collapsed={collapsed} />
+                        </div>
+                        <button
+                            className={styles.navButton}
+                            type="button"
+                            onClick={() => window.dispatchEvent(new Event('tahoe:onboarding-relaunch'))}
+                            aria-label="Getting started"
+                        >
+                            <span className={styles.navIcon} aria-hidden="true">?</span>
+                            {!collapsed ? <span className={styles.navLabel}>Getting started</span> : null}
+                        </button>
                         <button className={`${styles.navButton} ${styles.logoutButton}`} type="button" onClick={handleLogout}>
                             <span className={styles.navIcon}><ExitIcon width="18" height="18" /></span>
                             {!collapsed ? <span className={styles.navLabel}>Log out</span> : null}
@@ -304,6 +319,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <span>Logout</span>
                 </button>
             </nav>
+
+            <OnboardingRoot />
         </div>
+        </OnboardingProvider>
     );
 }

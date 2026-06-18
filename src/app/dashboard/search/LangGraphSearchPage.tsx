@@ -55,6 +55,9 @@ import CandidatePanel, {
 import styles from "./langgraph-search.module.css";
 import MicButton from "./MicButton";
 import PreviewGrid, { type PreviewGridRow } from "./preview-grid";
+import { useOnboarding } from "../_components/onboarding/OnboardingProvider";
+import { SAMPLE_CANDIDATES, SAMPLE_QUERY } from "../_components/onboarding/sampleCandidates";
+import { markOnboardingTask } from "@/lib/onboarding";
 import SearchBriefSummary from "./SearchBriefSummary";
 import UpgradePaywallModal, { type PaywallReason } from "./UpgradePaywallModal";
 import { useDictation } from "./useDictation";
@@ -1805,6 +1808,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
     const searchParams = useSearchParams();
     const sessionFromUrl = searchParams?.get("session") ?? null;
     const [state, dispatch] = useReducer(searchStateReducer, undefined, initialSearchState);
+    const { demoActive } = useOnboarding();
     const [metadata, setMetadata] = useState<FilterMetadata | null>(null);
     const [activeSection, setActiveSection] = useState("general");
     const [hydrated, setHydrated] = useState(false);
@@ -2241,6 +2245,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                     reanchorPrompt: searchPromptForRun,
                 });
                 dispatch({ type: "execute_success", payload: executeResponse, confirmedIntent: popupModel });
+                markOnboardingTask("first_search");
                 notifyCreditsChanged();
                 void refreshAccess();
                 dispatch({
@@ -2292,6 +2297,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                 reanchorPrompt: searchPromptForRun,
             });
             dispatch({ type: "execute_success", payload: executeResponse, confirmedIntent: intentForExecute });
+            markOnboardingTask("first_search");
             notifyCreditsChanged();
             void refreshAccess();
             // Keep the filter editor aligned to the recruiter's now-effective state.
@@ -2749,7 +2755,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
     };
     return (
         <Box className={styles.page}>
-            <Box className={styles.searchBar}>
+            <Box className={styles.searchBar} data-onboarding="search-bar">
                 <form onSubmit={handleFindCandidates}>
                     {isJdMode ? (
                         <div className={styles.jdInputGrid}>
@@ -2820,6 +2826,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                             className={styles.filtersButton}
                             onClick={openFilterSurface}
                             aria-haspopup="dialog"
+                            data-onboarding="filters"
                         >
                             Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
                         </button>
@@ -2914,7 +2921,27 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
 
             <Box className={styles.shellGrid}>
                 <Box className={styles.resultsArea} style={{ position: "relative" }}>
-                    {(state.viewState === "idle" || state.viewState === "review" || state.viewState === "intake_clarifying") && (
+                    {demoActive && (
+                        <Box data-onboarding="result-row">
+                            <Callout.Root color="gray" style={{ marginBottom: 12 }}>
+                                <Callout.Text>
+                                    👋 These are <strong>example candidates</strong> so you can see how Tahoe works — they&apos;re not real people. You&apos;ll search real profiles right after this quick tour.
+                                </Callout.Text>
+                            </Callout.Root>
+                            <Flex align="center" gap="2" mb="3" wrap="wrap">
+                                <Badge color="gray" variant="soft">Example data</Badge>
+                                <Text size="2" color="gray">{SAMPLE_QUERY}</Text>
+                            </Flex>
+                            <PreviewGrid
+                                rows={SAMPLE_CANDIDATES}
+                                showCandidateSubtitle
+                                hiddenColumnKeys={["id", "page", "pipeline", "search_prompt"]}
+                                emptyMessage="—"
+                            />
+                        </Box>
+                    )}
+
+                    {!demoActive && (state.viewState === "idle" || state.viewState === "review" || state.viewState === "intake_clarifying") && (
                         <Flex direction="column" align="center" justify="center" gap="4" className={styles.emptyState}>
                             <MagnifyingGlassIcon width="52" height="52" />
                             <Heading size="5">Search, review filters, then run the query</Heading>
@@ -2940,7 +2967,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                         </Flex>
                     )}
 
-                    {(state.viewState === "results" || state.viewState === "diagnosis") && (
+                    {!demoActive && (state.viewState === "results" || state.viewState === "diagnosis") && (
                         <Box className={styles.resultsLayout}>
                             <Box className={styles.resultsTableRegion}>
                                 <PreviewGrid
@@ -3111,6 +3138,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                 candidates={selectedImportPayload}
                 onSaved={async () => {
                     setSelectedIds(new Set());
+                    markOnboardingTask("save_candidate");
                 }}
                 onOpenList={(list) => openSavedList(list.id)}
                 onEnrichList={(list) => openSavedList(list.id, { enrich: true })}
