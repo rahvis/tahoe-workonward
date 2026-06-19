@@ -740,7 +740,7 @@
 }
 
 .backedByLogo {
-    width: clamp(150px, 24vw, 360px);
+    width: clamp(75px, 12vw, 180px);
     height: auto;
     display: block;
 }
