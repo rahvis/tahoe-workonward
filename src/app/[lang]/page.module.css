@@ -718,27 +718,19 @@
 
 /* ── Backed by Techstars (credibility strip) ── */
 .backedByStrip {
-    padding: 28px 0 4px;
+    padding: 48px 0 32px;
 }
 
 .backedByInner {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 14px;
-}
-
-.backedByLabel {
-    font-size: 12px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--color-text-tertiary);
 }
 
 .backedByLink {
     display: inline-flex;
     align-items: center;
-    opacity: 0.7;
+    opacity: 0.85;
     transition: opacity 160ms ease;
 }
 
@@ -748,8 +740,8 @@
 }
 
 .backedByLogo {
-    height: 28px;
-    width: auto;
+    width: clamp(300px, 48vw, 720px);
+    height: auto;
     display: block;
 }
 

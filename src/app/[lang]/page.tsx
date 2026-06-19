@@ -816,18 +816,18 @@ export default function LandingPage() {
             <aside className={styles.backedByStrip} aria-label={`${t.backedBy} Techstars`}>
                 <div className={styles.container}>
                     <div className={styles.backedByInner}>
-                        <span className={styles.backedByLabel}>{t.backedBy}</span>
                         <a
                             href="https://www.techstars.com"
                             target="_blank"
                             rel="noopener noreferrer"
                             className={styles.backedByLink}
+                            aria-label={`${t.backedBy} Techstars`}
                         >
                             <Image
                                 src="/logos/techstars.png"
-                                alt="Techstars"
-                                width={70}
-                                height={28}
+                                alt={`${t.backedBy} Techstars`}
+                                width={720}
+                                height={288}
                                 className={styles.backedByLogo}
                             />
                         </a>
