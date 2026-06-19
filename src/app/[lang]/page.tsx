@@ -37,13 +37,6 @@ const HERO_RESULTS = [
 
 type ScreenTab = (typeof homeT.en.screenTabs)[number]['id'];
 
-const PRICE_COMPARE = [
-    { name: 'LinkedIn Recruiter', price: 999, contract: 'Annual contract' },
-    { name: 'Recruiter Lite', price: 170, contract: 'Annual contract' },
-    { name: 'SeekOut', price: 749, contract: 'Custom contract' },
-    { name: 'hireEZ', price: 599, contract: 'Annual contract' },
-];
-
 const homeJsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -164,27 +157,6 @@ function CloseIcon() {
         <svg viewBox="0 0 16 16" aria-hidden="true" className={styles.miniIcon}>
             <path d="m4 4 8 8M12 4l-8 8" />
         </svg>
-    );
-}
-
-function Logo({ compact = false }: { compact?: boolean }) {
-    return (
-        <div className={styles.logo}>
-            <svg
-                viewBox="0 0 160 90"
-                aria-hidden="true"
-                className={compact ? styles.logoMarkCompact : styles.logoMark}
-            >
-                <path d="M0 90 L40 0 L80 90 Z" fill="none" stroke="var(--color-accent)" strokeWidth="10" strokeLinejoin="round" />
-                <path d="M80 90 L120 0 L160 90 Z" fill="none" stroke="var(--color-text-primary)" strokeWidth="10" strokeLinejoin="round" />
-            </svg>
-            <div className={styles.logoTextWrap}>
-                <span className={styles.logoWordmark}>
-                    tahoe<span className={styles.logoDot}>.</span>ai
-                </span>
-                {!compact && <span className={styles.logoMeta}>powered by WorkOnward</span>}
-            </div>
-        </div>
     );
 }
 
@@ -895,56 +867,6 @@ export default function LandingPage() {
                     </div>
 
                     {activeScreen}
-                </div>
-            </section>
-
-            <section id="pricing" className={styles.section}>
-                <div className={styles.container}>
-                    <div className={styles.pricingGrid}>
-                        <div className={styles.pricingCopy}>
-                            <span className={styles.sectionEyebrow}>{t.priceEyebrow}</span>
-                            <h2>
-                                {t.priceH2Pre}<span>{t.priceH2Accent}</span>
-                            </h2>
-                            <p>{t.priceSub}</p>
-                            <Link href={L('/signup')} className={styles.primaryAction} onClick={() => trackAuthCta('start_free_trial', 'pricing')}>
-                                {t.priceCta} <ArrowIcon />
-                            </Link>
-                        </div>
-
-                        <div className={styles.pricingCard}>
-                            <div className={styles.pricingFeaturedRow}>
-                                <div className={styles.featuredBrand}>
-                                    <Logo compact />
-                                </div>
-                                <div className={styles.barTrack}>
-                                    <div className={styles.barFillAccent} style={{ width: '5%' }} />
-                                </div>
-                                <div className={styles.priceCell}>
-                                    <strong>$49</strong>
-                                    <span>/mo</span>
-                                    <small>{t.priceCancel}</small>
-                                </div>
-                            </div>
-
-                            {PRICE_COMPARE.map((vendor) => (
-                                <div key={vendor.name} className={styles.pricingRow}>
-                                    <span>{vendor.name}</span>
-                                    <div className={styles.barTrack}>
-                                        <div
-                                            className={styles.barFillMuted}
-                                            style={{ width: `${(vendor.price / 1000) * 100}%` }}
-                                        />
-                                    </div>
-                                    <div className={styles.priceCell}>
-                                        <strong>${vendor.price}</strong>
-                                        <span>/mo</span>
-                                        <small>{vendor.contract}</small>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
             </section>
 
