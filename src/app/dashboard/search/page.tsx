@@ -1035,10 +1035,22 @@ function SearchPageInner() {
     const forcedMode = searchParams.get("mode");
     const resolvedMode = forcedMode ?? bootstrap?.mode ?? (SEARCH_LANGGRAPH_ENABLED ? "langgraph" : "legacy");
 
+    // Pre-fill from ?q= (e.g. "Find me candidates" off a posted job → search seeded, not run).
+    const prefillQuery = searchParams.get("q");
+    const prefillSource = searchParams.get("src");
+    const prefillJobId = searchParams.get("jobId");
+
     return (
         <div className={styles.searchRouteShell}>
             {resolvedMode === "langgraph"
-                ? <LangGraphSearchPage bootstrap={bootstrap?.mode === "langgraph" ? bootstrap : null} />
+                ? (
+                    <LangGraphSearchPage
+                        bootstrap={bootstrap?.mode === "langgraph" ? bootstrap : null}
+                        initialQuery={prefillQuery}
+                        prefillSource={prefillSource}
+                        prefillJobId={prefillJobId}
+                    />
+                )
                 : <LegacySearchPage bootstrap={bootstrap?.mode === "legacy" ? bootstrap : null} />}
         </div>
     );

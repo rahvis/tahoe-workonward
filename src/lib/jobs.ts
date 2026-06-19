@@ -160,6 +160,11 @@ export async function checkPost(id: string): Promise<CheckSuggestion[]> {
     return res.suggestions;
 }
 
+/** Turn a posted job into a simple natural-language candidate search query (for pre-filling search). */
+export function generateJobSearchQuery(id: string): Promise<{ query: string }> {
+    return apiRequest<{ query: string }>(`/api/jobs/${id}/search-query`, { method: 'POST' });
+}
+
 // ── application form ──────────────────────────────────────────────────────────
 export function getJobForm(id: string): Promise<JobFormResponse> {
     return apiRequest<JobFormResponse>(`/api/jobs/${id}/form`);

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import posthog from "posthog-js";
 import {
     answerSearchIntake,
     apiRequest,
@@ -290,6 +291,11 @@ type SearchPageAction =
 
 interface LangGraphSearchPageProps {
     bootstrap?: SearchPageBootstrapPayload | null;
+    /** Pre-fill the search box (e.g. "Find me candidates" from a posted job). Seeds the
+     *  query without running it. */
+    initialQuery?: string | null;
+    prefillSource?: string | null;
+    prefillJobId?: string | null;
 }
 
 function sanitizePersistedState(payload: Partial<SearchPageState>): Partial<SearchPageState> {
@@ -1805,7 +1811,7 @@ function notifyCreditsChanged() {
     }
 }
 
-export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPageProps) {
+export default function LangGraphSearchPage({ bootstrap, initialQuery, prefillSource, prefillJobId }: LangGraphSearchPageProps) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -1821,6 +1827,7 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
     const [desktopLayout, setDesktopLayout] = useState(() => isDesktopViewport());
     const sessionUrlConsumedRef = useRef<string | null>(null);
     const bootstrapAppliedRef = useRef<string | null>(null);
+    const prefillAppliedRef = useRef(false);
     const previousQueryHashRef = useRef<string | null>(null);
     const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -2000,6 +2007,21 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
 
         setHydrated(true);
     }, [bootstrap, openFilterSurface, sessionFromUrl]);
+
+    // One-shot pre-fill from ?q= (e.g. "Find me candidates" off a posted job). Seeds the
+    // search box once, without running it — the recruiter reviews/edits, then runs the
+    // search themselves. Skipped when a bootstrap owns the query, and never re-applied,
+    // so it can't clobber what the recruiter then types.
+    useEffect(() => {
+        if (prefillAppliedRef.current || bootstrap) return;
+        const seeded = (initialQuery ?? "").trim();
+        if (!seeded) return;
+        prefillAppliedRef.current = true;
+        dispatch({ type: "patch", payload: { query: seeded } });
+        if (prefillSource === "job") {
+            posthog.capture("search_prefilled_from_job", { job_id: prefillJobId ?? null });
+        }
+    }, [bootstrap, initialQuery, prefillSource, prefillJobId]);
 
     useEffect(() => {
         if (!hydrated || !sessionFromUrl) return;
@@ -2931,6 +2953,19 @@ export default function LangGraphSearchPage({ bootstrap }: LangGraphSearchPagePr
                         compact
                         onOpen={() => dispatch({ type: "patch", payload: { intakeDrawerOpen: true } })}
                     />
+                ) : null}
+                {prefillSource === "job" && !hasResultView ? (
+                    <Callout.Root color="gray" style={{ marginBottom: 12 }}>
+                        <Callout.Text>
+                            Built from your job posting — review and edit the search, then run it.
+                            {prefillJobId ? (
+                                <>
+                                    {" "}
+                                    <a href={`/dashboard/jobs/postings/${prefillJobId}/edit`}>View the job</a>
+                                </>
+                            ) : null}
+                        </Callout.Text>
+                    </Callout.Root>
                 ) : null}
                 <div className={styles.workflowRow}>
                     <div className={styles.workflowRail} aria-label="Recruiter workflow">

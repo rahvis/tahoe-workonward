@@ -1605,3 +1605,25 @@ test("reopening the desktop popup preserves recruiter filter edits", async () =>
     await user.click(screen.getByRole("button", { name: "Filters (1)" }));
     expect(await screen.findByText("Platform")).toBeInTheDocument();
 });
+
+test("pre-fills the search box from a posted job without auto-running a search", async () => {
+    render(
+        <LangGraphSearchPage
+            initialQuery="senior backend engineers in Europe with Python"
+            prefillSource="job"
+            prefillJobId="job-123"
+        />,
+    );
+
+    // The box is seeded with the generated query…
+    const input = await screen.findByRole("textbox", { name: "Search prompt" });
+    expect(input).toHaveValue("senior backend engineers in Europe with Python");
+
+    // …the "from your job" banner shows…
+    expect(screen.getByText(/Built from your job posting/i)).toBeInTheDocument();
+
+    // …and nothing ran: still pre-search — the Find candidates CTA and the empty-state
+    // prompt are both showing (a results view would have replaced the empty state).
+    expect(screen.getByRole("button", { name: /Find candidates/i })).toBeInTheDocument();
+    expect(screen.getByText(/review filters, then run the query/i)).toBeInTheDocument();
+});

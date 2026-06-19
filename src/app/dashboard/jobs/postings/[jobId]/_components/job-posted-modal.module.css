@@ -1,0 +1,62 @@
+.viewLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 38px;
+    padding: 0 16px;
+    border-radius: var(--tahoe-radius-lg);
+    border: 1px solid var(--tahoe-color-border-subtle);
+    background: var(--tahoe-color-surface-subtle);
+    color: var(--tahoe-color-text-primary);
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.viewLink:hover {
+    border-color: var(--tahoe-color-text-primary);
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 22px 0 14px;
+    color: var(--tahoe-color-text-tertiary);
+    font-size: 12.5px;
+    white-space: nowrap;
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--tahoe-color-border-subtle);
+}
+
+.pitch {
+    margin: 0 0 18px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--tahoe-color-text-secondary);
+}
+
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Accent-orange primary CTA (the tui-button base is dark; override to brand accent). */
+.findCta {
+    background: var(--tahoe-color-accent) !important;
+    color: #ffffff !important;
+    border-color: var(--tahoe-color-accent) !important;
+}
+
+.findCta:hover:not(:disabled) {
+    background: #f15f21 !important;
+    border-color: #f15f21 !important;
+    color: #ffffff !important;
+}

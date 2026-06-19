@@ -1,17 +1,20 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import posthog from 'posthog-js';
 import { Badge, Button, TextField } from '@/components/ui/tahoe-ui';
 import {
     type Job,
     closeJob,
+    generateJobSearchQuery,
     getJob,
     publishJob,
     reopenJob,
     unpublishJob,
 } from '@/lib/jobs';
 import JobsBreadcrumb from '../../../_components/JobsBreadcrumb';
+import JobPostedModal from '../_components/JobPostedModal';
 import shared from '../../../_components/jobs-shared.module.css';
 import styles from './publish.module.css';
 
@@ -29,12 +32,15 @@ function toIso(local: string): string | null {
 
 export default function PublishPage() {
     const { jobId } = useParams<{ jobId: string }>();
+    const router = useRouter();
     const [job, setJob] = useState<Job | null>(null);
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const [publishAt, setPublishAt] = useState('');
     const [closeAt, setCloseAt] = useState('');
+    const [postedOpen, setPostedOpen] = useState(false);
+    const [finding, setFinding] = useState(false);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -49,6 +55,39 @@ export default function PublishPage() {
         try { setJob(await fn()); } catch (e) { setError(e instanceof Error ? e.message : 'Action failed'); }
         finally { setBusy(false); }
     }, []);
+
+    // Publish now → on success the job goes live; show the "find candidates" popup once.
+    const handlePublishNow = useCallback(async () => {
+        setBusy(true); setError('');
+        try {
+            const updated = await publishJob(jobId, { mode: 'now' });
+            setJob(updated);
+            if (updated.status === 'published') {
+                posthog.capture('job_posted_popup_shown', { job_id: jobId });
+                setPostedOpen(true);
+            }
+        } catch (e) {
+            setError(e instanceof Error ? e.message : 'Action failed');
+        } finally {
+            setBusy(false);
+        }
+    }, [jobId]);
+
+    // Build a search query from the job (Claude, with a server-side fallback) and open
+    // search pre-filled. Navigation unmounts this page, so `finding` need not be reset.
+    const handleFindCandidates = useCallback(async () => {
+        posthog.capture('job_posted_find_candidates_clicked', { job_id: jobId });
+        setFinding(true);
+        const title = (job?.title ?? '').trim();
+        let q = title;
+        try {
+            const res = await generateJobSearchQuery(jobId);
+            q = (res.query || '').trim() || title;
+        } catch {
+            // Endpoint failure: still go to search, seeded with the job title.
+        }
+        router.push(`/dashboard/search/new?q=${encodeURIComponent(q)}&src=job&jobId=${jobId}`);
+    }, [jobId, job?.title, router]);
 
     const onSchedule = () => {
         const publishIso = toIso(publishAt);
@@ -108,7 +147,7 @@ export default function PublishPage() {
 
                     <div className={styles.actionRow}>
                         {CAN_PUBLISH_NOW.has(job.status) && (
-                            <Button disabled={busy} onClick={() => run(() => publishJob(jobId, { mode: 'now' }))}>Publish now</Button>
+                            <Button disabled={busy} onClick={handlePublishNow}>Publish now</Button>
                         )}
                         {job.status === 'published' && (
                             <>
@@ -149,6 +188,16 @@ export default function PublishPage() {
                     <pre className={styles.jsonLd}>{JSON.stringify(jsonLd, null, 2)}</pre>
                 </section>
             </div>
+
+            <JobPostedModal
+                open={postedOpen}
+                jobTitle={job.title}
+                publicUrl={publicUrl}
+                finding={finding}
+                onFindCandidates={handleFindCandidates}
+                onView={() => posthog.capture('job_posted_view_clicked', { job_id: jobId })}
+                onClose={() => setPostedOpen(false)}
+            />
         </div>
     );
 }
