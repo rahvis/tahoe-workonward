@@ -18,6 +18,7 @@ export const homeT = {
         ctaStart: 'Start for free',
         ctaDemo: 'Book a demo',
         heroMeta: 'Continue with Google or email. No credit card.',
+        backedBy: 'Backed by',
         stats: [
             ['800M+', 'profiles indexed'],
             ['$49', 'growth plan / month'],
@@ -92,6 +93,7 @@ export const homeT = {
         ctaStart: '무료로 시작하기',
         ctaDemo: '데모 예약',
         heroMeta: 'Google 또는 이메일로 계속하세요. 신용카드가 필요 없습니다.',
+        backedBy: '지원사',
         stats: [
             ['8억+', '색인된 프로필'],
             ['$49', 'Growth 플랜 / 월'],

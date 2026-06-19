@@ -716,6 +716,43 @@
     letter-spacing: -0.02em;
 }
 
+/* ── Backed by Techstars (credibility strip) ── */
+.backedByStrip {
+    padding: 28px 0 4px;
+}
+
+.backedByInner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+}
+
+.backedByLabel {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+}
+
+.backedByLink {
+    display: inline-flex;
+    align-items: center;
+    opacity: 0.7;
+    transition: opacity 160ms ease;
+}
+
+.backedByLink:hover,
+.backedByLink:focus-visible {
+    opacity: 1;
+}
+
+.backedByLogo {
+    height: 28px;
+    width: auto;
+    display: block;
+}
+
 /* ── Proof showcase (interactive tabs + stage) ── */
 .proofSection {
     padding: 36px 0 80px;
