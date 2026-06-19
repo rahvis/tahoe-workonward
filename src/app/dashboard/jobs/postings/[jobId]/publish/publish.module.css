@@ -1,16 +1,10 @@
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
-@media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+.panel { max-width: 560px; }
 
 .live { font-size: 14px; color: var(--tahoe-color-success); margin: 0 0 10px; }
 .live a { color: inherit; }
+.help { font-size: 13px; line-height: 1.5; color: var(--tahoe-color-text-secondary); margin: 0 0 14px; }
 .actionRow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
 
 .schedule { margin-top: 18px; border-top: 1px solid var(--tahoe-color-border-subtle); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
 .field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--tahoe-color-text-secondary); }
 .field :global(.tui-textfield) { border-radius: var(--tahoe-radius-lg); min-height: 40px; }
-
-.seoPreview { border: 1px solid var(--tahoe-color-border-subtle); border-radius: var(--tahoe-radius-sm); padding: 12px; margin-bottom: 6px; }
-.seoUrl { color: var(--tahoe-color-success); font-size: 12px; margin: 0 0 4px; word-break: break-all; }
-.seoTitle { color: #1a3fb8; font-size: 16px; margin: 0 0 2px; }
-.seoDesc { color: var(--tahoe-color-text-secondary); font-size: 13px; margin: 0; }
-.jsonLd { background: #14161b; color: #d7dae0; border-radius: var(--tahoe-radius-sm); padding: 12px; font-size: 12px; overflow: auto; margin: 8px 0 0; }

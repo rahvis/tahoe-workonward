@@ -22,6 +22,7 @@ export default function EditJobPage() {
     const [loadError, setLoadError] = useState('');
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
+    const [justSaved, setJustSaved] = useState(false);
 
     const load = useCallback(async () => {
         try {
@@ -41,6 +42,8 @@ export default function EditJobPage() {
         try {
             const updated = await updateJob(jobId, job.updated_at, values);
             setJob(updated);
+            // Saved → spotlight "Publish / schedule" as the next-step CTA.
+            setJustSaved(true);
         } catch (e) {
             if (e instanceof ApiError && e.status === 409) {
                 setError('This job was changed elsewhere — reloaded the latest version. Re-apply your edits and save again.');
@@ -64,7 +67,9 @@ export default function EditJobPage() {
             )}
             <span className={shared.spacer} />
             <Link href={`/dashboard/jobs/postings/${jobId}/form`}><Button variant="soft" size="2">Application form →</Button></Link>
-            <Link href={`/dashboard/jobs/postings/${jobId}/publish`}><Button variant="soft" size="2">Publish / schedule →</Button></Link>
+            <Link href={`/dashboard/jobs/postings/${jobId}/publish`}>
+                <Button variant="soft" size="2" className={justSaved ? shared.publishCta : undefined}>Publish / schedule →</Button>
+            </Link>
         </div>
     );
 

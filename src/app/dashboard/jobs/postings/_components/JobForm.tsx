@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, TahoeSelect, TextField } from '@/components/ui/tahoe-ui';
+import { Button, Spinner, TahoeSelect, TextField } from '@/components/ui/tahoe-ui';
 import {
     type CheckSuggestion,
     type Job,
@@ -11,6 +11,17 @@ import {
     formatComp,
 } from '@/lib/jobs';
 import styles from './job-form.module.css';
+
+// Rotating status lines shown next to the button while the model drafts, so the
+// recruiter sees that something is happening (the draft call itself is one request).
+const DRAFT_STEPS = [
+    'Reading your brief…',
+    'Identifying the role and seniority…',
+    'Mapping skills and requirements…',
+    'Writing the summary and responsibilities…',
+    'Estimating compensation and location…',
+    'Polishing the draft…',
+];
 
 const linesToArray = (s: string) => s.split('\n').map((x) => x.trim()).filter(Boolean);
 const csvToArray = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
@@ -114,6 +125,7 @@ export default function JobForm({ jobId, initial, submitLabel, saving, error, on
     const initialRef = useRef<string>(JSON.stringify(fromJob(initial)));
     const [prompt, setPrompt] = useState('');
     const [drafting, setDrafting] = useState(false);
+    const [draftStep, setDraftStep] = useState(0);
     const [aiError, setAiError] = useState('');
     const [checking, setChecking] = useState(false);
     const [suggestions, setSuggestions] = useState<CheckSuggestion[] | null>(null);
@@ -126,6 +138,16 @@ export default function JobForm({ jobId, initial, submitLabel, saving, error, on
             initialRef.current = JSON.stringify(seeded);
         }
     }, [initial]);
+
+    // While drafting, advance the status line every ~1.6s and hold on the last one.
+    useEffect(() => {
+        if (!drafting) { setDraftStep(0); return; }
+        setDraftStep(0);
+        const id = setInterval(() => {
+            setDraftStep((s) => Math.min(s + 1, DRAFT_STEPS.length - 1));
+        }, 1600);
+        return () => clearInterval(id);
+    }, [drafting]);
 
     const dirty = JSON.stringify(form) !== initialRef.current;
 
@@ -205,9 +227,14 @@ export default function JobForm({ jobId, initial, submitLabel, saving, error, on
                             onChange={(e) => setPrompt(e.target.value)}
                         />
                         <div className={styles.aiRow}>
-                            <Button type="button" variant="soft" onClick={runDraft} disabled={drafting || !prompt.trim()}>
-                                {drafting ? 'Drafting…' : 'Draft with AI'}
+                            <Button type="button" className={styles.draftCta} onClick={runDraft} disabled={drafting || !prompt.trim()}>
+                                {drafting ? <><Spinner /> Drafting…</> : 'Draft with AI'}
                             </Button>
+                            {drafting && (
+                                <span key={draftStep} className={styles.draftProgress} role="status" aria-live="polite">
+                                    {DRAFT_STEPS[draftStep]}
+                                </span>
+                            )}
                             {drafting && (
                                 <Button type="button" variant="ghost" onClick={() => draftAbort.current?.abort()}>Cancel</Button>
                             )}

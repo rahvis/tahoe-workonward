@@ -67,7 +67,29 @@
     border-radius: var(--tahoe-radius-md); padding: 14px;
 }
 .aiLabel { font-size: 13px; font-weight: 500; color: var(--tahoe-color-text-secondary); }
-.aiRow { display: flex; gap: 8px; flex-wrap: wrap; }
+.aiRow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Accent-orange primary for the Draft-with-AI action (overrides the dark tui base). */
+.draftCta {
+    background: var(--tahoe-color-accent) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+}
+.draftCta:hover:not(:disabled) { filter: brightness(0.95); }
+.draftCta:disabled { opacity: 0.6; }
+
+/* Rotating status line, shown next to the button while the model drafts. */
+.draftProgress {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--tahoe-color-accent);
+    white-space: nowrap;
+    animation: draftProgressFade 1.6s ease-in-out infinite;
+}
+@keyframes draftProgressFade {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
 
 .suggestions { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .suggestionWarn, .suggestionInfo, .suggestionOk { font-size: 13px; border-radius: var(--tahoe-radius-sm); padding: 6px 10px; }

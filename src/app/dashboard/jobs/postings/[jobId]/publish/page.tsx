@@ -107,19 +107,6 @@ export default function PublishPage() {
     if (loading) return <div className={shared.page}><div className={shared.loading}>Loading…</div></div>;
     if (!job) return <div className={shared.page}><p className={shared.error}>{error || 'Not found'}</p></div>;
 
-    const jsonLd = {
-        '@context': 'https://schema.org/',
-        '@type': 'JobPosting',
-        title: job.title,
-        description: job.summary ?? '',
-        datePosted: job.published_at ?? undefined,
-        employmentType: job.employment_type ?? undefined,
-        hiringOrganization: { '@type': 'Organization', name: 'Your company' },
-        ...(job.salary_min || job.salary_max
-            ? { baseSalary: { '@type': 'MonetaryValue', currency: job.salary_currency, value: { '@type': 'QuantitativeValue', minValue: job.salary_min ?? undefined, maxValue: job.salary_max ?? undefined, unitText: (job.salary_interval ?? 'annual').toUpperCase() } } }
-            : {}),
-    };
-
     return (
         <div className={shared.page}>
             <JobsBreadcrumb items={[
@@ -134,15 +121,19 @@ export default function PublishPage() {
 
             {error && <p className={shared.error} role="alert">{error}</p>}
 
-            <div className={styles.grid}>
+            <div className={styles.panel}>
                 <section className={shared.card}>
                     <p className={shared.sectionLabel}>Status &amp; actions</p>
 
-                    {job.status === 'published' && job.slug && (
+                    {job.status === 'published' && job.slug ? (
                         <p className={styles.live}>● Live at <a href={publicUrl} target="_blank" rel="noreferrer">{publicUrl}</a></p>
-                    )}
-                    {job.status === 'scheduled' && job.publish_at && (
+                    ) : job.status === 'scheduled' && job.publish_at ? (
                         <p className={shared.muted}>◷ Scheduled to publish {new Date(job.publish_at).toLocaleString()}</p>
+                    ) : (
+                        <p className={styles.help}>
+                            Publishing makes this job live on your public job board and discoverable on Google.
+                            You can unpublish or close it anytime.
+                        </p>
                     )}
 
                     <div className={styles.actionRow}>
@@ -175,17 +166,6 @@ export default function PublishPage() {
                             <Button variant="soft" disabled={busy} onClick={onSchedule}>Schedule</Button>
                         </div>
                     )}
-                </section>
-
-                <section className={shared.card}>
-                    <p className={shared.sectionLabel}>SEO preview</p>
-                    <div className={styles.seoPreview}>
-                        <p className={styles.seoUrl}>{publicUrl || `…/jobs/${'<slug minted on publish>'}`}</p>
-                        <p className={styles.seoTitle}>{job.title} — Careers</p>
-                        <p className={styles.seoDesc}>{job.summary || 'Add a summary to improve search snippets.'}</p>
-                    </div>
-                    <p className={shared.sectionLabel} style={{ marginTop: 12 }}>JSON-LD (JobPosting)</p>
-                    <pre className={styles.jsonLd}>{JSON.stringify(jsonLd, null, 2)}</pre>
                 </section>
             </div>
 
