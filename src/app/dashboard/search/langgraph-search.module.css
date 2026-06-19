@@ -910,17 +910,28 @@
     50% { opacity: 0.35; }
 }
 
-/* --- Staged progress card (parse phase) ---------------------------------- */
+/* --- Staged progress (parse phase): plain text, no card/border ----------- */
 .stageProgressCard {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-top: 14px;
-    padding: 16px 18px;
-    border-radius: var(--tahoe-radius-lg);
-    border: 1px solid rgba(32, 32, 32, 0.1);
-    background: white;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 2px 2px;
 }
+
+/* Pre-fill note under the search bar (e.g. "Built from your job posting"):
+   plain text, no border or background. */
+.jobPrefillNote {
+    margin: 8px 2px 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--tahoe-color-text-secondary);
+}
+.jobPrefillNote a {
+    color: var(--tahoe-color-accent);
+    text-decoration: none;
+}
+.jobPrefillNote a:hover { text-decoration: underline; }
 
 .stageProgressMessage {
     font-size: 15px;

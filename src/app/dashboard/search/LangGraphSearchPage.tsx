@@ -2955,17 +2955,15 @@ export default function LangGraphSearchPage({ bootstrap, initialQuery, prefillSo
                     />
                 ) : null}
                 {prefillSource === "job" && !hasResultView ? (
-                    <Callout.Root color="gray" style={{ marginBottom: 12 }}>
-                        <Callout.Text>
-                            Built from your job posting — review and edit the search, then run it.
-                            {prefillJobId ? (
-                                <>
-                                    {" "}
-                                    <a href={`/dashboard/jobs/postings/${prefillJobId}/edit`}>View the job</a>
-                                </>
-                            ) : null}
-                        </Callout.Text>
-                    </Callout.Root>
+                    <Text as="p" className={styles.jobPrefillNote}>
+                        Built from your job posting — review and edit the search, then run it.
+                        {prefillJobId ? (
+                            <>
+                                {" "}
+                                <a href={`/dashboard/jobs/postings/${prefillJobId}/edit`}>View the job</a>
+                            </>
+                        ) : null}
+                    </Text>
                 ) : null}
                 <div className={styles.workflowRow}>
                     <div className={styles.workflowRail} aria-label="Recruiter workflow">
