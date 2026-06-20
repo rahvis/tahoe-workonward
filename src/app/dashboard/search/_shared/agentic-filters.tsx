@@ -150,7 +150,7 @@ export function TagAutocomplete({
     }, []);
 
     return (
-        <Box mb="3">
+        <Box mb="4">
             <Text as="label" size="2" weight="medium" style={{ display: "block", marginBottom: 6 }}>
                 {label}
             </Text>
@@ -262,7 +262,7 @@ function TriState({
         { label: "No", v: false },
     ];
     return (
-        <Box mb="3">
+        <Box mb="4">
             <Text as="label" size="2" weight="medium" style={{ display: "block", marginBottom: 6 }}>
                 {label}
             </Text>
@@ -318,10 +318,10 @@ export function AgenticFilterPanel({
     const patch = (partial: Partial<AgenticFilters>) => onChange({ ...filters, ...partial });
 
     return (
-        <Flex gap="4" style={{ minHeight: 320 }}>
+        <Flex gap="5" style={{ minHeight: 340 }}>
             {/* Section nav */}
-            <Box style={{ minWidth: 150, borderRight: "1px solid var(--gray-4, #eee)", paddingRight: 12 }}>
-                <Flex direction="column" gap="1">
+            <Box style={{ minWidth: 168, borderRight: "1px solid var(--tahoe-color-border-subtle)", paddingRight: 16 }}>
+                <Flex direction="column" gap="2">
                     {SECTIONS.map((s) => (
                         <Button
                             key={s.id}
@@ -338,7 +338,7 @@ export function AgenticFilterPanel({
             </Box>
 
             {/* Section body */}
-            <Box style={{ flex: 1, minWidth: 0 }}>
+            <Box style={{ flex: 1, minWidth: 0, paddingLeft: 8 }}>
                 {activeSection === "role" && (
                     <>
                         <TagAutocomplete
@@ -423,7 +423,7 @@ export function AgenticFilterPanel({
                             value={filters.is_working}
                             onChange={(v) => patch({ is_working: v })}
                         />
-                        <Box mb="3">
+                        <Box mb="4">
                             <Text as="label" size="2" weight="medium" style={{ display: "block", marginBottom: 6 }}>
                                 Years of experience
                             </Text>
