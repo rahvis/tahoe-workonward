@@ -344,158 +344,207 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
     }
 
     return (
-        <Flex direction="column" gap="4" style={{ padding: 24, position: "relative" }}>
-            {/* Search bar — Enter runs the search; there is no Find candidates button. */}
-            <form onSubmit={runSearch}>
-                <Flex gap="3" align="center" wrap="wrap">
-                    <Box className={styles.promptInputWrap} style={{ minWidth: 280 }}>
-                        <TextField.Root
-                            size="3"
-                            placeholder='Try: "sushi chef in New York" — press Enter to search'
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            disabled={isSearching}
-                            aria-label="Search prompt"
-                        >
-                            <TextField.Slot>
-                                <MagnifyingGlassIcon width="16" height="16" />
-                            </TextField.Slot>
-                        </TextField.Root>
-                        {dictation.supported && (
-                            <MicButton
-                                supported={dictation.supported}
-                                status={dictation.status}
-                                amplitude={dictation.amplitude}
+        <Flex direction="column" style={{ height: "100%", minHeight: 0 }}>
+            {/* Search bar (fixed top) — Enter runs the search; no Find candidates button. */}
+            <Box style={{ flex: "0 0 auto", padding: "24px 24px 0" }}>
+                <form onSubmit={runSearch}>
+                    <Flex gap="3" align="center" wrap="wrap">
+                        <Box className={styles.promptInputWrap} style={{ minWidth: 280 }}>
+                            <TextField.Root
+                                size="3"
+                                placeholder='Try: "sushi chef in New York" — press Enter to search'
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
                                 disabled={isSearching}
-                                onStart={() => void dictation.start()}
-                                onStop={dictation.stop}
-                            />
-                        )}
-                    </Box>
-                    <Button
-                        type="button"
-                        size="3"
-                        variant={showFilters ? "solid" : "soft"}
-                        onClick={() => setShowFilters(true)}
-                    >
-                        <MixerHorizontalIcon />
-                        Filters
-                        {activeFilterCount > 0 && (
-                            <Badge variant="solid" color="orange" ml="1">
-                                {activeFilterCount}
-                            </Badge>
-                        )}
-                    </Button>
-                </Flex>
-            </form>
-
-            {error && (
-                <Flex align="center" gap="2">
-                    <ExclamationTriangleIcon />
-                    <Text size="2" color="red">
-                        {error}
-                    </Text>
-                </Flex>
-            )}
-
-            {/* Body */}
-            {stage === "idle" && !error && (
-                <Flex direction="column" align="center" gap="3" py="9" style={{ opacity: 0.6 }}>
-                    <MagnifyingGlassIcon width="48" height="48" />
-                    <Heading size="5" color="gray">
-                        Search, then run the query
-                    </Heading>
-                    <Text size="2" color="gray" align="center" style={{ maxWidth: 480 }}>
-                        Type a natural-language query and press Enter, or add filters. Page through the top 100
-                        matches in 20-result pages.
-                    </Text>
-                </Flex>
-            )}
-
-            {isSearching && (
-                <Flex direction="column" align="center" gap="3" py="9">
-                    <Spinner size="3" />
-                    <Heading size="4">Searching…</Heading>
-                    <Text size="2" color="gray">
-                        Building the query and fetching candidates
-                    </Text>
-                </Flex>
-            )}
-
-            {stage === "results" && totalResults === 0 && !isSearching && (
-                <Flex direction="column" align="center" gap="3" py="9">
-                    <MagnifyingGlassIcon width="40" height="40" style={{ opacity: 0.5 }} />
-                    <Heading size="4">No candidates matched</Heading>
-                    <Text size="2" color="gray" align="center" style={{ maxWidth: 480 }}>
-                        Try broadening your search — remove a filter, search by country instead of a specific
-                        city, or simplify your query (for example, &ldquo;sushi chef&rdquo; instead of a very
-                        specific phrase).
-                    </Text>
-                </Flex>
-            )}
-
-            {stage === "results" && totalResults > 0 && (
-                <Flex direction="column" gap="3">
-                    <Flex justify="between" align="center" wrap="wrap" gap="2">
-                        <Text size="2" color="gray">
-                            Showing {currentResults.length} of {previewTotalResults} previewed
-                            {totalResults > previewTotalResults ? ` (of ${totalResults}+ matches)` : ""}
-                            {totalPages > 1 ? ` · Page ${currentPage} of ${totalPages}` : ""}
-                        </Text>
-                        {selectedIds.size > 0 && (
-                            <Button size="2" onClick={openBulkSave}>
-                                Save {selectedIds.size} to list
-                            </Button>
-                        )}
+                                aria-label="Search prompt"
+                            >
+                                <TextField.Slot>
+                                    <MagnifyingGlassIcon width="16" height="16" />
+                                </TextField.Slot>
+                            </TextField.Root>
+                            {dictation.supported && (
+                                <MicButton
+                                    supported={dictation.supported}
+                                    status={dictation.status}
+                                    amplitude={dictation.amplitude}
+                                    disabled={isSearching}
+                                    onStart={() => void dictation.start()}
+                                    onStop={dictation.stop}
+                                />
+                            )}
+                        </Box>
+                        <Button
+                            type="button"
+                            size="3"
+                            variant={showFilters ? "solid" : "soft"}
+                            onClick={() => setShowFilters(true)}
+                        >
+                            <MixerHorizontalIcon />
+                            Filters
+                            {activeFilterCount > 0 && (
+                                <Badge variant="solid" color="orange" ml="1">
+                                    {activeFilterCount}
+                                </Badge>
+                            )}
+                        </Button>
                     </Flex>
+                </form>
 
-                    <PreviewGrid
-                        rows={currentResults}
-                        selectable
-                        selectedRowIds={selectedIds}
-                        activeRowId={activeRow?.id ?? null}
-                        emptyMessage="No preview rows for this page."
-                        hiddenColumnKeys={["id", "page", "pipeline", "search_prompt"]}
-                        onToggleAllSelection={toggleAll}
-                        onToggleRowSelection={toggleRow}
-                        onRowClick={(row) => setActiveRow(row)}
-                    />
+                {error && (
+                    <Flex align="center" gap="2" mt="3">
+                        <ExclamationTriangleIcon />
+                        <Text size="2" color="red">
+                            {error}
+                        </Text>
+                    </Flex>
+                )}
+            </Box>
 
-                    {totalPages > 1 && (
-                        <Flex justify="center" align="center" gap="2" wrap="wrap">
-                            <Button
-                                size="1"
-                                variant="soft"
-                                disabled={currentPage <= 1 || paginatingPage !== null}
-                                onClick={() => void handlePageChange(currentPage - 1)}
-                            >
-                                <ChevronLeftIcon />
-                                Previous
-                            </Button>
-                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
-                                <Button
-                                    key={pageNumber}
-                                    size="1"
-                                    variant={pageNumber === currentPage ? "solid" : "soft"}
-                                    disabled={paginatingPage !== null && pageNumber !== currentPage}
-                                    onClick={() => void handlePageChange(pageNumber)}
-                                >
-                                    {pageNumber === paginatingPage ? <Spinner /> : pageNumber}
-                                </Button>
-                            ))}
-                            <Button
-                                size="1"
-                                variant="soft"
-                                disabled={currentPage >= totalPages || paginatingPage !== null}
-                                onClick={() => void handlePageChange(currentPage + 1)}
-                            >
-                                Next
-                                <ChevronRightIcon />
-                            </Button>
+            {/* Main area fills the remaining height: results column + candidate panel. */}
+            <Flex style={{ flex: 1, minHeight: 0 }}>
+                <Box style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column" }}>
+                    {stage === "idle" && !error && (
+                        <Flex
+                            direction="column"
+                            align="center"
+                            justify="center"
+                            gap="3"
+                            style={{ flex: 1, minHeight: 0, padding: 24, opacity: 0.6 }}
+                        >
+                            <MagnifyingGlassIcon width="48" height="48" />
+                            <Heading size="5" color="gray">
+                                Search, then run the query
+                            </Heading>
+                            <Text size="2" color="gray" align="center" style={{ maxWidth: 480 }}>
+                                Type a natural-language query and press Enter, or add filters. Page through the
+                                top 100 matches in 20-result pages.
+                            </Text>
                         </Flex>
                     )}
-                </Flex>
-            )}
+
+                    {isSearching && (
+                        <Flex
+                            direction="column"
+                            align="center"
+                            justify="center"
+                            gap="3"
+                            style={{ flex: 1, minHeight: 0 }}
+                        >
+                            <Spinner size="3" />
+                            <Heading size="4">Searching…</Heading>
+                            <Text size="2" color="gray">
+                                Building the query and fetching candidates
+                            </Text>
+                        </Flex>
+                    )}
+
+                    {stage === "results" && totalResults === 0 && !isSearching && (
+                        <Flex
+                            direction="column"
+                            align="center"
+                            justify="center"
+                            gap="3"
+                            style={{ flex: 1, minHeight: 0, padding: 24 }}
+                        >
+                            <MagnifyingGlassIcon width="40" height="40" style={{ opacity: 0.5 }} />
+                            <Heading size="4">No candidates matched</Heading>
+                            <Text size="2" color="gray" align="center" style={{ maxWidth: 480 }}>
+                                Try broadening your search — remove a filter, search by country instead of a
+                                specific city, or simplify your query (for example, &ldquo;sushi chef&rdquo;
+                                instead of a very specific phrase).
+                            </Text>
+                        </Flex>
+                    )}
+
+                    {stage === "results" && totalResults > 0 && (
+                        <Box className={styles.resultsArea}>
+                            <Box className={styles.resultsLayout}>
+                                <Flex
+                                    justify="between"
+                                    align="center"
+                                    wrap="wrap"
+                                    gap="2"
+                                    className={styles.resultsToolbar}
+                                >
+                                    <Text size="2" color="gray">
+                                        Showing {currentResults.length} of {previewTotalResults} previewed
+                                        {totalResults > previewTotalResults ? ` (of ${totalResults}+ matches)` : ""}
+                                        {totalPages > 1 ? ` · Page ${currentPage} of ${totalPages}` : ""}
+                                    </Text>
+                                    {selectedIds.size > 0 && (
+                                        <Button size="2" onClick={openBulkSave}>
+                                            Save {selectedIds.size} to list
+                                        </Button>
+                                    )}
+                                </Flex>
+
+                                <Box className={styles.resultsTableRegion}>
+                                    <PreviewGrid
+                                        className={styles.resultsPreviewGrid}
+                                        rows={currentResults}
+                                        selectable
+                                        selectedRowIds={selectedIds}
+                                        activeRowId={activeRow?.id ?? null}
+                                        emptyMessage="No preview rows for this page."
+                                        hiddenColumnKeys={["id", "page", "pipeline", "search_prompt"]}
+                                        onToggleAllSelection={toggleAll}
+                                        onToggleRowSelection={toggleRow}
+                                        onRowClick={(row) => setActiveRow(row)}
+                                    />
+                                </Box>
+
+                                {totalPages > 1 && (
+                                    <Flex
+                                        justify="center"
+                                        align="center"
+                                        gap="2"
+                                        wrap="wrap"
+                                        className={styles.paginationFooter}
+                                    >
+                                        <Button
+                                            size="1"
+                                            variant="soft"
+                                            disabled={currentPage <= 1 || paginatingPage !== null}
+                                            onClick={() => void handlePageChange(currentPage - 1)}
+                                        >
+                                            <ChevronLeftIcon />
+                                            Previous
+                                        </Button>
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
+                                            <Button
+                                                key={pageNumber}
+                                                size="1"
+                                                variant={pageNumber === currentPage ? "solid" : "soft"}
+                                                disabled={paginatingPage !== null && pageNumber !== currentPage}
+                                                onClick={() => void handlePageChange(pageNumber)}
+                                            >
+                                                {pageNumber === paginatingPage ? <Spinner /> : pageNumber}
+                                            </Button>
+                                        ))}
+                                        <Button
+                                            size="1"
+                                            variant="soft"
+                                            disabled={currentPage >= totalPages || paginatingPage !== null}
+                                            onClick={() => void handlePageChange(currentPage + 1)}
+                                        >
+                                            Next
+                                            <ChevronRightIcon />
+                                        </Button>
+                                    </Flex>
+                                )}
+                            </Box>
+                        </Box>
+                    )}
+                </Box>
+
+                {activeRow && (
+                    <CandidatePanel
+                        preview={activeRow as unknown as PreviewData}
+                        onClose={() => setActiveRow(null)}
+                        onSaveToList={(id) => openSingleSave(id)}
+                    />
+                )}
+            </Flex>
 
             {/* Filters popup — its own Search button runs a filters-based search. */}
             <Dialog.Root open={showFilters} onOpenChange={setShowFilters}>
@@ -532,14 +581,6 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
                     </Flex>
                 </Dialog.Content>
             </Dialog.Root>
-
-            {activeRow && (
-                <CandidatePanel
-                    preview={activeRow as unknown as PreviewData}
-                    onClose={() => setActiveRow(null)}
-                    onSaveToList={(id) => openSingleSave(id)}
-                />
-            )}
 
             <SaveToListDialog
                 open={saveDialogOpen}
