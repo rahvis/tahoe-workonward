@@ -37,11 +37,15 @@ import {
 import styles from "./search.module.css";
 import CandidatePanel, { type PreviewData } from "./CandidatePanel";
 import LangGraphSearchPage from "./LangGraphSearchPage";
+import AgenticSearchPage from "./AgenticSearchPage";
 import PreviewCapBanner from "./preview-cap-banner";
 
 // Maximum pages the Coresignal preview endpoint supports.
 const MAX_PREVIEW_PAGES = 5;
 const SEARCH_LANGGRAPH_ENABLED = process.env.NEXT_PUBLIC_SEARCH_LANGGRAPH_ENABLED !== "false";
+// Coresignal agentic search mode (opt-in, default off). When on it supersedes the
+// LangGraph/legacy modes. Pairs with backend AGENTIC_SEARCH_CORESIGNAL=true.
+const AGENTIC_SEARCH_CORESIGNAL_ENABLED = process.env.NEXT_PUBLIC_AGENTIC_SEARCH_CORESIGNAL === "true";
 
 function notifyCreditsChanged() {
     clearAnalyticsCache();
@@ -1033,12 +1037,25 @@ function SearchPageInner() {
     }, [bootstrap]);
 
     const forcedMode = searchParams.get("mode");
-    const resolvedMode = forcedMode ?? bootstrap?.mode ?? (SEARCH_LANGGRAPH_ENABLED ? "langgraph" : "legacy");
+    const defaultMode = AGENTIC_SEARCH_CORESIGNAL_ENABLED
+        ? "agentic"
+        : SEARCH_LANGGRAPH_ENABLED
+            ? "langgraph"
+            : "legacy";
+    const resolvedMode = forcedMode ?? bootstrap?.mode ?? defaultMode;
 
     // Pre-fill from ?q= (e.g. "Find me candidates" off a posted job → search seeded, not run).
     const prefillQuery = searchParams.get("q");
     const prefillSource = searchParams.get("src");
     const prefillJobId = searchParams.get("jobId");
+
+    if (resolvedMode === "agentic") {
+        return (
+            <div className={styles.searchRouteShell}>
+                <AgenticSearchPage initialQuery={prefillQuery} />
+            </div>
+        );
+    }
 
     return (
         <div className={styles.searchRouteShell}>
