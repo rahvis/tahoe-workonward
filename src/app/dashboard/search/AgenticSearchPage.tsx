@@ -549,7 +549,34 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
 
             {/* Filters popup — its own Search button runs a filters-based search. */}
             <Dialog.Root open={showFilters} onOpenChange={setShowFilters}>
-                <Dialog.Content maxWidth="760px" aria-label="Search filters" style={{ padding: 28 }}>
+                <Dialog.Content
+                    maxWidth="760px"
+                    aria-label="Search filters"
+                    style={{ padding: 28, position: "relative" }}
+                >
+                    <Dialog.Close asChild>
+                        <button
+                            type="button"
+                            aria-label="Close filters"
+                            style={{
+                                position: "absolute",
+                                top: 16,
+                                right: 16,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: 32,
+                                height: 32,
+                                border: "none",
+                                background: "transparent",
+                                borderRadius: 8,
+                                cursor: "pointer",
+                                color: "var(--tahoe-color-text-secondary)",
+                            }}
+                        >
+                            <Cross2Icon width={18} height={18} />
+                        </button>
+                    </Dialog.Close>
                     <Dialog.Title>Filters</Dialog.Title>
                     <Dialog.Description mt="1">
                         Add filters to refine the search. Type a custom value and press Enter even if it
