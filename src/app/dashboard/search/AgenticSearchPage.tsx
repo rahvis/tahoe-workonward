@@ -36,6 +36,7 @@ import {
 import {
     ChevronLeftIcon,
     ChevronRightIcon,
+    Cross2Icon,
     ExclamationTriangleIcon,
     MagnifyingGlassIcon,
     MixerHorizontalIcon,
