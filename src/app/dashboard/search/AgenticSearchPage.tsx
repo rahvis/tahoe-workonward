@@ -15,7 +15,7 @@
  *   - An empty result set shows a "broaden your search" message.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { apiRequest, ApiError } from "@/lib/api";
 import {
     previewCandidateToImportPayload,
@@ -45,6 +45,7 @@ import PreviewGrid, { type PreviewGridRow } from "./preview-grid";
 import CandidatePanel, { type PreviewData } from "./CandidatePanel";
 import MicButton from "./MicButton";
 import { useDictation } from "./useDictation";
+import { useStagedMessages } from "./useStagedMessages";
 import styles from "./langgraph-search.module.css";
 import SaveToListDialog from "../_components/SaveToListDialog";
 import {
@@ -88,29 +89,19 @@ function notifyCreditsChanged() {
     window.dispatchEvent(new Event("tahoe:credits-updated"));
 }
 
-// Persist the last agentic search to sessionStorage so a page refresh restores
-// the results + current page instead of dropping back to the empty state.
-const SESSION_KEY = "tahoe_agentic_search_state";
-const SESSION_MAX_AGE_MS = 30 * 60 * 1000; // 30 minutes
+// Dispatched by the sidebar "New Search" link so this page resets to a blank slate
+// even when it's already mounted (clicking the active route does not remount).
+const NEW_SEARCH_EVENT = "tahoe:new-search";
 
-interface SavedAgenticState {
-    query: string;
-    pagesByNumber: Record<number, SearchResultItem[]>;
-    currentPage: number;
-    totalPages: number;
-    totalResults: number;
-    previewTotalResults: number;
-    queryHash: string | null;
-    ts?: number;
-}
-
-function persistSession(data: Omit<SavedAgenticState, "ts">) {
-    try {
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify({ ...data, ts: Date.now() }));
-    } catch {
-        /* sessionStorage unavailable or over quota — persistence is best-effort */
-    }
-}
+// Rotating, progress-style status shown (in orange) while a search is in flight.
+// Each line maps to a real step of the pipeline so it reads as progress.
+const AGENTIC_SEARCH_STAGES = [
+    "Understanding your search…",
+    "Building the query with AI…",
+    "Searching 800M+ professional profiles…",
+    "Ranking candidates by relevance…",
+    "Preparing your preview…",
+];
 
 export default function AgenticSearchPage({ initialQuery }: { initialQuery?: string | null }) {
     const [query, setQuery] = useState(initialQuery ?? "");
@@ -137,46 +128,35 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
 
     const dictation = useDictation((text) => setQuery((q) => (q ? `${q} ${text}` : text)));
 
-    // The query that produced the on-screen results (used when persisting paginated state).
-    const committedQueryRef = useRef("");
-
     const activeFilterCount = useMemo(() => countActiveAgenticFilters(filters), [filters]);
     const currentResults = pagesByNumber[currentPage] ?? [];
     const isSearching = stage === "searching";
+    const searchStatus = useStagedMessages(AGENTIC_SEARCH_STAGES, isSearching);
 
-    // Restore the last search on mount (e.g. after a page refresh).
+    // "New Search" in the sidebar should return a blank slate. Clicking the
+    // already-active route does NOT remount the page, so the nav link dispatches an
+    // event and we reset all state here. (Plain navigation / refresh already mounts
+    // this page blank — there is no cross-load persistence by design.)
     useEffect(() => {
-        if (initialQuery) return; // a ?q= prefill takes precedence over restoring
-        let saved: SavedAgenticState | null = null;
-        try {
-            const raw = sessionStorage.getItem(SESSION_KEY);
-            saved = raw ? (JSON.parse(raw) as SavedAgenticState) : null;
-        } catch {
-            saved = null;
+        function resetToBlank() {
+            setQuery("");
+            setFilters(emptyAgenticFilters());
+            setShowFilters(false);
+            setStage("idle");
+            setError("");
+            setPagesByNumber({});
+            setRowsById(new Map());
+            setCurrentPage(1);
+            setTotalPages(1);
+            setTotalResults(0);
+            setPreviewTotalResults(0);
+            setQueryHash(null);
+            setPaginatingPage(null);
+            setSelectedIds(new Set());
+            setActiveRow(null);
         }
-        const pages = saved?.pagesByNumber ?? {};
-        const fresh = saved?.ts && Date.now() - saved.ts <= SESSION_MAX_AGE_MS;
-        if (!saved || !fresh || Object.keys(pages).length === 0) {
-            try {
-                sessionStorage.removeItem(SESSION_KEY);
-            } catch {
-                /* ignore */
-            }
-            return;
-        }
-        const allRows = Object.values(pages).flat();
-        committedQueryRef.current = saved.query ?? "";
-        setQuery(saved.query ?? "");
-        setPagesByNumber(pages);
-        setRowsById(new Map(allRows.map((r) => [r.id, r])));
-        setCurrentPage(saved.currentPage ?? 1);
-        setTotalPages(saved.totalPages ?? 1);
-        setTotalResults(saved.totalResults ?? 0);
-        setPreviewTotalResults(saved.previewTotalResults ?? 0);
-        setQueryHash(saved.queryHash ?? null);
-        setStage("results");
-        // Mount-only restore; intentionally not re-run on dependency changes.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        window.addEventListener(NEW_SEARCH_EVENT, resetToBlank);
+        return () => window.removeEventListener(NEW_SEARCH_EVENT, resetToBlank);
     }, []);
 
     function indexRows(rows: SearchResultItem[]) {
@@ -208,9 +188,7 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
                 body: { search_prompt: query, filters, ui_page: 1 },
             });
 
-            const pages: Record<number, SearchResultItem[]> = { 1: resp.results };
-            committedQueryRef.current = query;
-            setPagesByNumber(pages);
+            setPagesByNumber({ 1: resp.results });
             setRowsById(new Map(resp.results.map((r) => [r.id, r])));
             setCurrentPage(1);
             setTotalPages(resp.total_pages);
@@ -220,16 +198,6 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
             setSelectedIds(new Set());
             setActiveRow(null);
             setStage("results");
-
-            persistSession({
-                query,
-                pagesByNumber: pages,
-                currentPage: 1,
-                totalPages: resp.total_pages,
-                totalResults: resp.total_results,
-                previewTotalResults: resp.preview_total_results,
-                queryHash: resp.query_hash,
-            });
 
             // A filters-based search resets the filters once results are shown.
             if (usedFilters) setFilters(emptyAgenticFilters());
@@ -258,15 +226,6 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
         }
         if (pagesByNumber[targetPage]) {
             setCurrentPage(targetPage);
-            persistSession({
-                query: committedQueryRef.current,
-                pagesByNumber,
-                currentPage: targetPage,
-                totalPages,
-                totalResults,
-                previewTotalResults,
-                queryHash,
-            });
             return;
         }
         setPaginatingPage(targetPage);
@@ -275,19 +234,9 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
             const resp = await apiRequest<AgenticPageResponse>(
                 `/search/agentic/page?query_hash=${encodeURIComponent(queryHash)}&page=${targetPage}`,
             );
-            const nextPages = { ...pagesByNumber, [targetPage]: resp.results };
-            setPagesByNumber(nextPages);
+            setPagesByNumber((prev) => ({ ...prev, [targetPage]: resp.results }));
             indexRows(resp.results);
             setCurrentPage(targetPage);
-            persistSession({
-                query: committedQueryRef.current,
-                pagesByNumber: nextPages,
-                currentPage: targetPage,
-                totalPages,
-                totalResults,
-                previewTotalResults,
-                queryHash,
-            });
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : "Unable to load that page.");
         } finally {
@@ -433,8 +382,14 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
                         >
                             <Spinner size="3" />
                             <Heading size="4">Searching…</Heading>
-                            <Text size="2" color="gray">
-                                Building the query and fetching candidates
+                            <Text
+                                size="3"
+                                weight="medium"
+                                align="center"
+                                aria-live="polite"
+                                style={{ color: "var(--tahoe-color-accent)", transition: "opacity 150ms ease" }}
+                            >
+                                {searchStatus}
                             </Text>
                         </Flex>
                     )}
@@ -558,6 +513,12 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
                         <button
                             type="button"
                             aria-label="Close filters"
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = "rgba(0,0,0,0.06)";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "transparent";
+                            }}
                             style={{
                                 position: "absolute",
                                 top: 16,
@@ -571,10 +532,10 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
                                 background: "transparent",
                                 borderRadius: 8,
                                 cursor: "pointer",
-                                color: "var(--tahoe-color-text-secondary)",
+                                color: "#111111",
                             }}
                         >
-                            <Cross2Icon width={18} height={18} />
+                            <Cross2Icon width={20} height={20} />
                         </button>
                     </Dialog.Close>
                     <Dialog.Title>Filters</Dialog.Title>

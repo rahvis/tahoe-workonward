@@ -260,6 +260,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                                         href={sub.href}
                                                         className={`${styles.sidebarSubnavItem} ${active ? styles.sidebarSubnavItemActive : ''}`}
                                                         aria-current={active ? 'page' : undefined}
+                                                        onClick={() => {
+                                                            // "New Search" resets the search page to a blank slate,
+                                                            // even when it's already the active route (no remount).
+                                                            if (sub.href === '/dashboard/search/new') {
+                                                                window.dispatchEvent(new Event('tahoe:new-search'));
+                                                            }
+                                                        }}
                                                     >
                                                         {sub.label}
                                                     </Link>
