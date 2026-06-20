@@ -44,6 +44,7 @@ import PreviewGrid, { type PreviewGridRow } from "./preview-grid";
 import CandidatePanel, { type PreviewData } from "./CandidatePanel";
 import MicButton from "./MicButton";
 import { useDictation } from "./useDictation";
+import styles from "./langgraph-search.module.css";
 import SaveToListDialog from "../_components/SaveToListDialog";
 import {
     AgenticFilterPanel,
@@ -254,25 +255,30 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
             {/* Search bar — Enter runs the search; there is no Find candidates button. */}
             <form onSubmit={runSearch}>
                 <Flex gap="3" align="center" wrap="wrap">
-                    <Box style={{ flex: 1, minWidth: 280, position: "relative" }}>
+                    <Box className={styles.promptInputWrap} style={{ minWidth: 280 }}>
                         <TextField.Root
                             size="3"
                             placeholder='Try: "sushi chef in New York" — press Enter to search'
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             disabled={isSearching}
-                        />
+                            aria-label="Search prompt"
+                        >
+                            <TextField.Slot>
+                                <MagnifyingGlassIcon width="16" height="16" />
+                            </TextField.Slot>
+                        </TextField.Root>
+                        {dictation.supported && (
+                            <MicButton
+                                supported={dictation.supported}
+                                status={dictation.status}
+                                amplitude={dictation.amplitude}
+                                disabled={isSearching}
+                                onStart={() => void dictation.start()}
+                                onStop={dictation.stop}
+                            />
+                        )}
                     </Box>
-                    {dictation.supported && (
-                        <MicButton
-                            supported={dictation.supported}
-                            status={dictation.status}
-                            amplitude={dictation.amplitude}
-                            disabled={isSearching}
-                            onStart={() => void dictation.start()}
-                            onStop={dictation.stop}
-                        />
-                    )}
                     <Button
                         type="button"
                         size="3"
@@ -291,16 +297,7 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
             </form>
 
             {error && (
-                <Flex
-                    align="center"
-                    gap="2"
-                    style={{
-                        background: "var(--red-2, #fff5f5)",
-                        border: "1px solid var(--red-6, #f3c1c1)",
-                        borderRadius: 8,
-                        padding: "10px 14px",
-                    }}
-                >
+                <Flex align="center" gap="2">
                     <ExclamationTriangleIcon />
                     <Text size="2" color="red">
                         {error}
