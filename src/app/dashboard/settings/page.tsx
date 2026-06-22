@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button, Dialog, Flex, Switch, TahoeSelect, TextField } from '@/components/ui/tahoe-ui';
-import { TimezonePicker } from '@/components/timezone-picker';
 import {
     autocompleteAddress,
     cancelSubscription,
@@ -875,7 +874,7 @@ function SettingsPageContent() {
                                 <div className={styles.cardHeader}>
                                     <div>
                                         <h2 className={styles.cardTitle}>Account</h2>
-                                        <p className={styles.cardText}>Your user profile and personal timezone. Email changes stay out of v1 to avoid account takeover risk.</p>
+                                        <p className={styles.cardText}>Your user profile. Email changes stay out of v1 to avoid account takeover risk.</p>
                                     </div>
                                     <span className={account.is_verified ? styles.successPill : styles.warningPill}>{account.is_verified ? 'Verified' : 'Unverified'}</span>
                                 </div>
@@ -883,14 +882,6 @@ function SettingsPageContent() {
                                     <TextInput label="First name" value={account.first_name} onChange={(value) => updateDraft('account', { ...account, first_name: value }, 'account')} />
                                     <TextInput label="Last name" value={account.last_name} onChange={(value) => updateDraft('account', { ...account, last_name: value }, 'account')} />
                                     <TextInput label="Email" value={account.email} onChange={() => undefined} disabled />
-                                    <label className={styles.field}>
-                                        <span className={styles.label}>Timezone</span>
-                                        <TimezonePicker
-                                            id="account-timezone"
-                                            value={account.timezone}
-                                            onChange={(timezone) => updateDraft('account', { ...account, timezone }, 'account')}
-                                        />
-                                    </label>
                                 </div>
                                 <SaveActions dirty={dirtySections.has('account')} saving={saving} onSave={() => saveSection('account')} onReset={() => resetSection('account')} />
                             </div>
@@ -904,20 +895,12 @@ function SettingsPageContent() {
                             <div className={styles.cardHeader}>
                                 <div>
                                     <h2 className={styles.cardTitle}>Workspace</h2>
-                                    <p className={styles.cardText}>Company identity, contact details, timezone, and address. Your phone, website, and address auto-fill new campaign signatures (you can still edit them per campaign).</p>
+                                    <p className={styles.cardText}>Company identity, contact details, and address. Your phone, website, and address auto-fill new campaign signatures (you can still edit them per campaign). Send timezone is configured per mailbox.</p>
                                 </div>
                             </div>
                             <div className={styles.formGrid}>
                                 <TextInput label="Workspace name" value={workspace.name} onChange={(value) => updateDraft('workspace', { ...workspace, name: value }, 'workspace')} />
                                 <TextInput label="Billing contact email" value={workspace.billing_contact_email || ''} onChange={(value) => updateDraft('workspace', { ...workspace, billing_contact_email: value }, 'workspace')} />
-                                <label className={styles.field}>
-                                    <span className={styles.label}>Default timezone</span>
-                                    <TimezonePicker
-                                        id="workspace-timezone"
-                                        value={workspace.timezone}
-                                        onChange={(timezone) => updateDraft('workspace', { ...workspace, timezone }, 'workspace')}
-                                    />
-                                </label>
                                 <TextInput label="Company website" value={workspace.company_website || ''} onChange={(value) => updateDraft('workspace', { ...workspace, company_website: value }, 'workspace')} />
                                 <TextInput label="Company phone" type="tel" value={workspace.company_phone || ''} onChange={(value) => updateDraft('workspace', { ...workspace, company_phone: value }, 'workspace')} />
                                 <AddressAutocompleteInput
@@ -1162,14 +1145,6 @@ function SettingsPageContent() {
                                     <textarea className={styles.textarea} value={outreach.signature?.sender_address || ''} onChange={(event) => updateDraft('outreach_defaults', { ...outreach, signature: { sender_name: outreach.signature?.sender_name || account.first_name, sender_email: outreach.signature?.sender_email || account.email, sender_phone: outreach.signature?.sender_phone || '', sender_address: event.target.value, sender_website: outreach.signature?.sender_website || workspace.company_website || '' } }, 'outreach')} />
                                 </label>
                                 <TextInput label="Reply-to email" value={outreach.reply_to_email || ''} onChange={(value) => updateDraft('outreach_defaults', { ...outreach, reply_to_email: value }, 'outreach')} />
-                                <label className={styles.field}>
-                                    <span className={styles.label}>Send timezone</span>
-                                    <TimezonePicker
-                                        id="outreach-timezone"
-                                        value={outreach.send_window_timezone}
-                                        onChange={(timezone) => updateDraft('outreach_defaults', { ...outreach, send_window_timezone: timezone }, 'outreach')}
-                                    />
-                                </label>
                                 <TextInput label="Send window start" value={outreach.send_window_start} onChange={(value) => updateDraft('outreach_defaults', { ...outreach, send_window_start: value }, 'outreach')} />
                                 <TextInput label="Send window end" value={outreach.send_window_end} onChange={(value) => updateDraft('outreach_defaults', { ...outreach, send_window_end: value }, 'outreach')} />
                                 <label className={styles.wideField}>

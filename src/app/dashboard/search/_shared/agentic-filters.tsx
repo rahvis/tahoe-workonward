@@ -32,6 +32,7 @@ export interface AgenticFilters {
     job_titles: string[];
     companies: string[];
     location_countries: string[];
+    location_states: string[];
     location_cities: string[];
     industries: string[];
     management_levels: string[];
@@ -46,6 +47,7 @@ export function emptyAgenticFilters(): AgenticFilters {
         job_titles: [],
         companies: [],
         location_countries: [],
+        location_states: [],
         location_cities: [],
         industries: [],
         management_levels: [],
@@ -61,6 +63,7 @@ export function countActiveAgenticFilters(f: AgenticFilters): number {
     n += f.job_titles.length;
     n += f.companies.length;
     n += f.location_countries.length;
+    n += f.location_states.length;
     n += f.location_cities.length;
     n += f.industries.length;
     n += f.management_levels.length;
@@ -401,6 +404,19 @@ export function AgenticFilterPanel({
                             }
                         />
                         <TagAutocomplete
+                            label="States / Regions"
+                            placeholder="e.g. California"
+                            values={filters.location_states}
+                            onChange={(v) => patch({ location_states: v })}
+                            fetchSuggestions={(q) =>
+                                autocompleteLocations({
+                                    field: "state",
+                                    query: q,
+                                    countries: filters.location_countries,
+                                }).then((r) => r.suggestions)
+                            }
+                        />
+                        <TagAutocomplete
                             label="Cities"
                             placeholder="e.g. New York"
                             values={filters.location_cities}
@@ -410,6 +426,7 @@ export function AgenticFilterPanel({
                                     field: "city",
                                     query: q,
                                     countries: filters.location_countries,
+                                    states: filters.location_states,
                                 }).then((r) => r.suggestions)
                             }
                         />

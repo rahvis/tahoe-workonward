@@ -231,7 +231,6 @@ function NewCampaignContent() {
                 if (firstHealthy) setMailboxId((current) => current || firstHealthy.id);
                 setSchedule((current) => ({
                     ...current,
-                    timezone: settingsPayload.outreach_defaults.send_window_timezone || firstHealthy?.send_window.timezone || current.timezone,
                     window_start_local: settingsPayload.outreach_defaults.send_window_start || firstHealthy?.send_window.start_local || current.window_start_local,
                     window_end_local: settingsPayload.outreach_defaults.send_window_end || firstHealthy?.send_window.end_local || current.window_end_local,
                     daily_campaign_cap: firstHealthy?.daily_cap || current.daily_campaign_cap,
@@ -724,10 +723,6 @@ function NewCampaignContent() {
                     <label className={styles.compactField}>
                         <span>Start time</span>
                         <TextField.Root size="3" type="datetime-local" value={localStartAt(schedule)} disabled={schedule.launch_mode === 'now'} onChange={(event) => updateSchedule({ start_at: fromLocalStartAt(event.target.value) })} />
-                    </label>
-                    <label className={styles.compactField}>
-                        <span>Timezone</span>
-                        <TextField.Root size="3" value={schedule.timezone} onChange={(event) => updateSchedule({ timezone: event.target.value })} />
                     </label>
                     <label className={styles.compactField}>
                         <span>Window start</span>
