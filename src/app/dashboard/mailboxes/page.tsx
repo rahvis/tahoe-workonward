@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button, Checkbox, Dialog, TextField } from '@/components/ui/tahoe-ui';
+import { TimezonePicker } from '@/components/timezone-picker';
 import {
     deleteMailbox,
     disconnectMailbox,
@@ -228,10 +229,10 @@ function MailboxManageDialog({
                         </label>
                         <label className={styles.fieldGroup}>
                             <span className={styles.fieldLabel}>Timezone</span>
-                            <TextField.Root
-                                size="3"
+                            <TimezonePicker
+                                id="mailbox-timezone"
                                 value={sendWindow.timezone}
-                                onChange={(event) => setSendWindow((current) => ({ ...current, timezone: event.target.value }))}
+                                onChange={(timezone) => setSendWindow((current) => ({ ...current, timezone }))}
                             />
                         </label>
                     </div>

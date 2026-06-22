@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button, Dialog, Flex, Switch, TahoeSelect, TextField } from '@/components/ui/tahoe-ui';
+import { TimezonePicker } from '@/components/timezone-picker';
 import {
     autocompleteAddress,
     cancelSubscription,
@@ -69,17 +70,6 @@ const tabs: Array<{ key: SettingsTab; label: string }> = [
 const HIDDEN_TABS: ReadonlySet<SettingsTab> = new Set(['account', 'subscription', 'outreach', 'compliance', 'integrations', 'notifications', 'security']);
 const DEFAULT_TAB: SettingsTab = 'workspace';
 const visibleTabs = tabs.filter((tab) => !HIDDEN_TABS.has(tab.key));
-
-const timezones = [
-    'America/Los_Angeles',
-    'America/Denver',
-    'America/Chicago',
-    'America/New_York',
-    'Europe/London',
-    'Europe/Berlin',
-    'Asia/Kolkata',
-    'Asia/Singapore',
-];
 
 const SETTINGS_TABLE_PAGE_SIZE = 20;
 
@@ -895,9 +885,11 @@ function SettingsPageContent() {
                                     <TextInput label="Email" value={account.email} onChange={() => undefined} disabled />
                                     <label className={styles.field}>
                                         <span className={styles.label}>Timezone</span>
-                                        <TahoeSelect size="3" value={account.timezone} onChange={(event) => updateDraft('account', { ...account, timezone: event.target.value }, 'account')}>
-                                            {timezones.map((timezone) => <option key={timezone} value={timezone}>{timezone}</option>)}
-                                        </TahoeSelect>
+                                        <TimezonePicker
+                                            id="account-timezone"
+                                            value={account.timezone}
+                                            onChange={(timezone) => updateDraft('account', { ...account, timezone }, 'account')}
+                                        />
                                     </label>
                                 </div>
                                 <SaveActions dirty={dirtySections.has('account')} saving={saving} onSave={() => saveSection('account')} onReset={() => resetSection('account')} />
@@ -920,9 +912,11 @@ function SettingsPageContent() {
                                 <TextInput label="Billing contact email" value={workspace.billing_contact_email || ''} onChange={(value) => updateDraft('workspace', { ...workspace, billing_contact_email: value }, 'workspace')} />
                                 <label className={styles.field}>
                                     <span className={styles.label}>Default timezone</span>
-                                    <TahoeSelect size="3" value={workspace.timezone} onChange={(event) => updateDraft('workspace', { ...workspace, timezone: event.target.value }, 'workspace')}>
-                                        {timezones.map((timezone) => <option key={timezone} value={timezone}>{timezone}</option>)}
-                                    </TahoeSelect>
+                                    <TimezonePicker
+                                        id="workspace-timezone"
+                                        value={workspace.timezone}
+                                        onChange={(timezone) => updateDraft('workspace', { ...workspace, timezone }, 'workspace')}
+                                    />
                                 </label>
                                 <TextInput label="Company website" value={workspace.company_website || ''} onChange={(value) => updateDraft('workspace', { ...workspace, company_website: value }, 'workspace')} />
                                 <TextInput label="Company phone" type="tel" value={workspace.company_phone || ''} onChange={(value) => updateDraft('workspace', { ...workspace, company_phone: value }, 'workspace')} />
@@ -1170,9 +1164,11 @@ function SettingsPageContent() {
                                 <TextInput label="Reply-to email" value={outreach.reply_to_email || ''} onChange={(value) => updateDraft('outreach_defaults', { ...outreach, reply_to_email: value }, 'outreach')} />
                                 <label className={styles.field}>
                                     <span className={styles.label}>Send timezone</span>
-                                    <TahoeSelect size="3" value={outreach.send_window_timezone} onChange={(event) => updateDraft('outreach_defaults', { ...outreach, send_window_timezone: event.target.value }, 'outreach')}>
-                                        {timezones.map((timezone) => <option key={timezone} value={timezone}>{timezone}</option>)}
-                                    </TahoeSelect>
+                                    <TimezonePicker
+                                        id="outreach-timezone"
+                                        value={outreach.send_window_timezone}
+                                        onChange={(timezone) => updateDraft('outreach_defaults', { ...outreach, send_window_timezone: timezone }, 'outreach')}
+                                    />
                                 </label>
                                 <TextInput label="Send window start" value={outreach.send_window_start} onChange={(value) => updateDraft('outreach_defaults', { ...outreach, send_window_start: value }, 'outreach')} />
                                 <TextInput label="Send window end" value={outreach.send_window_end} onChange={(value) => updateDraft('outreach_defaults', { ...outreach, send_window_end: value }, 'outreach')} />
