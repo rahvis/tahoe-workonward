@@ -305,13 +305,22 @@
     height: 18px;
     margin-top: 1px;
     accent-color: var(--tahoe-color-accent);
+    /* Orange ring so the empty box draws attention before it's ticked. */
+    outline: 1.5px solid var(--tahoe-color-accent);
+    outline-offset: 1px;
+    border-radius: 3px;
     cursor: pointer;
 }
 
 .termsLabel {
     font-size: 13px;
     line-height: 1.45;
-    color: var(--tahoe-color-text-secondary);
+    color: var(--tahoe-color-accent);
+    font-weight: 500;
+}
+
+.termsLabel .authLink {
+    color: var(--tahoe-color-accent);
 }
 
 .googleButtonWrap {
