@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { apiRequest, setToken } from '@/lib/api';
 import { EnvelopeClosedIcon, ExclamationTriangleIcon } from '@/components/ui/icons';
 import GoogleAuthSection from '@/components/auth/GoogleAuthSection';
+import MicrosoftAuthSection from '@/components/auth/MicrosoftAuthSection';
 import AuthShell from '@/components/auth/AuthShell';
 import PasswordInput from '@/components/auth/PasswordInput';
 import { authT } from '@/i18n/auth-dictionary';
@@ -65,6 +66,12 @@ export default function LoginPage() {
                 )}
 
                 <GoogleAuthSection
+                    context="signin"
+                    onError={setError}
+                    onSuccess={() => router.push('/dashboard')}
+                />
+
+                <MicrosoftAuthSection
                     context="signin"
                     onError={setError}
                     onSuccess={() => router.push('/dashboard')}

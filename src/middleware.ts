@@ -6,7 +6,9 @@ import { defaultLocale, isLocale } from '@/i18n/config';
 // /jobs/*). Everything else public (marketing, legal, auth) is redirected to
 // /{locale}/... The matcher already drops _next, files with an extension
 // (sitemap.xml, robots.txt, llms.txt, manifest.webmanifest, images), and /api.
-const SKIP_PREFIXES = ['/dashboard', '/api', '/og', '/dsl', '/logs', '/jobs'];
+// `/auth` hosts the Microsoft Entra SPA redirect URI (/auth/microsoft/callback),
+// which must stay un-localized so the OAuth response fragment survives.
+const SKIP_PREFIXES = ['/dashboard', '/api', '/og', '/dsl', '/logs', '/jobs', '/auth'];
 
 function pathHasLocale(pathname: string): boolean {
     const first = pathname.split('/')[1];

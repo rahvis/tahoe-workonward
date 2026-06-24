@@ -105,6 +105,35 @@
     justify-content: center;
 }
 
+.microsoftButton {
+    width: 100%;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 16px;
+    border: 1px solid var(--tahoe-color-border, #dadce0);
+    border-radius: 9999px;
+    background: var(--tahoe-color-surface, #ffffff);
+    color: var(--tahoe-color-text, #3c4043);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.microsoftButton:hover:not(:disabled) {
+    background: var(--tahoe-color-surface-hover, #f7f8f8);
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
+}
+
+.microsoftButton:disabled,
+.microsoftButton[aria-disabled='true'] {
+    opacity: 0.6;
+    cursor: default;
+}
+
 .altchaField {
     display: grid;
     gap: 8px;

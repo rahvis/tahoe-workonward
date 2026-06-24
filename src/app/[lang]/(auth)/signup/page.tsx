@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { apiRequest } from '@/lib/api';
 import { PersonIcon, EnvelopeClosedIcon, ExclamationTriangleIcon, CheckCircledIcon } from '@/components/ui/icons';
 import GoogleAuthSection from '@/components/auth/GoogleAuthSection';
+import MicrosoftAuthSection from '@/components/auth/MicrosoftAuthSection';
 import AuthShell from '@/components/auth/AuthShell';
 import PasswordInput from '@/components/auth/PasswordInput';
 import PasswordChecklist from '@/components/auth/PasswordChecklist';
@@ -151,6 +152,15 @@ export default function SignupPage() {
                     disabledHint={t.googleDisabledHint}
                     acceptedTerms={agreed}
                     note={t.googleBusinessNote}
+                />
+
+                <MicrosoftAuthSection
+                    context="signup"
+                    onError={setError}
+                    onSuccess={() => router.push('/dashboard')}
+                    disabled={!agreed}
+                    disabledHint={t.googleDisabledHint}
+                    acceptedTerms={agreed}
                 />
 
                 <form onSubmit={handleSubmit} className={styles.form} noValidate>
