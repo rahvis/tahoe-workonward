@@ -15,9 +15,10 @@
  *   - An empty result set shows a "broaden your search" message.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiRequest, ApiError } from "@/lib/api";
 import {
+    fetchSearchAccess,
     previewCandidateToImportPayload,
     type SaveToListCandidatePayload,
 } from "@/lib/organization";
@@ -48,6 +49,7 @@ import { useDictation } from "./useDictation";
 import { useStagedMessages } from "./useStagedMessages";
 import styles from "./langgraph-search.module.css";
 import SaveToListDialog from "../_components/SaveToListDialog";
+import UpgradePaywallModal, { type PaywallReason } from "./UpgradePaywallModal";
 import {
     AgenticFilterPanel,
     agenticFiltersAreEmpty,
@@ -111,6 +113,15 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
     const [stage, setStage] = useState<"idle" | "searching" | "results">("idle");
     const [error, setError] = useState("");
 
+    // Free-search trial state (from GET /search/access). `searchLocked` = the recruiter
+    // has used their one free search and isn't subscribed; gated actions open the paywall
+    // instead of firing a doomed request. The backend 402 remains the authoritative gate.
+    const [searchLocked, setSearchLocked] = useState(false);
+    const [subscriptionActive, setSubscriptionActive] = useState(false);
+    const [freeSearchUsed, setFreeSearchUsed] = useState(false);
+    const [trialEnabled, setTrialEnabled] = useState(false);
+    const [paywallReason, setPaywallReason] = useState<PaywallReason | null>(null);
+
     const [pagesByNumber, setPagesByNumber] = useState<Record<number, SearchResultItem[]>>({});
     const [rowsById, setRowsById] = useState<Map<number, SearchResultItem>>(new Map());
     const [currentPage, setCurrentPage] = useState(1);
@@ -132,6 +143,24 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
     const currentResults = pagesByNumber[currentPage] ?? [];
     const isSearching = stage === "searching";
     const searchStatus = useStagedMessages(AGENTIC_SEARCH_STAGES, isSearching);
+    // The recruiter still has their one free search available (brand-new, unsubscribed).
+    const freeSearchAvailable = trialEnabled && !freeSearchUsed && !subscriptionActive;
+
+    const refreshAccess = useCallback(async () => {
+        try {
+            const access = await fetchSearchAccess();
+            setSearchLocked(access.locked);
+            setSubscriptionActive(access.subscription_active);
+            setFreeSearchUsed(access.free_search_used);
+            setTrialEnabled(access.trial_enabled);
+        } catch {
+            // Non-fatal: the backend 402 still gates the search.
+        }
+    }, []);
+
+    useEffect(() => {
+        void refreshAccess();
+    }, [refreshAccess]);
 
     // "New Search" in the sidebar should return a blank slate. Clicking the
     // already-active route does NOT remount the page, so the nav link dispatches an
@@ -144,6 +173,7 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
             setShowFilters(false);
             setStage("idle");
             setError("");
+            setPaywallReason(null);
             setPagesByNumber({});
             setRowsById(new Map());
             setCurrentPage(1);
@@ -170,6 +200,13 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
     async function runSearch(event?: { preventDefault(): void }) {
         event?.preventDefault();
         if (isSearching) return;
+
+        // Free search already used and not subscribed → show the paywall up front
+        // rather than firing a request the backend will reject with 402.
+        if (searchLocked) {
+            setPaywallReason("subscription_required");
+            return;
+        }
 
         const trimmed = query.trim();
         const usedFilters = !agenticFiltersAreEmpty(filters);
@@ -203,9 +240,14 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
             if (usedFilters) setFilters(emptyAgenticFilters());
 
             notifyCreditsChanged();
+            // The free search may have just been consumed — refresh so the next search
+            // is gated proactively and the "1 free search" hint disappears.
+            void refreshAccess();
         } catch (err: unknown) {
             if (err instanceof ApiError && err.status === 402) {
-                setError("This search needs credits or an active subscription.");
+                const code = (err.detail as { code?: string } | null | undefined)?.code;
+                setPaywallReason(code === "insufficient_credits" ? "insufficient_credits" : "subscription_required");
+                void refreshAccess();
             } else {
                 setError(err instanceof Error ? err.message : "Search failed. Please try again.");
             }
@@ -238,7 +280,13 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
             indexRows(resp.results);
             setCurrentPage(targetPage);
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Unable to load that page.");
+            if (err instanceof ApiError && err.status === 402) {
+                const code = (err.detail as { code?: string } | null | undefined)?.code;
+                setPaywallReason(code === "insufficient_credits" ? "insufficient_credits" : "subscription_required");
+                void refreshAccess();
+            } else {
+                setError(err instanceof Error ? err.message : "Unable to load that page.");
+            }
         } finally {
             setPaginatingPage(null);
         }
@@ -345,6 +393,14 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
                         <ExclamationTriangleIcon />
                         <Text size="2" color="red">
                             {error}
+                        </Text>
+                    </Flex>
+                )}
+
+                {!error && freeSearchAvailable && (
+                    <Flex align="center" gap="2" mt="3">
+                        <Text size="2" color="gray">
+                            You have 1 free search — preview the top results, no card required.
                         </Text>
                     </Flex>
                 )}
@@ -579,6 +635,12 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
                     setSelectedIds(new Set());
                     setSaveDialogOpen(false);
                 }}
+            />
+
+            <UpgradePaywallModal
+                open={paywallReason !== null}
+                reason={paywallReason ?? "subscription_required"}
+                onClose={() => setPaywallReason(null)}
             />
         </Flex>
     );
