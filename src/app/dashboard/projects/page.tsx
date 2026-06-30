@@ -8,9 +8,11 @@ import {
     createList,
     createProject,
     fetchProjects,
+    updateProject,
     type ProjectSummary,
 } from '@/lib/organization';
 import styles from './projects.module.css';
+import { DEFAULT_PROJECT_COLOR, PROJECT_COLORS, colorName } from './project-colors';
 
 type ProjectStatusFilter = 'open' | 'archived' | 'all';
 type ProjectSort = 'updated_desc' | 'name_asc' | 'list_count_desc';
@@ -46,6 +48,13 @@ export default function ProjectsPage() {
     const [firstListName, setFirstListName] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [archivingId, setArchivingId] = useState<string | null>(null);
+    const [restoringId, setRestoringId] = useState<string | null>(null);
+    const [editOpen, setEditOpen] = useState(false);
+    const [editProject, setEditProject] = useState<ProjectSummary | null>(null);
+    const [editName, setEditName] = useState('');
+    const [editColor, setEditColor] = useState<string>(DEFAULT_PROJECT_COLOR);
+    const [editError, setEditError] = useState('');
+    const [editSubmitting, setEditSubmitting] = useState(false);
     const loadRequestIdRef = useRef(0);
 
     const loadProjects = useCallback(async () => {
@@ -145,6 +154,64 @@ export default function ProjectsPage() {
             setDirectoryError(err instanceof Error ? err.message : 'Unable to archive project.');
         } finally {
             setArchivingId(null);
+        }
+    }
+
+    async function handleRestore(project: ProjectSummary) {
+        if (!project.archived || restoringId) return;
+        setRestoringId(project.id);
+        setDirectoryError('');
+        setDirectoryWarning('');
+        try {
+            await updateProject(project.id, { archived: false });
+            await loadProjects();
+        } catch (err) {
+            setDirectoryError(err instanceof Error ? err.message : 'Unable to restore project.');
+        } finally {
+            setRestoringId(null);
+        }
+    }
+
+    function openEditModal(project: ProjectSummary) {
+        setEditProject(project);
+        setEditName(project.name);
+        setEditColor(project.color || DEFAULT_PROJECT_COLOR);
+        setEditError('');
+        setEditOpen(true);
+    }
+
+    function handleEditOpenChange(open: boolean) {
+        setEditOpen(open);
+        setEditError('');
+        if (!open) {
+            setEditProject(null);
+            setEditName('');
+            setEditColor(DEFAULT_PROJECT_COLOR);
+        }
+    }
+
+    async function handleSaveEdit() {
+        const trimmedName = editName.trim();
+        if (!editProject || !trimmedName || editSubmitting) return;
+
+        const payload: Record<string, unknown> = {};
+        if (trimmedName !== editProject.name) payload.name = trimmedName;
+        if (editColor !== (editProject.color || DEFAULT_PROJECT_COLOR)) payload.color = editColor;
+        if (Object.keys(payload).length === 0) {
+            handleEditOpenChange(false);
+            return;
+        }
+
+        setEditSubmitting(true);
+        setEditError('');
+        try {
+            const updated = await updateProject(editProject.id, payload);
+            setProjects((current) => current.map((project) => (project.id === updated.id ? updated : project)));
+            handleEditOpenChange(false);
+        } catch (err) {
+            setEditError(err instanceof Error ? err.message : 'Unable to save changes.');
+        } finally {
+            setEditSubmitting(false);
         }
     }
 
@@ -257,11 +324,29 @@ export default function ProjectsPage() {
                                                     <button
                                                         type="button"
                                                         className="tahoe-button-ghost"
-                                                        disabled={project.archived || archivingId === project.id}
-                                                        onClick={() => void handleArchive(project)}
+                                                        onClick={() => openEditModal(project)}
                                                     >
-                                                        {project.archived ? 'Archived' : archivingId === project.id ? 'Archiving...' : 'Archive'}
+                                                        Edit
                                                     </button>
+                                                    {project.archived ? (
+                                                        <button
+                                                            type="button"
+                                                            className="tahoe-button-ghost"
+                                                            disabled={restoringId === project.id}
+                                                            onClick={() => void handleRestore(project)}
+                                                        >
+                                                            {restoringId === project.id ? 'Restoring...' : 'Restore'}
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            className="tahoe-button-ghost"
+                                                            disabled={archivingId === project.id}
+                                                            onClick={() => void handleArchive(project)}
+                                                        >
+                                                            {archivingId === project.id ? 'Archiving...' : 'Archive'}
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -331,6 +416,52 @@ export default function ProjectsPage() {
                         </Button>
                         <Button size="3" type="button" disabled={!projectName.trim() || submitting} onClick={() => void handleCreateProject()}>
                             {submitting ? 'Creating...' : 'Create project'}
+                        </Button>
+                    </Flex>
+                </Dialog.Content>
+            </Dialog.Root>
+
+            <Dialog.Root open={editOpen} onOpenChange={handleEditOpenChange}>
+                <Dialog.Content maxWidth="520px" style={{ padding: 24 }}>
+                    <Dialog.Title>Edit project</Dialog.Title>
+                    <Dialog.Description size="2" mb="4">
+                        Rename the project or change its color.
+                    </Dialog.Description>
+                    <Flex direction="column" gap="4">
+                        <Flex direction="column" gap="2">
+                            <label className="tahoe-label" htmlFor="edit-project-name">Project name</label>
+                            <TextField.Root
+                                id="edit-project-name"
+                                size="3"
+                                value={editName}
+                                onChange={(event) => setEditName(event.target.value)}
+                            />
+                        </Flex>
+                        <Flex direction="column" gap="2">
+                            <span className="tahoe-label">Color</span>
+                            <Flex gap="2" wrap="wrap">
+                                {PROJECT_COLORS.map((color) => (
+                                    <button
+                                        key={color}
+                                        type="button"
+                                        aria-label={`Use ${colorName(color)}`}
+                                        aria-pressed={editColor === color}
+                                        className={styles.colorSwatch}
+                                        data-selected={editColor === color ? 'true' : undefined}
+                                        style={{ background: color }}
+                                        onClick={() => setEditColor(color)}
+                                    />
+                                ))}
+                            </Flex>
+                        </Flex>
+                        {editError ? <Text size="2" color="red">{editError}</Text> : null}
+                    </Flex>
+                    <Flex gap="3" justify="end" mt="5">
+                        <Button size="3" variant="soft" color="gray" type="button" onClick={() => handleEditOpenChange(false)}>
+                            Cancel
+                        </Button>
+                        <Button size="3" type="button" disabled={!editName.trim() || editSubmitting} onClick={() => void handleSaveEdit()}>
+                            {editSubmitting ? 'Saving...' : 'Save changes'}
                         </Button>
                     </Flex>
                 </Dialog.Content>

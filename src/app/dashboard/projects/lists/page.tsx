@@ -6,6 +6,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { Button, Dialog, Flex, TahoeSelect, Text, TextField } from '@/components/ui/tahoe-ui';
 import {
     createList,
+    deleteList,
     fetchLists,
     fetchProjects,
     updateList,
@@ -13,6 +14,7 @@ import {
     type ProjectSummary,
 } from '@/lib/organization';
 import styles from '../projects.module.css';
+import ConfirmDialog from '@/app/dashboard/_components/ConfirmDialog';
 
 type ListSort = 'updated_desc' | 'name_asc' | 'candidate_count_desc';
 
@@ -55,6 +57,8 @@ function ListsDirectoryPageInner() {
     const [createProjectId, setCreateProjectId] = useState(projectIdFromUrl === 'all' ? '' : projectIdFromUrl);
     const [newListName, setNewListName] = useState('');
     const [renameListName, setRenameListName] = useState('');
+    const [editProjectId, setEditProjectId] = useState('');
+    const [deleteTarget, setDeleteTarget] = useState<ListSummary | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
     const load = useCallback(async () => {
@@ -150,6 +154,7 @@ function ListsDirectoryPageInner() {
         setModalError('');
         if (!open) {
             setRenameListName('');
+            setEditProjectId('');
             setRenameList(null);
         }
     }
@@ -158,6 +163,7 @@ function ListsDirectoryPageInner() {
         setModalError('');
         setRenameList(list);
         setRenameListName(list.name);
+        setEditProjectId(list.project_id);
         setRenameOpen(true);
     }
 
@@ -178,22 +184,36 @@ function ListsDirectoryPageInner() {
         }
     }
 
-    async function handleRenameList() {
+    async function handleSaveListEdit() {
         const trimmedName = renameListName.trim();
         if (!renameList || !trimmedName || submitting) return;
+
+        const payload: Record<string, unknown> = {};
+        if (trimmedName !== renameList.name) payload.name = trimmedName;
+        if (editProjectId && editProjectId !== renameList.project_id) payload.project_id = editProjectId;
+        if (Object.keys(payload).length === 0) {
+            handleRenameOpenChange(false);
+            return;
+        }
+
         setSubmitting(true);
         setModalError('');
         try {
-            const updated = await updateList(renameList.id, { name: trimmedName });
-            setLists((current) => current.map((list) => list.id === updated.id ? updated : list));
-            setRenameOpen(false);
-            setRenameList(null);
-            setModalError('');
+            const updated = await updateList(renameList.id, payload);
+            setLists((current) => current.map((list) => (list.id === updated.id ? updated : list)));
+            handleRenameOpenChange(false);
         } catch (err) {
-            setModalError(err instanceof Error ? err.message : 'Unable to rename list.');
+            setModalError(err instanceof Error ? err.message : 'Unable to update list.');
         } finally {
             setSubmitting(false);
         }
+    }
+
+    async function handleDeleteList() {
+        if (!deleteTarget) return;
+        const listId = deleteTarget.id;
+        await deleteList(listId);
+        setLists((current) => current.filter((list) => list.id !== listId));
     }
 
     return (
@@ -304,7 +324,15 @@ function ListsDirectoryPageInner() {
                                                         </>
                                                     )}
                                                     <button type="button" className="tahoe-button-ghost" onClick={() => openRenameModal(list)}>
-                                                        Rename
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="tahoe-button-ghost"
+                                                        style={{ color: 'var(--tahoe-color-danger)' }}
+                                                        onClick={() => setDeleteTarget(list)}
+                                                    >
+                                                        Delete
                                                     </button>
                                                 </div>
                                             </td>
@@ -387,30 +415,68 @@ function ListsDirectoryPageInner() {
 
             <Dialog.Root open={renameOpen} onOpenChange={handleRenameOpenChange}>
                 <Dialog.Content maxWidth="480px" style={{ padding: 24 }}>
-                    <Dialog.Title>Rename list</Dialog.Title>
+                    <Dialog.Title>Edit list</Dialog.Title>
                     <Dialog.Description size="2" mb="4">
-                        Keep the list name short and recognizable.
+                        Rename the list or move it to a different project.
                     </Dialog.Description>
-                    <Flex direction="column" gap="3">
-                        <label className="tahoe-label" htmlFor="rename-list-name">List name</label>
-                        <TextField.Root
-                            id="rename-list-name"
-                            size="3"
-                            value={renameListName}
-                            onChange={(event) => setRenameListName(event.target.value)}
-                        />
+                    <Flex direction="column" gap="4">
+                        <Flex direction="column" gap="2">
+                            <label className="tahoe-label" htmlFor="rename-list-name">List name</label>
+                            <TextField.Root
+                                id="rename-list-name"
+                                size="3"
+                                value={renameListName}
+                                onChange={(event) => setRenameListName(event.target.value)}
+                            />
+                        </Flex>
+                        <Flex direction="column" gap="2">
+                            <label className="tahoe-label" htmlFor="edit-list-project">Project</label>
+                            <TahoeSelect
+                                id="edit-list-project"
+                                size="3"
+                                value={editProjectId}
+                                onChange={(event) => setEditProjectId(event.target.value)}
+                            >
+                                {projects.every((project) => project.id !== editProjectId) && editProjectId ? (
+                                    <option value={editProjectId}>{renameList?.project_name || 'Current project'}</option>
+                                ) : null}
+                                {projects.map((project) => (
+                                    <option key={project.id} value={project.id}>
+                                        {project.name}
+                                    </option>
+                                ))}
+                            </TahoeSelect>
+                        </Flex>
                         {modalError ? <Text size="2" color="red">{modalError}</Text> : null}
                     </Flex>
                     <Flex gap="3" justify="end" mt="5">
                         <Button size="3" variant="soft" color="gray" type="button" onClick={() => handleRenameOpenChange(false)}>
                             Cancel
                         </Button>
-                        <Button size="3" type="button" disabled={!renameListName.trim() || submitting} onClick={() => void handleRenameList()}>
-                            {submitting ? 'Saving...' : 'Save name'}
+                        <Button size="3" type="button" disabled={!renameListName.trim() || submitting} onClick={() => void handleSaveListEdit()}>
+                            {submitting ? 'Saving...' : 'Save changes'}
                         </Button>
                     </Flex>
                 </Dialog.Content>
             </Dialog.Root>
+
+            <ConfirmDialog
+                open={deleteTarget !== null}
+                onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+                title="Delete list?"
+                body={
+                    <>
+                        Deleting <strong>{deleteTarget?.name}</strong> removes the list and its{' '}
+                        {deleteTarget?.candidate_count ?? 0} candidate membership
+                        {(deleteTarget?.candidate_count ?? 0) === 1 ? '' : 's'}. Saved candidate
+                        records are not deleted. This can&apos;t be undone.
+                    </>
+                }
+                confirmLabel="Delete list"
+                pendingLabel="Deleting..."
+                destructive
+                onConfirm={handleDeleteList}
+            />
         </section>
     );
 }

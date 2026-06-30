@@ -23,7 +23,7 @@ function CheckIcon() {
 
 /**
  * The 3 self-serve plan cards (Starter / Growth / Pro) with a Monthly/Annual toggle,
- * "Most Popular" accent on Growth, a feature checklist, and a per-action legend.
+ * "Most Popular" accent on Growth, and a feature checklist.
  * Shared by the in-app pricing modal and the Billing → Plans page so they stay identical.
  * `onChoose(planKey, interval)` is called when a plan's CTA is clicked.
  */
@@ -93,10 +93,6 @@ export default function PlanCards({
                         </div>
                     );
                 })}
-            </div>
-
-            <div className={styles.legend}>
-                Search 2 cr · Personal email 3 cr · Mobile phone 10 cr · Sending free · Failed reveals free
             </div>
         </div>
     );

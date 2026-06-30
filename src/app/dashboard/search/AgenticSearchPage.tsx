@@ -6,16 +6,14 @@
  * A deliberately lean search surface that does NOT use the LangGraph/DSL flow:
  *   - Typing a query and pressing Enter runs the search immediately (there is no
  *     "Find candidates" button).
- *   - Filters live in a popup; structured filters + the typed prompt are turned
- *     into one natural-language query by the backend (Claude Haiku→Sonnet) and
- *     sent to /v2/agentic_search/fast.
+ *   - The typed prompt is turned into one natural-language query by the backend
+ *     (Claude Haiku→Sonnet) and sent to /v2/agentic_search/fast.
  *   - The backend returns the top 100 in one call; we show 20 per page and page
  *     through the cached set (pages 2–5 cost no extra credits).
- *   - After a filters-based search returns, the filters auto-reset.
  *   - An empty result set shows a "broaden your search" message.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiRequest, ApiError } from "@/lib/api";
 import {
     fetchSearchAccess,
@@ -24,10 +22,8 @@ import {
 } from "@/lib/organization";
 import { clearAnalyticsCache } from "../analytics/_components/analytics-cache";
 import {
-    Badge,
     Box,
     Button,
-    Dialog,
     Flex,
     Heading,
     Spinner,
@@ -37,10 +33,8 @@ import {
 import {
     ChevronLeftIcon,
     ChevronRightIcon,
-    Cross2Icon,
     ExclamationTriangleIcon,
     MagnifyingGlassIcon,
-    MixerHorizontalIcon,
 } from "@/components/ui/icons";
 import PreviewGrid, { type PreviewGridRow } from "./preview-grid";
 import CandidatePanel, { type PreviewData } from "./CandidatePanel";
@@ -51,9 +45,7 @@ import styles from "./langgraph-search.module.css";
 import SaveToListDialog from "../_components/SaveToListDialog";
 import UpgradePaywallModal, { type PaywallReason } from "./UpgradePaywallModal";
 import {
-    AgenticFilterPanel,
     agenticFiltersAreEmpty,
-    countActiveAgenticFilters,
     emptyAgenticFilters,
     type AgenticFilters,
 } from "./_shared/agentic-filters";
@@ -108,7 +100,6 @@ const AGENTIC_SEARCH_STAGES = [
 export default function AgenticSearchPage({ initialQuery }: { initialQuery?: string | null }) {
     const [query, setQuery] = useState(initialQuery ?? "");
     const [filters, setFilters] = useState<AgenticFilters>(emptyAgenticFilters());
-    const [showFilters, setShowFilters] = useState(false);
 
     const [stage, setStage] = useState<"idle" | "searching" | "results">("idle");
     const [error, setError] = useState("");
@@ -139,7 +130,6 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
 
     const dictation = useDictation((text) => setQuery((q) => (q ? `${q} ${text}` : text)));
 
-    const activeFilterCount = useMemo(() => countActiveAgenticFilters(filters), [filters]);
     const currentResults = pagesByNumber[currentPage] ?? [];
     const isSearching = stage === "searching";
     const searchStatus = useStagedMessages(AGENTIC_SEARCH_STAGES, isSearching);
@@ -170,7 +160,6 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
         function resetToBlank() {
             setQuery("");
             setFilters(emptyAgenticFilters());
-            setShowFilters(false);
             setStage("idle");
             setError("");
             setPaywallReason(null);
@@ -217,7 +206,6 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
 
         setStage("searching");
         setError("");
-        setShowFilters(false);
 
         try {
             const resp = await apiRequest<AgenticExecuteResponse>("/search/agentic/execute", {
@@ -371,20 +359,6 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
                                 />
                             )}
                         </Box>
-                        <Button
-                            type="button"
-                            size="3"
-                            variant={showFilters ? "solid" : "soft"}
-                            onClick={() => setShowFilters(true)}
-                        >
-                            <MixerHorizontalIcon />
-                            Filters
-                            {activeFilterCount > 0 && (
-                                <Badge variant="solid" color="orange" ml="1">
-                                    {activeFilterCount}
-                                </Badge>
-                            )}
-                        </Button>
                     </Flex>
                 </form>
 
@@ -557,75 +531,6 @@ export default function AgenticSearchPage({ initialQuery }: { initialQuery?: str
                     />
                 )}
             </Flex>
-
-            {/* Filters popup — its own Search button runs a filters-based search. */}
-            <Dialog.Root open={showFilters} onOpenChange={setShowFilters}>
-                <Dialog.Content
-                    maxWidth="760px"
-                    aria-label="Search filters"
-                    style={{ padding: 28, position: "relative" }}
-                >
-                    <Dialog.Close asChild>
-                        <button
-                            type="button"
-                            aria-label="Close filters"
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.background = "rgba(0,0,0,0.06)";
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.background = "transparent";
-                            }}
-                            style={{
-                                position: "absolute",
-                                top: 16,
-                                right: 16,
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                width: 32,
-                                height: 32,
-                                border: "none",
-                                background: "transparent",
-                                borderRadius: 8,
-                                cursor: "pointer",
-                                color: "#111111",
-                            }}
-                        >
-                            <Cross2Icon width={20} height={20} />
-                        </button>
-                    </Dialog.Close>
-                    <Dialog.Title>Filters</Dialog.Title>
-                    <Dialog.Description mt="1">
-                        Add filters to refine the search. Type a custom value and press Enter even if it
-                        isn&apos;t in the suggestions.
-                    </Dialog.Description>
-                    <Box mt="5" mb="5">
-                        <AgenticFilterPanel filters={filters} onChange={setFilters} />
-                    </Box>
-                    <Flex
-                        justify="between"
-                        align="center"
-                        pt="4"
-                        style={{ borderTop: "1px solid var(--tahoe-color-border-subtle)" }}
-                    >
-                        <Button variant="soft" color="gray" type="button" onClick={() => setFilters(emptyAgenticFilters())}>
-                            Reset
-                        </Button>
-                        <Button
-                            type="button"
-                            disabled={isSearching}
-                            onClick={() => void runSearch()}
-                            style={{
-                                background: "var(--tahoe-color-accent)",
-                                borderColor: "var(--tahoe-color-accent)",
-                                color: "#fff",
-                            }}
-                        >
-                            {isSearching ? <Spinner /> : "Search"}
-                        </Button>
-                    </Flex>
-                </Dialog.Content>
-            </Dialog.Root>
 
             <SaveToListDialog
                 open={saveDialogOpen}

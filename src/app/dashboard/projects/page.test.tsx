@@ -2,18 +2,21 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import ProjectsPage from './page';
-import { createList, createProject, fetchProjects } from '@/lib/organization';
+import { archiveProject, createList, createProject, fetchProjects, updateProject } from '@/lib/organization';
 
 vi.mock('@/lib/organization', () => ({
     fetchProjects: vi.fn(),
     createProject: vi.fn(),
     createList: vi.fn(),
     archiveProject: vi.fn(),
+    updateProject: vi.fn(),
 }));
 
 const mockedFetchProjects = vi.mocked(fetchProjects);
 const mockedCreateProject = vi.mocked(createProject);
 const mockedCreateList = vi.mocked(createList);
+const mockedUpdateProject = vi.mocked(updateProject);
+const mockedArchiveProject = vi.mocked(archiveProject);
 
 const baseProject = {
     id: 'project-1',
@@ -29,6 +32,8 @@ beforeEach(() => {
     mockedFetchProjects.mockReset();
     mockedCreateProject.mockReset();
     mockedCreateList.mockReset();
+    mockedUpdateProject.mockReset();
+    mockedArchiveProject.mockReset();
     mockedFetchProjects.mockImplementation(({ archived = false }: { archived?: boolean } = {}) => Promise.resolve(
         archived
             ? []
@@ -95,6 +100,59 @@ test('keeps a created project when optional first-list creation fails', async ()
     expect(await screen.findByText('Project created. First list was not created: List API failed')).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'New Project' })).toHaveAttribute('href', '/dashboard/projects/project-new');
+});
+
+test('edits a project name via the edit dialog', async () => {
+    const user = userEvent.setup();
+    mockedUpdateProject.mockResolvedValue({ ...baseProject, name: 'Quantum Team' });
+
+    render(<ProjectsPage />);
+    await screen.findByText('Quantum Computing');
+
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await user.clear(screen.getByLabelText('Project name'));
+    await user.type(screen.getByLabelText('Project name'), 'Quantum Team');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => {
+        expect(mockedUpdateProject).toHaveBeenCalledWith('project-1', { name: 'Quantum Team' });
+    });
+    expect(await screen.findByText('Quantum Team')).toBeInTheDocument();
+});
+
+test('edits a project color via the edit dialog', async () => {
+    const user = userEvent.setup();
+    mockedUpdateProject.mockResolvedValue({ ...baseProject, color: '#FF682C' });
+
+    render(<ProjectsPage />);
+    await screen.findByText('Quantum Computing');
+
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await user.click(screen.getByRole('button', { name: 'Use Orange' }));
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => {
+        expect(mockedUpdateProject).toHaveBeenCalledWith('project-1', { color: '#FF682C' });
+    });
+});
+
+test('restores an archived project from the archived filter', async () => {
+    const user = userEvent.setup();
+    const archived = { ...baseProject, id: 'project-arch', name: 'Archived Co', archived: true };
+    mockedFetchProjects.mockImplementation(({ archived: isArchived = false }: { archived?: boolean } = {}) =>
+        Promise.resolve(isArchived ? [archived] : []),
+    );
+    mockedUpdateProject.mockResolvedValue({ ...archived, archived: false });
+
+    render(<ProjectsPage />);
+    await user.selectOptions(screen.getByLabelText('Project status'), 'archived');
+    expect(await screen.findByText('Archived Co')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Restore' }));
+
+    await waitFor(() => {
+        expect(mockedUpdateProject).toHaveBeenCalledWith('project-arch', { archived: false });
+    });
 });
 
 test('filters project rows without showing a detail drawer', async () => {

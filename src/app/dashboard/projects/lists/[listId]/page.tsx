@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ChevronLeftIcon,
@@ -9,23 +9,28 @@ import {
     MagnifyingGlassIcon,
     PersonIcon,
 } from '@/components/ui/icons';
-import { Box, Button, Flex, TextField } from '@/components/ui/tahoe-ui';
+import { Box, Button, Dialog, Flex, TahoeSelect, Text, TextField } from '@/components/ui/tahoe-ui';
 import CreditsBadge from '@/app/dashboard/_components/CreditsBadge';
+import ConfirmDialog from '@/app/dashboard/_components/ConfirmDialog';
 import EnrichModal from '@/app/dashboard/_components/EnrichModal';
 import CandidatePanel, { type PreviewData } from '../../../search/CandidatePanel';
 import { buildPaginationTokens } from '../../../search/pagination';
 import PreviewGrid, { type PreviewGridExtraColumn, type PreviewGridRow } from '../../../search/preview-grid';
 import {
+    deleteList,
     fetchEnrichmentRun,
     fetchEnrichmentRuns,
     fetchList,
     fetchListCandidates,
+    fetchProjects,
     removeListCandidates,
+    updateList,
     updateListCandidateContact,
     type ContactFieldState,
     type EnrichmentRunSummary,
     type ListCandidateRow,
     type ListSummary,
+    type ProjectSummary,
 } from '@/lib/organization';
 import layoutStyles from '../../../candidates/candidates.module.css';
 import projectStyles from '../../projects.module.css';
@@ -221,6 +226,7 @@ function ContactFieldCell({
 function ListDetailPageInner() {
     const params = useParams<{ listId: string }>();
     const searchParams = useSearchParams();
+    const router = useRouter();
     const listId = String(params.listId);
     const shouldAutoOpenEnrich = searchParams.get('enrich') === '1';
     const [list, setList] = useState<ListSummary | null>(null);
@@ -238,6 +244,13 @@ function ListDetailPageInner() {
     const [activeRun, setActiveRun] = useState<EnrichmentRunSummary | null>(null);
     const [enrichmentNotice, setEnrichmentNotice] = useState('');
     const [creditRefreshKey, setCreditRefreshKey] = useState(0);
+    const [editOpen, setEditOpen] = useState(false);
+    const [editName, setEditName] = useState('');
+    const [editProjectId, setEditProjectId] = useState('');
+    const [editError, setEditError] = useState('');
+    const [editSubmitting, setEditSubmitting] = useState(false);
+    const [projects, setProjects] = useState<ProjectSummary[]>([]);
+    const [deleteOpen, setDeleteOpen] = useState(false);
     const contactOverridesRef = useRef(new Map<string, ListCandidateRow>());
     const autoOpenedEnrichListIdRef = useRef<string | null>(null);
 
@@ -514,6 +527,57 @@ function ListDetailPageInner() {
         setEnrichOpen(true);
     }, [canEnrich, listId, shouldAutoOpenEnrich]);
 
+    function openEditModal() {
+        if (!list) return;
+        setEditName(list.name);
+        setEditProjectId(list.project_id);
+        setEditError('');
+        setEditOpen(true);
+        if (projects.length === 0) {
+            void fetchProjects({ archived: false })
+                .then(setProjects)
+                .catch(() => { /* keep the current project as the only option */ });
+        }
+    }
+
+    function handleEditOpenChange(open: boolean) {
+        setEditOpen(open);
+        setEditError('');
+        if (!open) {
+            setEditProjectId('');
+        }
+    }
+
+    async function handleSaveEdit() {
+        const trimmedName = editName.trim();
+        if (!list || !trimmedName || editSubmitting) return;
+
+        const payload: Record<string, unknown> = {};
+        if (trimmedName !== list.name) payload.name = trimmedName;
+        if (editProjectId && editProjectId !== list.project_id) payload.project_id = editProjectId;
+        if (Object.keys(payload).length === 0) {
+            handleEditOpenChange(false);
+            return;
+        }
+
+        setEditSubmitting(true);
+        setEditError('');
+        try {
+            const updated = await updateList(list.id, payload);
+            setList(updated);
+            handleEditOpenChange(false);
+        } catch (err) {
+            setEditError(err instanceof Error ? err.message : 'Unable to update list.');
+        } finally {
+            setEditSubmitting(false);
+        }
+    }
+
+    async function handleDeleteList() {
+        await deleteList(listId);
+        router.push('/dashboard/projects/lists');
+    }
+
     return (
         <section className={layoutStyles.page}>
             <header className={`${layoutStyles.header} ${layoutStyles.listHeader}`}>
@@ -539,6 +603,23 @@ function ListDetailPageInner() {
                         <Link href={`/dashboard/outreach/campaigns/new?list_id=${encodeURIComponent(listId)}`} className="tahoe-button-secondary">
                             Push to campaign
                         </Link>
+                        <button
+                            type="button"
+                            className="tahoe-button-ghost"
+                            disabled={!list}
+                            onClick={openEditModal}
+                        >
+                            Edit
+                        </button>
+                        <button
+                            type="button"
+                            className="tahoe-button-ghost"
+                            style={{ color: 'var(--tahoe-color-danger)' }}
+                            disabled={!list}
+                            onClick={() => setDeleteOpen(true)}
+                        >
+                            Delete
+                        </button>
                         <Link href="/dashboard/projects/lists" className="tahoe-button-secondary">
                             Back to all lists
                         </Link>
@@ -734,6 +815,70 @@ function ListDetailPageInner() {
                     setCreditRefreshKey((current) => current + 1);
                     await Promise.all([load(), loadRuns()]);
                 }}
+            />
+
+            <Dialog.Root open={editOpen} onOpenChange={handleEditOpenChange}>
+                <Dialog.Content maxWidth="480px" style={{ padding: 24 }}>
+                    <Dialog.Title>Edit list</Dialog.Title>
+                    <Dialog.Description size="2" mb="4">
+                        Rename the list or move it to a different project.
+                    </Dialog.Description>
+                    <Flex direction="column" gap="4">
+                        <Flex direction="column" gap="2">
+                            <label className="tahoe-label" htmlFor="edit-list-name">List name</label>
+                            <TextField.Root
+                                id="edit-list-name"
+                                size="3"
+                                value={editName}
+                                onChange={(event) => setEditName(event.target.value)}
+                            />
+                        </Flex>
+                        <Flex direction="column" gap="2">
+                            <label className="tahoe-label" htmlFor="edit-list-project">Project</label>
+                            <TahoeSelect
+                                id="edit-list-project"
+                                size="3"
+                                value={editProjectId}
+                                onChange={(event) => setEditProjectId(event.target.value)}
+                            >
+                                {projects.every((project) => project.id !== editProjectId) && editProjectId ? (
+                                    <option value={editProjectId}>{list?.project_name || 'Current project'}</option>
+                                ) : null}
+                                {projects.map((project) => (
+                                    <option key={project.id} value={project.id}>
+                                        {project.name}
+                                    </option>
+                                ))}
+                            </TahoeSelect>
+                        </Flex>
+                        {editError ? <Text size="2" color="red">{editError}</Text> : null}
+                    </Flex>
+                    <Flex gap="3" justify="end" mt="5">
+                        <Button size="3" variant="soft" color="gray" type="button" onClick={() => handleEditOpenChange(false)}>
+                            Cancel
+                        </Button>
+                        <Button size="3" type="button" disabled={!editName.trim() || editSubmitting} onClick={() => void handleSaveEdit()}>
+                            {editSubmitting ? 'Saving...' : 'Save changes'}
+                        </Button>
+                    </Flex>
+                </Dialog.Content>
+            </Dialog.Root>
+
+            <ConfirmDialog
+                open={deleteOpen}
+                onOpenChange={setDeleteOpen}
+                title="Delete list?"
+                body={
+                    <>
+                        Deleting <strong>{list?.name}</strong> removes the list and its{' '}
+                        {listCandidateCount} candidate membership{listCandidateCount === 1 ? '' : 's'}.
+                        Saved candidate records are not deleted. This can&apos;t be undone.
+                    </>
+                }
+                confirmLabel="Delete list"
+                pendingLabel="Deleting..."
+                destructive
+                onConfirm={handleDeleteList}
             />
         </section>
     );

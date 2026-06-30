@@ -166,12 +166,3 @@
     background: #f2551c;
     border-color: #f2551c;
 }
-
-.legend {
-    padding: 11px 16px;
-    border-radius: var(--tahoe-radius-sm);
-    background: var(--tahoe-color-surface-subtle);
-    color: var(--tahoe-color-text-tertiary);
-    font-size: 12.5px;
-    text-align: center;
-}

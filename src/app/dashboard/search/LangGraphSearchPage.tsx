@@ -59,6 +59,7 @@ import CandidatePanel, {
 import styles from "./langgraph-search.module.css";
 import MicButton from "./MicButton";
 import PreviewGrid, { type PreviewGridRow } from "./preview-grid";
+import { scoreToMatch } from "./match-score";
 import { useOnboarding } from "../_components/onboarding/OnboardingProvider";
 import { SAMPLE_CANDIDATES, SAMPLE_QUERY } from "../_components/onboarding/sampleCandidates";
 import { markOnboardingTask } from "@/lib/onboarding";
@@ -1792,11 +1793,12 @@ function buildCandidateMatchRationales(
         pushMissingPreviewEvidence(rationales, "Company HQ evidence unavailable", `Company HQ: ${hqCriteria.join(", ")}`);
     }
 
-    if (preview.score !== null && rationales.length > 0 && rationales.length < MAX_CANDIDATE_MATCH_RATIONALES) {
+    const previewMatch = scoreToMatch(preview.score);
+    if (previewMatch && rationales.length > 0 && rationales.length < MAX_CANDIDATE_MATCH_RATIONALES) {
         pushCandidateRationale(rationales, {
-            title: "Preview score returned",
-            criterion: "Coresignal preview score",
-            evidence: `Preview score returned: ${preview.score.toFixed(2)}. This is not a full fit score.`,
+            title: "Preview match score",
+            criterion: "Search relevance",
+            evidence: `Relevance match: ${previewMatch.pct}% (${previewMatch.label}). This is a search-relevance signal, not a full fit score.`,
             confidence: "low",
         });
     }

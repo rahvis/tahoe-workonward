@@ -35,7 +35,6 @@ import {
     type SettingsPayload,
     type WorkspaceSettings,
 } from '@/lib/organization';
-import CreditConfirmToggle from '@/app/dashboard/_components/CreditConfirmToggle';
 import styles from './settings.module.css';
 
 type SettingsTab =
@@ -914,15 +913,6 @@ function SettingsPageContent() {
                                 />
                             </div>
                             <SaveActions dirty={dirtySections.has('workspace')} saving={saving} onSave={() => saveSection('workspace')} onReset={() => resetSection('workspace')} />
-                        </div>
-                        <div className={styles.card}>
-                            <div className={styles.cardHeader}>
-                                <div>
-                                    <h2 className={styles.cardTitle}>Preferences</h2>
-                                    <p className={styles.cardText}>How Tahoe communicates credit usage to you.</p>
-                                </div>
-                            </div>
-                            <CreditConfirmToggle />
                         </div>
                         <div className={styles.card}>
                             <div className={styles.cardHeader}>

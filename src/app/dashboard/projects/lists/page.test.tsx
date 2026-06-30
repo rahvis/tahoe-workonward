@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import ListsDirectoryPage from './page';
-import { createList, fetchLists, fetchProjects, updateList } from '@/lib/organization';
+import { createList, deleteList, fetchLists, fetchProjects, updateList } from '@/lib/organization';
 
 let currentSearchParams = 'project_id=project-1';
 
@@ -15,12 +15,14 @@ vi.mock('@/lib/organization', () => ({
     fetchProjects: vi.fn(),
     createList: vi.fn(),
     updateList: vi.fn(),
+    deleteList: vi.fn(),
 }));
 
 const mockedFetchLists = vi.mocked(fetchLists);
 const mockedFetchProjects = vi.mocked(fetchProjects);
 const mockedCreateList = vi.mocked(createList);
 const mockedUpdateList = vi.mocked(updateList);
+const mockedDeleteList = vi.mocked(deleteList);
 
 const baseLists = [
     {
@@ -66,6 +68,7 @@ beforeEach(() => {
     mockedFetchProjects.mockReset();
     mockedCreateList.mockReset();
     mockedUpdateList.mockReset();
+    mockedDeleteList.mockReset();
     mockedFetchLists.mockResolvedValue(baseLists);
     mockedFetchProjects.mockResolvedValue(baseProjects);
 });
@@ -76,6 +79,7 @@ test('renders lists as a full-width compact table with row actions', async () =>
     expect(await screen.findByText('Contact engineers')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Search lists or projects...').closest('label')).toHaveClass('tui-textfield--size-3');
     expect(screen.getByRole('columnheader', { name: 'List' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Project' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Candidates' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Actions' })).toBeInTheDocument();
     expect(screen.getAllByText('Quantum Computing').length).toBeGreaterThan(0);
@@ -84,7 +88,8 @@ test('renders lists as a full-width compact table with row actions', async () =>
     expect(screen.getAllByRole('link', { name: 'Open' })[0]).toHaveAttribute('href', '/dashboard/projects/lists/list-1');
     expect(screen.getAllByRole('link', { name: 'Enrich' })[0]).toHaveAttribute('href', '/dashboard/projects/lists/list-1?enrich=1');
     expect(screen.getAllByRole('link', { name: 'Campaign' })[0]).toHaveAttribute('href', '/dashboard/outreach/campaigns/new?list_id=list-1');
-    expect(screen.getAllByRole('button', { name: 'Rename' })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Edit' })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Delete' })[0]).toBeInTheDocument();
     expect(screen.queryByLabelText('List details')).not.toBeInTheDocument();
 });
 
@@ -159,17 +164,17 @@ test('clears create-list modal errors between sessions', async () => {
     expect(screen.queryByText('Create list failed')).not.toBeInTheDocument();
 });
 
-test('clears rename-list modal errors between sessions', async () => {
+test('clears edit-list modal errors between sessions', async () => {
     const user = userEvent.setup();
     mockedUpdateList.mockRejectedValue(new Error('Rename list failed'));
 
     render(<ListsDirectoryPage />);
     await screen.findAllByText('Contact engineers');
 
-    await user.click(screen.getAllByRole('button', { name: 'Rename' })[0]);
+    await user.click(screen.getAllByRole('button', { name: 'Edit' })[0]);
     await user.clear(screen.getByLabelText('List name'));
     await user.type(screen.getByLabelText('List name'), 'Renamed list');
-    await user.click(screen.getByRole('button', { name: 'Save name' }));
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
 
     expect(await screen.findByText('Rename list failed')).toBeInTheDocument();
 
@@ -178,8 +183,50 @@ test('clears rename-list modal errors between sessions', async () => {
         expect(screen.queryByText('Rename list failed')).not.toBeInTheDocument();
     });
 
-    await user.click(screen.getAllByRole('button', { name: 'Rename' })[0]);
+    await user.click(screen.getAllByRole('button', { name: 'Edit' })[0]);
 
     expect(screen.queryByText('Rename list failed')).not.toBeInTheDocument();
     expect(screen.getByLabelText('List name')).toHaveValue('Contact engineers');
+});
+
+test('deletes a list after confirmation and removes it from the table', async () => {
+    const user = userEvent.setup();
+    mockedDeleteList.mockResolvedValue({ deleted: true, list_id: 'list-1' });
+
+    render(<ListsDirectoryPage />);
+    await screen.findByText('Contact engineers');
+
+    await user.click(screen.getAllByRole('button', { name: 'Delete' })[0]);
+
+    expect(await screen.findByRole('heading', { name: 'Delete list?' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Delete list' }));
+
+    await waitFor(() => {
+        expect(mockedDeleteList).toHaveBeenCalledWith('list-1');
+    });
+    await waitFor(() => {
+        expect(screen.queryByRole('link', { name: 'Contact engineers' })).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole('link', { name: 'Backend alumni' })).toBeInTheDocument();
+});
+
+test('moves a list to a different project via the edit dialog', async () => {
+    const user = userEvent.setup();
+    mockedUpdateList.mockImplementation(async (listId, payload) => ({
+        ...baseLists[0],
+        id: listId,
+        ...(payload as Record<string, unknown>),
+        project_name: 'Backend Platform',
+    }));
+
+    render(<ListsDirectoryPage />);
+    await screen.findByText('Contact engineers');
+
+    await user.click(screen.getAllByRole('button', { name: 'Edit' })[0]);
+    await user.selectOptions(screen.getByLabelText('Project'), 'project-2');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => {
+        expect(mockedUpdateList).toHaveBeenCalledWith('list-1', { project_id: 'project-2' });
+    });
 });

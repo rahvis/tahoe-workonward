@@ -93,34 +93,33 @@ beforeEach(() => {
     mockedCreateTopUpCheckout.mockResolvedValue({ url: 'https://stripe.test/topup' });
 });
 
-test('defaults to the overview tab and hides plan actions until the Plans tab is selected', async () => {
+test('defaults to the plans tab with only Plans and Top-ups available', async () => {
     render(<BillingPlanPage />);
 
     expect(await screen.findByText('Starter')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.queryByRole('tab', { name: 'Rules' })).not.toBeInTheDocument();
-    expect(screen.getByText('Available credits')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /upgrade now/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Plans' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.queryByRole('tab', { name: 'Overview' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Credits' })).not.toBeInTheDocument();
 });
 
-test('normalizes the removed rules tab to overview', async () => {
+test('normalizes an unknown tab to plans', async () => {
     searchParams = new URLSearchParams('tab=rules');
 
     render(<BillingPlanPage />);
 
-    expect(await screen.findByText('Available credits')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.queryByRole('tab', { name: 'Rules' })).not.toBeInTheDocument();
+    expect(await screen.findByText('Starter')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Plans' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.queryByRole('tab', { name: 'Overview' })).not.toBeInTheDocument();
     await waitFor(() => {
-        expect(replaceMock).toHaveBeenCalledWith('/dashboard/billing/plan?tab=overview', { scroll: false });
+        expect(replaceMock).toHaveBeenCalledWith('/dashboard/billing/plan?tab=plans', { scroll: false });
     });
 });
 
-test('switches sections with settings-style tabs and updates the URL', async () => {
+test('switches to the Top-ups tab and updates the URL', async () => {
     render(<BillingPlanPage />);
 
-    await screen.findByText('Available credits');
-    // The Credits tab was removed from the UI.
+    await screen.findByText('Starter');
+    expect(screen.queryByRole('tab', { name: 'Overview' })).not.toBeInTheDocument();
     expect(screen.queryByRole('tab', { name: 'Credits' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Top-ups' }));
 
@@ -139,9 +138,8 @@ test('plans tab starts subscription checkout (annual by default) with existing r
 
     render(<BillingPlanPage />);
 
-    await screen.findByText('Available credits');
-    fireEvent.click(screen.getByRole('tab', { name: 'Plans' }));
-    // Starter is the current plan (disabled); Growth is the only "Upgrade now".
+    // Plans is the default tab. Starter is the current plan (disabled); Growth is
+    // the only "Upgrade now".
     fireEvent.click(await screen.findByRole('button', { name: /upgrade now/i }));
 
     await waitFor(() => {
@@ -157,7 +155,7 @@ test('plans tab starts subscription checkout (annual by default) with existing r
 test('top-ups tab starts top-up checkout', async () => {
     render(<BillingPlanPage />);
 
-    await screen.findByText('Available credits');
+    await screen.findByText('Starter');
     fireEvent.click(screen.getByRole('tab', { name: 'Top-ups' }));
     fireEvent.click(await screen.findByRole('button', { name: /buy.*\$80/i }));
 
@@ -182,9 +180,8 @@ test('renders clean empty states for unavailable plans and top-ups', async () =>
 
     render(<BillingPlanPage />);
 
-    await screen.findByRole('tab', { name: 'Plans' });
-    fireEvent.click(screen.getByRole('tab', { name: 'Plans' }));
-    expect(screen.getByText('No subscription plans are available yet.')).toBeInTheDocument();
+    // Plans is the default tab, so its empty state shows immediately after load.
+    expect(await screen.findByText('No subscription plans are available yet.')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Top-ups' }));
     expect(screen.getByText('No top-up packs are available yet.')).toBeInTheDocument();

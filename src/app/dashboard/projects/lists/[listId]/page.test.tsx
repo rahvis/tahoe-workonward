@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 import ListDetailPage from './page';
 import {
     createEnrichmentRun,
+    deleteList,
     estimateEnrichmentRun,
     fetchBillingSummary,
     fetchEnrichmentRun,
@@ -18,9 +19,12 @@ let lastPreviewGridProps: Record<string, unknown> | null = null;
 let currentSearchParams = new URLSearchParams();
 let currentListId = 'list-1';
 
+const mockRouterPush = vi.fn();
+
 vi.mock('next/navigation', () => ({
     useParams: () => ({ listId: currentListId }),
     useSearchParams: () => currentSearchParams,
+    useRouter: () => ({ push: mockRouterPush }),
 }));
 
 vi.mock('@/lib/organization', () => ({
@@ -31,8 +35,11 @@ vi.mock('@/lib/organization', () => ({
     fetchEnrichmentRuns: vi.fn(),
     fetchList: vi.fn(),
     fetchListCandidates: vi.fn(),
+    fetchProjects: vi.fn(),
     removeListCandidates: vi.fn(),
+    updateList: vi.fn(),
     updateListCandidateContact: vi.fn(),
+    deleteList: vi.fn(),
 }));
 
 vi.mock('../../../search/CandidatePanel', () => ({
@@ -97,11 +104,14 @@ const mockedRemoveListCandidates = vi.mocked(removeListCandidates);
 const mockedUpdateListCandidateContact = vi.mocked(updateListCandidateContact);
 const mockedEstimateEnrichmentRun = vi.mocked(estimateEnrichmentRun);
 const mockedCreateEnrichmentRun = vi.mocked(createEnrichmentRun);
+const mockedDeleteList = vi.mocked(deleteList);
 
 beforeEach(() => {
     currentSearchParams = new URLSearchParams();
     currentListId = 'list-1';
     lastPreviewGridProps = null;
+    mockRouterPush.mockReset();
+    mockedDeleteList.mockReset();
     mockedFetchList.mockReset();
     mockedFetchListCandidates.mockReset();
     mockedFetchEnrichmentRuns.mockReset();
@@ -795,4 +805,23 @@ test('completed zero-target enrichment shows no-op notice instead of in-progress
 
     expect(await screen.findByText(/No new enrichment was started/i)).toBeInTheDocument();
     expect(screen.queryByText(/is in progress/i)).not.toBeInTheDocument();
+});
+
+test('deletes the list after confirmation and returns to the lists directory', async () => {
+    const user = userEvent.setup();
+    mockedDeleteList.mockResolvedValue({ deleted: true, list_id: 'list-1' });
+
+    render(<ListDetailPage />);
+    await screen.findByRole('heading', { name: 'Outreach Round 1' });
+
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(await screen.findByRole('heading', { name: 'Delete list?' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Delete list' }));
+
+    await waitFor(() => {
+        expect(mockedDeleteList).toHaveBeenCalledWith('list-1');
+    });
+    await waitFor(() => {
+        expect(mockRouterPush).toHaveBeenCalledWith('/dashboard/projects/lists');
+    });
 });

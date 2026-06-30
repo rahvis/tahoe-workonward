@@ -1,34 +1,3 @@
-.packGrid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-}
-
-@media (max-width: 600px) {
-    .packGrid {
-        grid-template-columns: 1fr;
-    }
-}
-
-.pack {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-    padding: 16px 16px 14px;
-    border: 1px solid var(--tahoe-color-border-subtle);
-    border-radius: var(--tahoe-radius-md);
-    background: var(--tahoe-color-canvas);
-}
-
-/* Orange, eye-grabbing highlight for the best-value pack. */
-.packBest {
-    border: 1.5px solid var(--tahoe-color-accent);
-    background: linear-gradient(180deg, rgba(255, 104, 44, 0.12) 0%, rgba(255, 104, 44, 0.03) 100%);
-    box-shadow: var(--tahoe-focus-ring-shadow);
-}
-
 .bestBadge {
     position: absolute;
     top: -10px;
@@ -150,4 +119,130 @@
     font-size: 12px;
     line-height: 1.5;
     color: var(--tahoe-color-text-tertiary);
+}
+
+/* ── Top-up slider ──────────────────────────────────────────────────────── */
+.sliderCard {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 20px;
+    border: 1.5px solid var(--tahoe-color-accent);
+    border-radius: var(--tahoe-radius-md);
+    background: linear-gradient(180deg, rgba(255, 104, 44, 0.10) 0%, rgba(255, 104, 44, 0.02) 100%);
+    max-width: 460px;
+    margin: 0 auto;
+}
+
+.sliderHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+/* The slider's Best-value badge sits inline, not absolutely positioned. */
+.sliderHead .bestBadge {
+    position: static;
+}
+
+.sliderPriceRow {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 2px;
+}
+
+.slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    margin: 16px 0 8px;
+    border-radius: 999px;
+    background: rgba(255, 104, 44, 0.25);
+    cursor: pointer;
+}
+
+.slider:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--tahoe-color-accent);
+    border: 3px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--tahoe-color-accent);
+    border: 3px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+}
+
+.slider:disabled::-webkit-slider-thumb {
+    cursor: default;
+}
+
+.slider:disabled::-moz-range-thumb {
+    cursor: default;
+}
+
+.slider:focus-visible:not(:disabled) {
+    outline: 3px solid var(--tahoe-color-accent);
+    outline-offset: 4px;
+}
+
+.sliderTicks {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.tick {
+    flex: 0 0 auto;
+    padding: 2px 9px;
+    border: 1px solid var(--tahoe-color-border-subtle);
+    border-radius: 999px;
+    background: var(--tahoe-color-canvas);
+    color: var(--tahoe-color-text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.tick:hover:not(:disabled) {
+    border-color: var(--tahoe-color-accent);
+}
+
+.tick:focus-visible {
+    outline: 2px solid var(--tahoe-color-accent);
+    outline-offset: 2px;
+}
+
+.tick:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.tickActive {
+    background: var(--tahoe-color-accent);
+    border-color: var(--tahoe-color-accent);
+    color: #ffffff;
 }

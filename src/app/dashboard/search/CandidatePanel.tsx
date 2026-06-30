@@ -6,6 +6,7 @@ import {
     PersonIcon,
 } from "@/components/ui/icons";
 import styles from "./search.module.css";
+import { scoreToMatch } from "./match-score";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -206,9 +207,18 @@ export default function CandidatePanel({
                 )}
             </div>
 
-            {preview.score !== null && (
-                <div className={styles.scoreMeta}>ES Match Score: {preview.score.toFixed(2)}</div>
-            )}
+            {(() => {
+                const match = scoreToMatch(preview.score);
+                if (!match) return null;
+                return (
+                    <div
+                        className={styles.scoreMeta}
+                        title={`Relevance score ${(preview.score as number).toFixed(2)}`}
+                    >
+                        Match: {match.pct}% · {match.label}
+                    </div>
+                );
+            })()}
         </aside>
     );
 }

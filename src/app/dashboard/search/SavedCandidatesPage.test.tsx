@@ -107,6 +107,13 @@ test('saved candidates uses the aligned Tahoe search input sizing and pagination
     expect(screen.queryByRole('columnheader', { name: 'Pipeline' })).not.toBeInTheDocument();
     expect(screen.queryByText('langgraph_search')).not.toBeInTheDocument();
 
+    // Relevance score is presented as a recruiter-facing "Match" %/tier, not a raw number.
+    expect(screen.getByRole('columnheader', { name: 'Match' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Score' })).not.toBeInTheDocument();
+    expect(screen.getByText(/65%\s*·\s*Good/)).toBeInTheDocument(); // score 42.7
+    expect(screen.getByText(/58%\s*·\s*Good/)).toBeInTheDocument(); // score 39.2
+    expect(screen.queryByText('42.70')).not.toBeInTheDocument();
+
     const searchInput = screen.getByPlaceholderText('Search candidates...');
     expect(searchInput.closest('label')).toHaveClass('tui-textfield--size-3');
 

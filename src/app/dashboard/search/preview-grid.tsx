@@ -2,6 +2,26 @@
 
 import type { ReactNode } from "react";
 import styles from "./preview-grid.module.css";
+import { scoreToMatch, type MatchTier } from "./match-score";
+
+const MATCH_TIER_CLASS: Record<MatchTier, string> = {
+    strong: styles.matchStrong,
+    good: styles.matchGood,
+    possible: styles.matchPossible,
+};
+
+function matchCell(score: number | null | undefined): ReactNode {
+    const match = scoreToMatch(score);
+    if (!match) return "—";
+    return (
+        <span
+            className={`${styles.matchChip} ${MATCH_TIER_CLASS[match.tier]}`}
+            title={`${match.label} match · relevance score ${(score as number).toFixed(2)}`}
+        >
+            {match.pct}% · {match.label}
+        </span>
+    );
+}
 
 export interface PreviewGridRow {
     id: number;
@@ -205,9 +225,9 @@ function buildBaseColumns(showCandidateSubtitle: boolean): PreviewGridColumn[] {
         },
         {
             key: "score",
-            label: "Score",
-            className: styles.numericCell,
-            render: (row) => (row.score != null ? row.score.toFixed(2) : "—"),
+            label: "Match",
+            className: styles.matchCell,
+            render: (row) => matchCell(row.score),
         },
     ];
 }
