@@ -238,12 +238,10 @@ test('the list picker filters project-scoped lists and selecting one clears the 
     expect(newListInput).toHaveValue('');
 });
 
-test('shows next-step success actions after importing selected candidates', async () => {
+test('imports selected candidates, calls onSaved, and closes the dialog', async () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
     const onSaved = vi.fn();
-    const onOpenList = vi.fn();
-    const onEnrichList = vi.fn();
 
     render(
         <SaveToListDialog
@@ -256,8 +254,6 @@ test('shows next-step success actions after importing selected candidates', asyn
                 },
             ]}
             onSaved={onSaved}
-            onOpenList={onOpenList}
-            onEnrichList={onEnrichList}
         />,
     );
 
@@ -269,17 +265,14 @@ test('shows next-step success actions after importing selected candidates', asyn
 
     await user.click(screen.getByLabelText('List'));
     await user.click(screen.getByRole('option', { name: /Contact engineers/i }));
-    // "Stay on search" is the default now — opt into the next-steps flow for this test.
-    await user.click(screen.getByLabelText('Show next steps'));
+    // The "After saving" choice was removed — saving always returns to search.
+    expect(screen.queryByText('After saving')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Save candidates' }));
 
-    expect(await screen.findByRole('heading', { name: 'Saved 1 candidate' })).toBeInTheDocument();
-    expect(screen.getByText(/1 added, 0 already in this list/i)).toBeInTheDocument();
-    expect(onSaved).toHaveBeenCalledWith(expect.any(Object), expect.objectContaining({ id: 'list-1' }));
-
-    await user.click(screen.getByRole('button', { name: 'Open list' }));
-
-    expect(onOpenChange).toHaveBeenCalledWith(false);
-    expect(onOpenList).toHaveBeenCalledWith(expect.objectContaining({ id: 'list-1' }));
-    expect(onEnrichList).not.toHaveBeenCalled();
+    await waitFor(() => {
+        expect(onSaved).toHaveBeenCalledWith(expect.any(Object), expect.objectContaining({ id: 'list-1' }));
+    });
+    await waitFor(() => {
+        expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
 });

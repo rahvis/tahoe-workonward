@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import {
     clearSearchPageBootstrap,
@@ -246,7 +246,6 @@ function TagInput({
 // ---------------------------------------------------------------------------
 
 export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstrapPayload | null }) {
-    const router = useRouter();
     const bootstrapState = getLegacyBootstrapState(bootstrap);
     const [query, setQuery] = useState(bootstrapState?.query ?? "");
     const [filters, setFilters] = useState<SearchFilters>(bootstrapState?.filters ?? emptyFilters());
@@ -533,10 +532,6 @@ export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstra
                 ),
         [lastCommittedQuery, query, queryHash, selectedCandidatesById],
     );
-
-    function openSavedList(listId: string, options?: { enrich?: boolean }) {
-        router.push(`/dashboard/projects/lists/${listId}${options?.enrich ? "?enrich=1" : ""}`);
-    }
 
     function handlePanelSaveToList(id: number) {
         const selectedItem = results.find((item) => item.id === id);
@@ -1015,8 +1010,6 @@ export function LegacySearchPage({ bootstrap }: { bootstrap?: SearchPageBootstra
                         setSelectedIds(new Set());
                         setSelectedCandidatesById(new Map());
                     }}
-                    onOpenList={(list) => openSavedList(list.id)}
-                    onEnrichList={(list) => openSavedList(list.id, { enrich: true })}
                 />
             </Flex>
         </Box>

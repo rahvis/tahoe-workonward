@@ -2520,10 +2520,6 @@ export default function LangGraphSearchPage({ bootstrap, initialQuery, prefillSo
         window.setTimeout(() => searchInputRef.current?.focus(), 0);
     }
 
-    function openSavedList(listId: string, options?: { enrich?: boolean }) {
-        router.push(`/dashboard/projects/lists/${listId}${options?.enrich ? "?enrich=1" : ""}`);
-    }
-
     function renderField(field: FilterField) {
         const value = getNestedValue(popupModel as unknown as Record<string, unknown>, field.key);
         const placeholder = getFieldPlaceholder();
@@ -3230,8 +3226,6 @@ export default function LangGraphSearchPage({ bootstrap, initialQuery, prefillSo
                     setSelectedIds(new Set());
                     markOnboardingTask("save_candidate");
                 }}
-                onOpenList={(list) => openSavedList(list.id)}
-                onEnrichList={(list) => openSavedList(list.id, { enrich: true })}
             />
 
             <UpgradePaywallModal

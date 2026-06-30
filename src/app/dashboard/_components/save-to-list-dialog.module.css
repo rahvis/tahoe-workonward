@@ -184,17 +184,3 @@
   font-size: 14px;
   line-height: 1.45;
 }
-
-.radioRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 30px;
-  color: var(--tahoe-color-text-primary);
-  font-size: 14px;
-  line-height: 1.35;
-}
-
-.radioRow input {
-  accent-color: var(--tahoe-color-accent);
-}

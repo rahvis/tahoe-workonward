@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
     ChevronLeftIcon,
     ChevronRightIcon,
@@ -44,7 +43,6 @@ function toPreviewData(candidate: SavedCandidate): PreviewData {
 }
 
 export default function SavedCandidatesPage() {
-    const router = useRouter();
     const [candidates, setCandidates] = useState<SavedCandidate[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -109,10 +107,6 @@ export default function SavedCandidatesPage() {
     );
 
     const legacySelectedCount = selectedCandidates.filter((candidate) => candidate.saved_origin === 'legacy_preview_compat').length;
-
-    const openSavedList = useCallback((listId: string, options?: { enrich?: boolean }) => {
-        router.push(`/dashboard/projects/lists/${listId}${options?.enrich ? '?enrich=1' : ''}`);
-    }, [router]);
 
     return (
         <section className={styles.page}>
@@ -262,8 +256,6 @@ export default function SavedCandidatesPage() {
                     setSelectedIds(new Set());
                     await fetchCandidates();
                 }}
-                onOpenList={(list) => openSavedList(list.id)}
-                onEnrichList={(list) => openSavedList(list.id, { enrich: true })}
             />
         </section>
     );
